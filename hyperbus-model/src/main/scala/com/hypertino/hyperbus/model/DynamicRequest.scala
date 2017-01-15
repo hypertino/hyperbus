@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus.model
 
-import java.io.{ByteArrayInputStream, InputStream, OutputStream}
+import java.io._
 
 import com.fasterxml.jackson.core.JsonParser
 import com.hypertino.binders.json.JsonBindersFactory
@@ -13,9 +13,9 @@ trait DynamicBody extends Body with Links {
 
   lazy val links: Links.LinksMap = content.__links.to[Option[Links.LinksMap]].getOrElse(Map.empty)
 
-  def serialize(outputStream: OutputStream): Unit = {
+  def serialize(writer: Writer): Unit = {
     import com.hypertino.binders._
-    com.hypertino.binders.json.JsonBindersFactory.findFactory().withStreamGenerator(outputStream) { serializer =>
+    com.hypertino.binders.json.JsonBindersFactory.findFactory().withWriter(writer) { serializer =>
       serializer.bind[Value](content)
     }
   }
@@ -55,12 +55,18 @@ object DynamicRequest {
     apply(requestHeader, b)
   }
 
-  def apply(message: String, encoding: String = "UTF-8"): DynamicRequest = {
-    apply(new ByteArrayInputStream(message.getBytes(encoding)))
+  def apply(message: String): DynamicRequest = {
+    val stringReader = new StringReader(message)
+    try {
+      apply(stringReader)
+    }
+    finally {
+      stringReader.close()
+    }
   }
 
-  def apply(inputStream: InputStream): DynamicRequest = {
-    MessageDeserializer.deserializeRequestWith(inputStream) { (requestHeader, jsonParser) ⇒
+  def apply(reader: Reader): DynamicRequest = {
+    MessageDeserializer.deserializeRequestWith(reader) { (requestHeader, jsonParser) ⇒
       DynamicRequest(requestHeader, jsonParser)
     }
   }

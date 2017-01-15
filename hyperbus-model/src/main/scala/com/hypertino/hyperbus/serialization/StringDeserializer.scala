@@ -1,7 +1,5 @@
 package com.hypertino.hyperbus.serialization
 
-import java.io.ByteArrayInputStream
-
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value.{Null, Value}
 import com.hypertino.inflector.naming.PlainConverter
@@ -11,22 +9,13 @@ import scala.language.experimental.macros
 import scala.reflect.macros.blackbox.Context
 
 object StringDeserializer {
-  private val defaultEncoding = StringSerializer.defaultEncoding
+  def request[T <: Request[_]](input: String): T = macro StringDeserializerImpl.request[T]
 
-  def request[T <: Request[_]](input: String, encoding: String): T = macro StringDeserializerImpl.request[T]
-
-  def request[T <: Request[_]](input: String): T = macro StringDeserializerImpl.requestUtf8[T]
-
-  def dynamicRequest(input: String): DynamicRequest = dynamicRequest(input, defaultEncoding)
-
-  def dynamicRequest(input: String, encoding: String): DynamicRequest = {
-    val is = new java.io.ByteArrayInputStream(input.getBytes(encoding))
-    com.hypertino.hyperbus.serialization.MessageDeserializer.deserializeRequestWith[DynamicRequest](is)(DynamicRequest.apply)
+  def dynamicRequest(input: String): DynamicRequest = {
+    com.hypertino.hyperbus.serialization.MessageDeserializer.deserializeRequestWith[DynamicRequest](input)(DynamicRequest.apply)
   }
 
-  def dynamicBody(content: Option[String]): DynamicBody = dynamicBody(content, defaultEncoding)
-
-  def dynamicBody(content: Option[String], encoding: String): DynamicBody = content match {
+  def dynamicBody(content: Option[String]): DynamicBody = content match {
     case None ⇒ DynamicBody(Null)
     case Some(string) ⇒ {
       implicit val jsf = new JsonHalSerializerFactory[PlainConverter.type]
@@ -39,20 +28,16 @@ object StringDeserializer {
 
   // todo: response for DefinedResponse
 
-  def dynamicResponse(input: String): Response[Body] = dynamicResponse(input, defaultEncoding)
-
-  def dynamicResponse(input: String, encoding: String): Response[DynamicBody] = {
-    val byteStream = new ByteArrayInputStream(input.getBytes(encoding))
-    MessageDeserializer.deserializeResponseWith(byteStream) { (responseHeader, responseBodyJson) =>
+  def dynamicResponse(input: String): Response[DynamicBody] = {
+    MessageDeserializer.deserializeResponseWith(input) { (responseHeader, responseBodyJson) =>
       StandardResponse(responseHeader, responseBodyJson).asInstanceOf[Response[DynamicBody]]
     }
   }
 }
 
 private[serialization] object StringDeserializerImpl {
-  def request[T: c.WeakTypeTag](c: Context)(input: c.Expr[String], encoding: c.Expr[String]): c.Expr[T] = {
+  def request[T: c.WeakTypeTag](c: Context)(input: c.Expr[String]): c.Expr[T] = {
     import c.universe._
-    val isVal = TermName(c.freshName("is"))
     val typ = weakTypeOf[T]
     val deserializer = typ.companion.decl(TermName("apply"))
     if (typ.companion == null) {
@@ -60,13 +45,7 @@ private[serialization] object StringDeserializerImpl {
     }
     c.Expr[T](
       q"""{
-      val $isVal = new java.io.ByteArrayInputStream($input.getBytes($encoding))
-      com.hypertino.hyperbus.serialization.MessageDeserializer.deserializeRequestWith[$typ]($isVal)($deserializer)
+      com.hypertino.hyperbus.serialization.MessageDeserializer.deserializeRequestWith[$typ]($input)($deserializer)
     }""")
-  }
-
-  def requestUtf8[T: c.WeakTypeTag](c: Context)(input: c.Expr[String]): c.Expr[T] = {
-    import c.universe._
-    request[T](c)(input, c.Expr[String](Literal(Constant(StringSerializer.defaultEncoding))))
   }
 }

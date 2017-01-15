@@ -1,9 +1,9 @@
 package com.hypertino.hyperbus.model
 
-import java.io.OutputStream
+import java.io.Writer
 
 import com.hypertino.binders.annotations.fieldName
-import com.hypertino.hyperbus.serialization.{MessageSerializer, StringSerializer}
+import com.hypertino.hyperbus.serialization.MessageSerializer
 import com.hypertino.hyperbus.transport.api.{TransportMessage, TransportRequest, TransportResponse}
 
 import scala.collection.mutable
@@ -13,7 +13,7 @@ case class Link(href: String, templated: Boolean = false, @fieldName("type") typ
 trait Body {
   def contentType: Option[String]
 
-  def serialize(output: OutputStream)
+  def serialize(writer: Writer)
 }
 
 trait BodyObjectApi[B <: Body] {
@@ -98,12 +98,6 @@ trait Message[+B <: Body] extends TransportMessage with MessagingContextFactory 
   override def toString = {
     s"${getClass.getName}[${body.getClass.getName}]:$serializeToString"
   }
-
-  private def serializeToString = {
-    val os = new java.io.ByteArrayOutputStream()
-    serialize(os)
-    os.toString(StringSerializer.defaultEncoding)
-  }
 }
 
 trait Request[+B <: Body] extends Message[B] with TransportRequest {
@@ -113,7 +107,7 @@ trait Request[+B <: Body] extends Message[B] with TransportRequest {
     if (method != value) throw new IllegalArgumentException(s"Incorrect method value: $method != $value (headers?)")
   }
 
-  override def serialize(outputStream: java.io.OutputStream) = MessageSerializer.serializeRequest(this, outputStream)
+  override def serialize(writer: Writer) = MessageSerializer.serializeRequest(this, writer)
 }
 
 trait RequestObjectApi[R <: Request[Body]] {
@@ -125,7 +119,7 @@ trait RequestObjectApi[R <: Request[Body]] {
 trait Response[+B <: Body] extends Message[B] with TransportResponse {
   def statusCode: Int
 
-  override def serialize(outputStream: java.io.OutputStream) = MessageSerializer.serializeResponse(this, outputStream)
+  override def serialize(writer: Writer) = MessageSerializer.serializeResponse(this, writer)
 }
 
 // defines responses:

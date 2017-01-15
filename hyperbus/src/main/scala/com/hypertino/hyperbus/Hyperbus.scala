@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus
 
-import java.io.InputStream
+import java.io.{Reader, Writer}
 
 import com.hypertino.hyperbus.impl.MacroApi
 import com.hypertino.hyperbus.model._
@@ -64,7 +64,7 @@ class Hyperbus(val transportManager: TransportManager,
     if (logMessages && log.isTraceEnabled) {
       log.trace(Map("messageId" → request.messageId, "correlationId" → request.correlationId), s"hyperbus <~ $request")
     }
-    val outputDeserializer = MessageDeserializer.deserializeResponseWith(_: InputStream)(responseDeserializer)
+    val outputDeserializer = MessageDeserializer.deserializeResponseWith(_: Reader)(responseDeserializer)
     transportManager.ask(request, outputDeserializer) map { r ⇒
       (r: @unchecked) match {
         case throwable: Throwable ⇒
@@ -128,13 +128,13 @@ class Hyperbus(val transportManager: TransportManager,
     transportManager.shutdown(duration)
   }
 
-  protected def exceptionSerializer(exception: Throwable, outputStream: java.io.OutputStream): Unit = {
+  protected def exceptionSerializer(exception: Throwable, writer: Writer): Unit = {
     exception match {
-      case r: ErrorResponse ⇒ r.serialize(outputStream)
+      case r: ErrorResponse ⇒ r.serialize(writer)
       case t ⇒
         val error = InternalServerError(ErrorBody(DefError.INTERNAL_ERROR, Some(t.getMessage)))
         logError("Unhandled exception", error, t)
-        error.serialize(outputStream)
+        error.serialize(writer)
     }
   }
 

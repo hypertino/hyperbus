@@ -1,4 +1,4 @@
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, StringReader}
 import java.util.concurrent.atomic.AtomicLong
 
 import com.hypertino.binders.value._
@@ -23,12 +23,9 @@ class ClientTransportTest(output: String) extends ClientTransport {
   def input = messageBuf.toString()
 
   override def ask(message: TransportRequest, outputDeserializer: Deserializer[TransportResponse]): Future[TransportResponse] = {
-    val ba = new ByteArrayOutputStream()
-    message.serialize(ba)
-    messageBuf.append(ba.toString("UTF-8"))
+    messageBuf.append(message.serializeToString)
 
-    val os = new ByteArrayInputStream(output.getBytes("UTF-8"))
-    val out = outputDeserializer(os)
+    val out = outputDeserializer(new StringReader(output))
     Future.successful(out)
   }
 
@@ -261,8 +258,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/resources"},"headers":{"method":["post"],"contentType":["test-1"],"messageId":["123"]},"body":{"resourceData":"ha ha"}}"""
-    val ba = new ByteArrayInputStream(req.getBytes("UTF-8"))
-    val msg = MessageDeserializer.deserializeRequestWith(ba)(st.sInputDeserializer)
+    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(testclasses.TestPost1(testclasses.TestBody1("ha ha")))
 
     val futureResult = st.sHandler(msg)
@@ -281,8 +277,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/resources"},"headers":{"method":["post"],"messageId":["123"]},"body":{"resourceData":"ha ha"}}"""
-    val ba = new ByteArrayInputStream(req.getBytes("UTF-8"))
-    val msg = MessageDeserializer.deserializeRequestWith(ba)(st.sInputDeserializer)
+    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg shouldBe a[testclasses.TestPost1]
     msg.body shouldBe a[testclasses.TestBody1]
     msg.body.asInstanceOf[testclasses.TestBody1].resourceData should equal("ha ha")
@@ -303,8 +298,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/empty"},"headers":{"method":["post"],"messageId":["123"]},"body":null}"""
-    val ba = new ByteArrayInputStream(req.getBytes("UTF-8"))
-    val msg = MessageDeserializer.deserializeRequestWith(ba)(st.sInputDeserializer)
+    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(StaticPostWithEmptyBody(EmptyBody))
 
     val futureResult = st.sHandler(msg)
@@ -323,8 +317,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/empty"},"headers":{"method":["post"],"contentType":["some-content"],"messageId":["123"]},"body":"haha"}"""
-    val ba = new ByteArrayInputStream(req.getBytes("UTF-8"))
-    val msg = MessageDeserializer.deserializeRequestWith(ba)(st.sInputDeserializer)
+    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(StaticPostWithDynamicBody(DynamicBody(Some("some-content"), Text("haha"))))
 
     val futureResult = st.sHandler(msg)
@@ -346,8 +339,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/test"},"headers":{"method":["get"],"contentType":["some-content"],"messageId":["123"]},"body":"haha"}"""
-    val ba = new ByteArrayInputStream(req.getBytes("UTF-8"))
-    val msg = MessageDeserializer.deserializeRequestWith(ba)(st.sInputDeserializer)
+    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(DynamicRequest(
       RequestHeader(Uri("/test"), Map(
         Header.METHOD → Seq(Method.GET),
@@ -464,17 +456,13 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/resources"},"headers":{"messageId":["123"],"method":["post"],"contentType":["test-1"]},"body":{"resourceData":"ha ha"}}"""
-    val ba = new ByteArrayInputStream(req.getBytes("UTF-8"))
-    val msg = MessageDeserializer.deserializeRequestWith(ba)(st.sInputDeserializer)
+    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(testclasses.TestPost1(testclasses.TestBody1("ha ha")))
 
     val futureResult = st.sHandler(msg)
     whenReady(futureResult) { r =>
       r shouldBe a[Conflict[_]]
-      val ba = new ByteArrayOutputStream()
-      r.serialize(ba)
-      val s = ba.toString("UTF-8")
-      s should equal(
+      r.serializeToString should equal(
         """{"status":409,"headers":{"messageId":["123"]},"body":{"code":"failed","errorId":"abcde12345"}}"""
       )
     }

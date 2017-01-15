@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus.transport.api
 
-import java.io.OutputStream
+import java.io.{StringWriter, Writer}
 
 import com.hypertino.hyperbus.model.{Body, Request}
 import com.hypertino.hyperbus.serialization.RequestDeserializer
@@ -24,7 +24,13 @@ trait TransportMessage extends EntityWithHeaders {
 
   def correlationId: String
 
-  def serialize(output: OutputStream)
+  def serialize(writer: Writer)
+
+  def serializeToString: String = {
+    val writer = new StringWriter()
+    serialize(writer)
+    writer.toString
+  }
 }
 
 trait TransportRequest extends TransportMessage {

@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus.transport.inproc
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.StringReader
 
 import com.hypertino.hyperbus.model.{Body, Request}
 import com.hypertino.hyperbus.serialization._
@@ -77,10 +77,9 @@ private[transport] case class InprocSubscriptionHandler[REQ <: Request[Body]]
 
   private def reserializeRequest(serialize: Boolean, message: TransportMessage, deserializer: RequestDeserializer[REQ]): REQ = {
     if (serialize) {
-      val ba = new ByteArrayOutputStream()
-      message.serialize(ba)
-      val bi = new ByteArrayInputStream(ba.toByteArray)
-      MessageDeserializer.deserializeRequestWith(bi)(deserializer)
+      MessageDeserializer.deserializeRequestWith(
+        message.serializeToString
+      )(deserializer)
     }
     else {
       message.asInstanceOf[REQ]
@@ -89,10 +88,13 @@ private[transport] case class InprocSubscriptionHandler[REQ <: Request[Body]]
 
   private def reserializeResponse[OUT <: TransportResponse](serialize: Boolean, message: TransportMessage, deserializer: Deserializer[OUT]): OUT = {
     if (serialize) {
-      val ba = new ByteArrayOutputStream()
-      message.serialize(ba)
-      val bi = new ByteArrayInputStream(ba.toByteArray)
-      deserializer(bi)
+      val stringReader = new StringReader(message.serializeToString)
+      try {
+        deserializer(stringReader)
+      }
+      finally {
+        stringReader.close()
+      }
     }
     else {
       message.asInstanceOf[OUT]

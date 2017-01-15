@@ -28,20 +28,12 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
 
   "Response" should "serialize" in {
     val msg = Created(TestCreatedBody("100500"))
-    val ba = new ByteArrayOutputStream()
-    msg.serialize(ba)
-    val s = ba.toString("UTF8")
-    //println(s)
-    s should equal("""{"status":201,"headers":{"messageId":["123"],"correlationId":["abc"],"contentType":["test-created-body"]},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}""")
+    msg.serializeToString should equal("""{"status":201,"headers":{"messageId":["123"],"correlationId":["abc"],"contentType":["test-created-body"]},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}""")
   }
 
   "Response with headers" should "serialize" in {
     val msg = Created(TestCreatedBody("100500"), Headers("test" → Seq("a")))
-    val ba = new ByteArrayOutputStream()
-    msg.serialize(ba)
-    val s = ba.toString("UTF8")
-    //println(s)
-    s should equal("""{"status":201,"headers":{"test":["a"],"messageId":["123"],"correlationId":["abc"],"contentType":["test-created-body"]},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}""")
+    msg.serializeToString should equal("""{"status":201,"headers":{"test":["a"],"messageId":["123"],"correlationId":["abc"],"contentType":["test-created-body"]},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}""")
   }
 
   "hashCode, equals, product" should "work" in {

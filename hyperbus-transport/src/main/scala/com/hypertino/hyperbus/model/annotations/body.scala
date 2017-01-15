@@ -41,10 +41,10 @@ private[annotations] trait BodyAnnotationMacroImpl extends AnnotationMacroImplBa
     val newBodyContent = q"""
       ..$body
       def contentType = ${className.toTermName}.contentType
-      override def serialize(outputStream: java.io.OutputStream) = {
+      override def serialize(writer: java.io.Writer) = {
         import com.hypertino.hyperbus.serialization.MessageSerializer.bindOptions
         implicit val $fVal = new com.hypertino.hyperbus.serialization.JsonHalSerializerFactory[com.hypertino.inflector.naming.PlainConverter.type]
-        com.hypertino.binders.json.JsonBindersFactory.findFactory().withStreamGenerator(outputStream) { case $serializerVal =>
+        com.hypertino.binders.json.JsonBindersFactory.findFactory().withWriter(writer) { case $serializerVal =>
           $serializerVal.bind[$className](this)
         }
       }

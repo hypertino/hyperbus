@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus.model
 
-import java.io.OutputStream
+import java.io.Writer
 
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value._
@@ -67,10 +67,10 @@ private[model] case class ErrorBodyContainer(code: String,
                                              contentType: Option[String]) extends ErrorBody {
   def message = code + description.map(": " + _).getOrElse("") + ". #" + errorId
 
-  override def serialize(outputStream: OutputStream): Unit = {
+  override def serialize(writer: Writer): Unit = {
     implicit val bindOptions = com.hypertino.hyperbus.serialization.MessageSerializer.bindOptions
     implicit val jsonSerializerFactory = new JsonHalSerializerFactory[PlainConverter.type ]
-    JsonBindersFactory.findFactory().withStreamGenerator(outputStream) { serializer =>
+    JsonBindersFactory.findFactory().withWriter(writer) { serializer =>
       serializer.bind(this.copyErrorBody(contentType = None)) // find other way to skip contentType
     }
   }
