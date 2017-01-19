@@ -4,6 +4,7 @@ import java.io.Writer
 
 import com.hypertino.binders.core.BindOptions
 import com.hypertino.hyperbus.model.{Body, Request, Response}
+import com.hypertino.hyperbus.transport.api.Headers
 import com.hypertino.hyperbus.transport.api.uri.UriJsonSerializer
 
 object MessageSerializer {
@@ -37,8 +38,8 @@ object MessageSerializer {
     writer.write("}")
   }
 
-  private def require(headers: Map[String, Seq[String]], required: String) = {
-    if (headers.get(required).flatMap(_.headOption).isEmpty)
+  private def require(headers: Headers, required: String) = {
+    if (headers.get(required).forall(_.toString.isEmpty))
       throw new HeaderIsRequiredException(required)
   }
 }

@@ -1,34 +1,35 @@
 package com.hypertino.hyperbus.model
 
+import com.hypertino.binders.value.{Lst, LstV, Text, Value}
 import com.hypertino.hyperbus.transport.api.{Header, Headers}
 
 import scala.collection.mutable
 
 
-class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Seq[String]), Map[String, Seq[String]]]) {
-  def this() = this(Map.newBuilder[String, Seq[String]])
+class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Value), Map[String, Value]]) {
+  def this() = this(Map.newBuilder[String, Value])
 
-  def this(headers: Map[String, Seq[String]]) = this {
-    Map.newBuilder[String, Seq[String]] ++= headers
+  def this(headers: Map[String, Value]) = this {
+    Map.newBuilder[String, Value] ++= headers
   }
 
-  def +=(kv: (String, String)) = {
-    mapBuilder += kv._1 → Seq(kv._2)
+  def +=(kv: (String, Value)) = {
+    mapBuilder += kv._1 → LstV(kv._2)
     this
   }
 
-  def ++=(headers: Map[String, Seq[String]]) = {
+  def ++=(headers: Map[String, Value]) = {
     mapBuilder ++= headers
     this
   }
 
-  def ++=(headers: Seq[(String, Seq[String])]) = {
+  def ++=(headers: Seq[(String, Value)]) = {
     mapBuilder ++= headers
     this
   }
 
   def withCorrelation(correlationId: Option[String]) = {
-    mapBuilder ++= correlationId.map(c ⇒ Header.CORRELATION_ID → Seq(c))
+    mapBuilder ++= correlationId.map(c ⇒ Header.CORRELATION_ID → Text(c))
     this
   }
 
@@ -38,17 +39,17 @@ class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Seq[
   }
 
   def withMessageId(messageId: String): HeadersBuilder = {
-    mapBuilder += Header.MESSAGE_ID → Seq(messageId)
+    mapBuilder += Header.MESSAGE_ID → Text(messageId)
     this
   }
 
   def withContentType(contentType: Option[String]): HeadersBuilder = {
-    mapBuilder ++= contentType.map(ct => Header.CONTENT_TYPE → Seq(ct))
+    mapBuilder ++= contentType.map(ct => Header.CONTENT_TYPE → Text(ct))
     this
   }
 
   def withMethod(method: String) = {
-    mapBuilder += Header.METHOD → Seq(method)
+    mapBuilder += Header.METHOD → Text(method)
     this
   }
 

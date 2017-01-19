@@ -96,14 +96,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
   "<~ " should "send a request (client)" in {
     val ct = new ClientTransportTest(
-      """{"status":201,"headers":{"contentType":["created-body"],"messageId":["123"]},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}"""
+      """{"status":201,"headers":{"contentType":"created-body","messageId":"123"},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
     val f = hyperbus <~ testclasses.TestPost1(testclasses.TestBody1("ha ha"))
 
     ct.input should equal(
-      """{"uri":{"pattern":"/resources"},"headers":{"messageId":["123"],"method":["post"],"contentType":["test-1"]},"body":{"resourceData":"ha ha"}}"""
+      """{"uri":{"pattern":"/resources"},"headers":{"messageId":"123","method":"post","contentType":"test-1"},"body":{"resourceData":"ha ha"}}"""
     )
 
     whenReady(f) { r =>
@@ -114,7 +114,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
   "<~ " should "send a request, dynamic (client)" in {
 
     val ct = new ClientTransportTest(
-      """{"status":201,"headers":{"contentType":["created-body"],"messageId":["123"]},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}"""
+      """{"status":201,"headers":{"contentType":["created-body"],"messageId":"123"},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
@@ -127,7 +127,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     )
 
     ct.input should equal(
-      """{"uri":{"pattern":"/resources"},"headers":{"messageId":["123"],"method":["post"],"contentType":["test-1"]},"body":{"resourceData":"ha ha"}}"""
+      """{"uri":{"pattern":"/resources"},"headers":{"messageId":"123","method":"post","contentType":"test-1"},"body":{"resourceData":"ha ha"}}"""
     )
 
     whenReady(f) { r =>
@@ -139,14 +139,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
   "<~ " should " send empty request (client)" in {
     val ct = new ClientTransportTest(
-      """{"status":204,"headers":{"messageId":["123"]},"body":{}}"""
+      """{"status":204,"headers":{"messageId":"123"},"body":{}}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
     val f = hyperbus <~ TestPostWithNoContent(testclasses.TestBody1("empty"))
 
     ct.input should equal(
-      """{"uri":{"pattern":"/empty"},"headers":{"messageId":["123"],"method":["post"],"contentType":["test-1"]},"body":{"resourceData":"empty"}}"""
+      """{"uri":{"pattern":"/empty"},"headers":{"messageId":"123","method":"post","contentType":"test-1"},"body":{"resourceData":"empty"}}"""
     )
 
     whenReady(f) { r =>
@@ -157,14 +157,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
   "<~ " should " send static request with dynamic body (client)" in {
     val ct = new ClientTransportTest(
-      """{"status":204,"headers":{"messageId":["123"]},"body":{}}"""
+      """{"status":204,"headers":{"messageId":"123"},"body":{}}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
     val f = hyperbus <~ StaticPostWithDynamicBody(DynamicBody(Text("ha ha")))
 
     ct.input should equal(
-      """{"uri":{"pattern":"/empty"},"headers":{"messageId":["123"],"method":["post"]},"body":"ha ha"}"""
+      """{"uri":{"pattern":"/empty"},"headers":{"messageId":"123","method":"post"},"body":"ha ha"}"""
     )
 
     whenReady(f) { r =>
@@ -175,14 +175,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
   "<~ " should " send static request with empty body (client)" in {
     val ct = new ClientTransportTest(
-      """{"status":204,"headers":{"messageId":["123"]},"body":{}}"""
+      """{"status":204,"headers":{"messageId":"123"},"body":{}}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
     val f = hyperbus <~ StaticPostWithEmptyBody()
 
     ct.input should equal(
-      """{"uri":{"pattern":"/empty"},"headers":{"messageId":["123"],"method":["post"]},"body":null}"""
+      """{"uri":{"pattern":"/empty"},"headers":{"messageId":"123","method":"post"},"body":null}"""
     )
 
     whenReady(f) { r =>
@@ -193,14 +193,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
   "<~" should "send static request with body without contentType specified" in {
     val ct = new ClientTransportTest(
-      """{"status":204,"headers":{"messageId":["123"]},"body":{}}"""
+      """{"status":204,"headers":{"messageId":"123"},"body":{}}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
     val f = hyperbus <~ StaticPostBodyWithoutContentType(TestBodyNoContentType("yey"))
 
     ct.input should equal(
-      """{"uri":{"pattern":"/content-body-not-specified"},"headers":{"messageId":["123"],"method":["post"]},"body":{"resourceData":"yey"}}"""
+      """{"uri":{"pattern":"/content-body-not-specified"},"headers":{"messageId":"123","method":"post"},"body":{"resourceData":"yey"}}"""
     )
 
     whenReady(f) { r =>
@@ -211,14 +211,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
   "<~" should "send static request with query body (client)" in {
     val ct = new ClientTransportTest(
-      """{"status":200,"headers":{"messageId":["123"]},"body":{"data":"abc"}}"""
+      """{"status":200,"headers":{"messageId":"123"},"body":{"data":"abc"}}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
     val f = hyperbus <~ StaticGetWithQuery()
 
     ct.input should equal(
-      """{"uri":{"pattern":"/empty"},"headers":{"messageId":["123"],"method":["get"]},"body":null}"""
+      """{"uri":{"pattern":"/empty"},"headers":{"messageId":"123","method":"get"},"body":null}"""
     )
 
     whenReady(f) { r =>
@@ -229,14 +229,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
   "<~" should "catch client exception" in {
     val ct = new ClientTransportTest(
-      """{"status":409,"headers":{"messageId":["abcde12345"]},"body":{"code":"failed","errorId":"abcde12345"}}"""
+      """{"status":409,"headers":{"messageId":"abcde12345"},"body":{"code":"failed","errorId":"abcde12345"}}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
     val f = hyperbus <~ testclasses.TestPost1(testclasses.TestBody1("ha ha"))
 
     ct.input should equal(
-      """{"uri":{"pattern":"/resources"},"headers":{"messageId":["123"],"method":["post"],"contentType":["test-1"]},"body":{"resourceData":"ha ha"}}"""
+      """{"uri":{"pattern":"/resources"},"headers":{"messageId":"123","method":"post","contentType":"test-1"},"body":{"resourceData":"ha ha"}}"""
     )
 
     whenReady(f.failed) { r =>
@@ -254,7 +254,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
       }
     }
 
-    val req = """{"uri":{"pattern":"/resources"},"headers":{"method":["post"],"contentType":["test-1"],"messageId":["123"]},"body":{"resourceData":"ha ha"}}"""
+    val req = """{"uri":{"pattern":"/resources"},"headers":{"method":"post","contentType":"test-1","messageId":"123"},"body":{"resourceData":"ha ha"}}"""
     val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(testclasses.TestPost1(testclasses.TestBody1("ha ha")))
 
@@ -273,7 +273,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
       }
     }
 
-    val req = """{"uri":{"pattern":"/resources"},"headers":{"method":["post"],"messageId":["123"]},"body":{"resourceData":"ha ha"}}"""
+    val req = """{"uri":{"pattern":"/resources"},"headers":{"method":"post","messageId":"123"},"body":{"resourceData":"ha ha"}}"""
     val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg shouldBe a[testclasses.TestPost1]
     msg.body shouldBe a[testclasses.TestBody1]
@@ -294,7 +294,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
       }
     }
 
-    val req = """{"uri":{"pattern":"/empty"},"headers":{"method":["post"],"messageId":["123"]},"body":null}"""
+    val req = """{"uri":{"pattern":"/empty"},"headers":{"method":"post","messageId":"123"},"body":null}"""
     val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(StaticPostWithEmptyBody(EmptyBody))
 
@@ -313,7 +313,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
       }
     }
 
-    val req = """{"uri":{"pattern":"/empty"},"headers":{"method":["post"],"contentType":["some-content"],"messageId":["123"]},"body":"haha"}"""
+    val req = """{"uri":{"pattern":"/empty"},"headers":{"method":"post","contentType":"some-content","messageId":"123"},"body":"haha"}"""
     val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(StaticPostWithDynamicBody(DynamicBody(Some("some-content"), Text("haha"))))
 
@@ -335,13 +335,13 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
       }
     }
 
-    val req = """{"uri":{"pattern":"/test"},"headers":{"method":["get"],"contentType":["some-content"],"messageId":["123"]},"body":"haha"}"""
+    val req = """{"uri":{"pattern":"/test"},"headers":{"method":"get","contentType":"some-content","messageId":"123"},"body":"haha"}"""
     val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(DynamicRequest(
       RequestHeader(Uri("/test"), Map(
-        Header.METHOD → Seq(Method.GET),
-        Header.CONTENT_TYPE → Seq("some-content"),
-        Header.MESSAGE_ID → Seq("123"))
+        Header.METHOD → Method.GET,
+        Header.CONTENT_TYPE → "some-content",
+        Header.MESSAGE_ID → "123")
       ),
       DynamicBody(Some("some-content"), Text("haha")))
     )
@@ -354,7 +354,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
   }
 
   "<|" should "publish static request (client)" in {
-    val rsp = """{"status":409,"headers":{"messageId":["123"]},"body":{"code":"failed","errorId":"abcde12345"}}"""
+    val rsp = """{"status":409,"headers":{"messageId":"123"},"body":{"code":"failed","errorId":"abcde12345"}}"""
     var sentEvents = List[TransportRequest]()
     val clientTransport = new ClientTransportTest(rsp) {
       override def publish(message: TransportRequest): Future[PublishResult] = {
@@ -377,7 +377,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
   }
 
   "<|" should "publish dynamic request (client)" in {
-    val rsp = """{"status":409,"headers":{"messageId":["123"]},"body":{"code":"failed","errorId":"abcde12345"}}"""
+    val rsp = """{"status":409,"headers":{"messageId":"123"},"body":{"code":"failed","errorId":"abcde12345"}}"""
     var sentEvents = List[TransportRequest]()
     val clientTransport = new ClientTransportTest(rsp) {
       override def publish(message: TransportRequest): Future[PublishResult] = {
@@ -452,7 +452,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
       }
     }
 
-    val req = """{"uri":{"pattern":"/resources"},"headers":{"messageId":["123"],"method":["post"],"contentType":["test-1"]},"body":{"resourceData":"ha ha"}}"""
+    val req = """{"uri":{"pattern":"/resources"},"headers":{"messageId":"123","method":"post","contentType":"test-1"},"body":{"resourceData":"ha ha"}}"""
     val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(testclasses.TestPost1(testclasses.TestBody1("ha ha")))
 
@@ -460,7 +460,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     whenReady(futureResult) { r =>
       r shouldBe a[Conflict[_]]
       r.serializeToString should equal(
-        """{"status":409,"headers":{"messageId":["123"]},"body":{"code":"failed","errorId":"abcde12345"}}"""
+        """{"status":409,"headers":{"messageId":"123"},"body":{"code":"failed","errorId":"abcde12345"}}"""
       )
     }
   }

@@ -58,22 +58,22 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
 
   "TestPost1" should "serialize" in {
     val post1 = TestPost1("155", TestBody1("abcde"))
-    post1.serializeToString should equal("""{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"messageId":["123"],"method":["post"],"contentType":["test-body-1"]},"body":{"data":"abcde"}}""")
+    post1.serializeToString should equal("""{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"messageId":"123","method":"post","contentType":"test-body-1"},"body":{"data":"abcde"}}""")
   }
 
   "TestPost1" should "serialize with headers" in {
-    val post1 = TestPost1("155", TestBody1("abcde"), Headers("test" → Seq("a")))
-    post1.serializeToString should equal("""{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"test":["a"],"messageId":["123"],"method":["post"],"contentType":["test-body-1"]},"body":{"data":"abcde"}}""")
+    val post1 = TestPost1("155", TestBody1("abcde"), Headers("test" → LstV("a")))
+    post1.serializeToString should equal("""{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"test":["a"],"messageId":"123","method":"post","contentType":"test-body-1"},"body":{"data":"abcde"}}""")
   }
 
   "TestPost1" should "deserialize" in {
-    val str = """{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"method":["post"],"contentType":["test-body-1"],"messageId":["123"]},"body":{"data":"abcde"}}"""
+    val str = """{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"method":"post","contentType":"test-body-1","messageId":"123"},"body":{"data":"abcde"}}"""
     val post1 = MessageDeserializer.deserializeRequestWith(str) { (requestHeader, jsonParser) ⇒
       requestHeader.uri should equal(Uri("/test-post-1/{id}", Map("id" → "155")))
       requestHeader.contentType should equal(Some("test-body-1"))
       requestHeader.method should equal("post")
       requestHeader.messageId should equal("123")
-      requestHeader.correlationId should equal("123")
+      requestHeader.correlationId should equal(Some("123"))
       TestPost1(requestHeader, jsonParser)
     }
 
@@ -85,14 +85,14 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   }
 
   "TestPost1" should "deserialize from String" in {
-    val str = """{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"messageId":["123"],"method":["post"],"contentType":["test-body-1"]},"body":{"data":"abcde"}}"""
+    val str = """{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"messageId":"123","method":"post","contentType":"test-body-1"},"body":{"data":"abcde"}}"""
     val post1 = StringDeserializer.request[TestPost1](str)
     val post2 = TestPost1("155", TestBody1("abcde"))
     post1 should equal(post2)
   }
 
   "TestPost1" should "deserialize with headers" in {
-    val str = """{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"method":["post"],"contentType":["test-body-1"],"messageId":["123"],"test":["a"]},"body":{"data":"abcde"}}"""
+    val str = """{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"method":"post","contentType":"test-body-1","messageId":"123","test":["a","b"]},"body":{"data":"abcde"}}"""
     val post1 = MessageDeserializer.deserializeRequestWith(str) { (requestHeader, jsonParser) ⇒
       TestPost1(requestHeader, jsonParser)
     }
@@ -102,7 +102,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     post1.uri should equal(Uri("/test-post-1/{id}", Map(
       "id" → "155"
     )))
-    post1.headers should contain("test" → Seq("a"))
+    post1.headers.get("test") should equal(Some(LstV("a","b")))
   }
 
   "TestOuterPost" should "serialize" in {
@@ -114,17 +114,17 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
       TestOuterBodyEmbedded(inner1, List(inner2, inner3))
     ))
     val str = postO.serializeToString
-    str should equal("""{"uri":{"pattern":"/test-outer-resource"},"headers":{"messageId":["123"],"method":["get"],"contentType":["test-outer-body"]},"body":{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"href":"/test-inner-resource","templated":false}}},"collection":[{"innerData":"xyz","_links":{"self":{"href":"/test-inner-resource","templated":false}}},{"innerData":"yey","_links":{"self":{"href":"/test-inner-resource","templated":false}}}]}}}""")
+    str should equal("""{"uri":{"pattern":"/test-outer-resource"},"headers":{"messageId":"123","method":"get","contentType":"test-outer-body"},"body":{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"href":"/test-inner-resource","templated":false}}},"collection":[{"innerData":"xyz","_links":{"self":{"href":"/test-inner-resource","templated":false}}},{"innerData":"yey","_links":{"self":{"href":"/test-inner-resource","templated":false}}}]}}}""")
   }
 
   "TestOuterPost" should "deserialize" in {
-    val str = """{"uri":{"pattern":"/test-outer-resource"},"headers":{"method":["get"],"contentType":["test-outer-body"],"messageId":["123"]},"body":{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"href":"/test-inner-resource","templated":false}}},"collection":[{"innerData":"xyz","_links":{"self":{"href":"/test-inner-resource","templated":false}}},{"innerData":"yey","_links":{"self":{"href":"/test-inner-resource","templated":false}}}]}}}"""
+    val str = """{"uri":{"pattern":"/test-outer-resource"},"headers":{"method":"get","contentType":"test-outer-body","messageId":"123"},"body":{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"href":"/test-inner-resource","templated":false}}},"collection":[{"innerData":"xyz","_links":{"self":{"href":"/test-inner-resource","templated":false}}},{"innerData":"yey","_links":{"self":{"href":"/test-inner-resource","templated":false}}}]}}}"""
     val outer = MessageDeserializer.deserializeRequestWith(str) { (requestHeader, jsonParser) ⇒
       requestHeader.uri should equal(Uri("/test-outer-resource"))
       requestHeader.contentType should equal(Some("test-outer-body"))
       requestHeader.method should equal("get")
       requestHeader.messageId should equal("123")
-      requestHeader.correlationId should equal("123")
+      requestHeader.correlationId should equal(Some("123"))
       TestOuterResource(TestOuterBody(requestHeader.contentType, jsonParser))
     }
 
@@ -140,7 +140,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   }
 
   "DynamicRequest" should "decode" in {
-    val str = """{"uri":{"pattern":"/test"},"headers":{"method":["custom-method"],"contentType":["test-body-1"],"messageId":["123"]},"body":{"resourceId":"100500"}}"""
+    val str = """{"uri":{"pattern":"/test"},"headers":{"method":["custom-method"],"contentType":"test-body-1","messageId":"123"},"body":{"resourceId":"100500"}}"""
     val request = DynamicRequest(str)
     request shouldBe a[Request[_]]
     request.method should equal("custom-method")

@@ -89,10 +89,6 @@ class LinksBuilder(private [this] val args: mutable.Map[String, Either[Link, Seq
 trait Message[+B <: Body] extends TransportMessage with MessagingContext {
   def body: B
 
-  def messageId = header(Header.MESSAGE_ID)
-
-  def correlationId = headerOption(Header.CORRELATION_ID).orElse(Some(messageId))
-
   def newContext() = MessagingContext(correlationId)
 
   override def toString = {
@@ -101,7 +97,7 @@ trait Message[+B <: Body] extends TransportMessage with MessagingContext {
 }
 
 trait Request[+B <: Body] extends Message[B] with TransportRequest {
-  def method: String = header(Header.METHOD)
+  def method: String = header(Header.METHOD).toString
 
   protected def assertMethod(value: String): Unit = {
     if (method != value) throw new IllegalArgumentException(s"Incorrect method value: $method != $value (headers?)")

@@ -39,7 +39,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val q"case class $className(..$fields) extends ..$bases { ..$body }" = existingClass
 
     val classFields: Seq[ValDef] = if (fields.exists(_.name.toString == "headers")) fields else {
-      fields :+ q"val headers: Map[String,Seq[String]]"
+      fields :+ q"val headers: com.hypertino.hyperbus.transport.api.Headers"
     }
 
     val (bodyFieldName, bodyType) = getBodyField(fields)

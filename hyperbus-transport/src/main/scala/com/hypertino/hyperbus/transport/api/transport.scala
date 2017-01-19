@@ -2,6 +2,7 @@ package com.hypertino.hyperbus.transport.api
 
 import java.io.{StringWriter, Writer}
 
+import com.hypertino.binders.value.Value
 import com.hypertino.hyperbus.model.{Body, Request}
 import com.hypertino.hyperbus.serialization.RequestDeserializer
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
@@ -12,11 +13,17 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 trait EntityWithHeaders {
-  def headers: Map[String, Seq[String]]
+  def headers: Headers
 
-  def headerOption(name: String): Option[String] = headers.get(name).flatMap(_.headOption)
+  def headerOption(name: String): Option[Value] = headers.get(name)
 
-  def header(name: String): String = headerOption(name).getOrElse(throw new NoSuchHeaderException(name))
+  def header(name: String): Value = headerOption(name).getOrElse(throw new NoSuchHeaderException(name))
+
+  def messageId: String = header(Header.MESSAGE_ID).toString
+
+  def correlationId: Option[String] = headerOption(Header.CORRELATION_ID).map(_.toString).orElse(Some(messageId))
+
+  def contentType: Option[String] = headerOption(Header.CONTENT_TYPE).map(_.toString)
 }
 
 trait TransportMessage extends EntityWithHeaders {

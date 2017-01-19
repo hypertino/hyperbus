@@ -3,6 +3,7 @@ package com.hypertino.hyperbus.model
 import java.io.ByteArrayOutputStream
 
 import com.hypertino.binders.annotations.fieldName
+import com.hypertino.binders.value.LstV
 import com.hypertino.hyperbus.model.annotations.body
 import com.hypertino.hyperbus.transport.api.Headers
 import org.scalatest.{FlatSpec, FreeSpec, Matchers}
@@ -26,12 +27,12 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
 
   "Response" should "serialize" in {
     val msg = Created(TestCreatedBody("100500"))
-    msg.serializeToString should equal("""{"status":201,"headers":{"messageId":["123"],"correlationId":["abc"],"contentType":["test-created-body"]},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}""")
+    msg.serializeToString should equal("""{"status":201,"headers":{"messageId":"123","correlationId":"abc","contentType":"test-created-body"},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}""")
   }
 
   "Response with headers" should "serialize" in {
-    val msg = Created(TestCreatedBody("100500"), Headers("test" → Seq("a")))
-    msg.serializeToString should equal("""{"status":201,"headers":{"test":["a"],"messageId":["123"],"correlationId":["abc"],"contentType":["test-created-body"]},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}""")
+    val msg = Created(TestCreatedBody("100500"), Headers("test" → LstV("a")))
+    msg.serializeToString should equal("""{"status":201,"headers":{"test":["a"],"messageId":"123","correlationId":"abc","contentType":"test-created-body"},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}""")
   }
 
   "hashCode, equals, product" should "work" in {
