@@ -1,10 +1,8 @@
 package com.hypertino.hyperbus.model
 
-import com.hypertino.binders.value.{Lst, LstV, Text, Value}
-import com.hypertino.hyperbus.transport.api.{Header, Headers}
+import com.hypertino.binders.value.{LstV, Text, Value}
 
 import scala.collection.mutable
-
 
 class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Value), Map[String, Value]]) {
   def this() = this(Map.newBuilder[String, Value])

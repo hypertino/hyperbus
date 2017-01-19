@@ -4,7 +4,7 @@ import java.io.Writer
 
 import com.hypertino.binders.core.BindOptions
 import com.hypertino.hyperbus.model.{Body, Request, Response}
-import com.hypertino.hyperbus.transport.api.Headers
+import com.hypertino.hyperbus.model.Headers
 import com.hypertino.hyperbus.transport.api.uri.UriJsonSerializer
 
 object MessageSerializer {

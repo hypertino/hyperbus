@@ -1,4 +1,4 @@
-package com.hypertino.hyperbus.transport.api
+package com.hypertino.hyperbus.model
 
 /**
   * Created by maqdev on 1/19/17.

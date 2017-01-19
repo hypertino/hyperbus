@@ -39,7 +39,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val q"case class $className(..$fields) extends ..$bases { ..$body }" = existingClass
 
     val classFields: Seq[ValDef] = if (fields.exists(_.name.toString == "headers")) fields else {
-      fields :+ q"val headers: com.hypertino.hyperbus.transport.api.Headers"
+      fields :+ q"val headers: com.hypertino.hyperbus.model.Headers"
     }
 
     val (bodyFieldName, bodyType) = getBodyField(fields)
@@ -90,7 +90,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
             ..${classFields.map { case ValDef(_, name, tpt, _) ⇒
               q"val $name: $tpt = this.$name"
             }}): $className = {
-            ${className.toTermName}(..${fieldsNoHeaders.map(_.name)}, headers = com.hypertino.hyperbus.transport.api.Headers.plain(headers))
+            ${className.toTermName}(..${fieldsNoHeaders.map(_.name)}, headers = com.hypertino.hyperbus.model.Headers.plain(headers))
           }
 
           def canEqual(other: Any): Boolean = other.isInstanceOf[$className]
@@ -114,7 +114,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       """
 
     val fieldsWithDefVal = fieldsNoHeaders.filter(_.rhs.nonEmpty) :+
-      q"val headers: com.hypertino.hyperbus.transport.api.Headers = com.hypertino.hyperbus.transport.api.Headers()(mcx)"
+      q"val headers: com.hypertino.hyperbus.model.Headers = com.hypertino.hyperbus.model.Headers()(mcx)"
 
     val defMethods = fieldsWithDefVal.map { case currentField: ValDef ⇒
       val fmap = fieldsNoHeaders.foldLeft((Seq.empty[Tree], Seq.empty[Tree], false)) { case ((seqFields, seqVals, withDefaultValue), f) ⇒
@@ -128,7 +128,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       q"""def apply(
             ..${fmap._1}
          )(implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className =
-         apply(..${fmap._2}, headers = com.hypertino.hyperbus.transport.api.Headers()(mcx))"""
+         apply(..${fmap._2}, headers = com.hypertino.hyperbus.model.Headers()(mcx))"""
     }
 
     //println(defMethods)
@@ -137,7 +137,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val bodyVal = fresh("body")
     val companionExtra =
       q"""
-        def apply(..${fieldsNoHeaders.map(stripDefaultValue)}, headers: com.hypertino.hyperbus.transport.api.Headers): $className = {
+        def apply(..${fieldsNoHeaders.map(stripDefaultValue)}, headers: com.hypertino.hyperbus.model.Headers): $className = {
           new $className(..${fieldsNoHeaders.map(_.name)},
             headers = new com.hypertino.hyperbus.model.HeadersBuilder(headers)
               .withMethod(${className.toTermName}.method)

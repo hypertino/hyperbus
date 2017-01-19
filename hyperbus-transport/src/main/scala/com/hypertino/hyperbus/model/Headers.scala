@@ -1,7 +1,6 @@
-package com.hypertino.hyperbus.transport.api
+package com.hypertino.hyperbus.model
 
 import com.hypertino.binders.value.Value
-import com.hypertino.hyperbus.model.HeadersBuilder
 
 object Headers {
   def apply(vargs: (String, Value)*)

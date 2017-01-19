@@ -6,7 +6,6 @@ import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value._
 import com.hypertino.hyperbus.model.annotations.{body, request}
 import com.hypertino.hyperbus.serialization._
-import com.hypertino.hyperbus.transport.api.Headers
 import com.hypertino.hyperbus.transport.api.uri.Uri
 import org.scalatest.{FlatSpec, FreeSpec, Matchers}
 
@@ -23,14 +22,14 @@ object TestPost1 extends RequestObjectApi[TestPost1] with TestPost1ObjectApi {
 
 @body("test-inner-body")
 case class TestInnerBody(innerData: String) extends Body {
-  def toEmbedded(links: Links.LinksMap = Links("/test-inner-resource")) = TestInnerBodyEmbedded(innerData, links)
+  def toEmbedded(links: Links = Links("/test-inner-resource")) = TestInnerBodyEmbedded(innerData, links)
 }
 
 object TestInnerBody extends BodyObjectApi[TestInnerBody]
 
 @body("test-inner-body")
 case class TestInnerBodyEmbedded(innerData: String,
-                                 @fieldName("_links") links: Links.LinksMap = Links("/test-inner-resource")) extends Body with Links {
+                                 @fieldName("_links") links: Links = Links("/test-inner-resource")) extends Body with HalLinks {
 
   def toOuter: TestInnerBody = TestInnerBody(innerData)
 }

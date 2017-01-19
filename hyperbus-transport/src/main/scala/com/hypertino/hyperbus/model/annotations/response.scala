@@ -61,12 +61,12 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
       q"""
         @com.hypertino.hyperbus.model.annotations.statusCode($statusCode)
         class $className[..$typeArgs](..$fieldsExceptHeaders,
-          val headers: com.hypertino.hyperbus.transport.api.Headers, plain__init: Boolean)
+          val headers: com.hypertino.hyperbus.model.Headers, plain__init: Boolean)
           extends ..$bases with scala.Product {
           def statusCode: Int = ${className.toTermName}.statusCode
 
-          def copy[S <: $upperBound](body: S = this.body, headers: com.hypertino.hyperbus.transport.api.Headers = this.headers): $className[S] = {
-            ${className.toTermName}[S](body, com.hypertino.hyperbus.transport.api.Headers.plain(headers))
+          def copy[S <: $upperBound](body: S = this.body, headers: com.hypertino.hyperbus.model.Headers = this.headers): $className[S] = {
+            ${className.toTermName}[S](body, com.hypertino.hyperbus.model.Headers.plain(headers))
           }
 
           def canEqual(other: Any): Boolean = other.isInstanceOf[$className[_ <: $upperBound]]
@@ -94,7 +94,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
       q"""
         def statusCode: Int = $statusCode
 
-        def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headers: com.hypertino.hyperbus.transport.api.Headers):
+        def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headers: com.hypertino.hyperbus.model.Headers):
           $className[..$classTypeNames] = {
           new $className[..$classTypeNames](..${fieldsExceptHeaders.map(_.name)},
             headers = new com.hypertino.hyperbus.model.HeadersBuilder(headers)
@@ -106,7 +106,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
 
         def apply[..$methodTypeArgs](..$fieldsExceptHeaders)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className[..$classTypeNames]
-          = apply(..${fieldsExceptHeaders.map(_.name)}, com.hypertino.hyperbus.transport.api.Headers()(mcx))
+          = apply(..${fieldsExceptHeaders.map(_.name)}, com.hypertino.hyperbus.model.Headers()(mcx))
 
         def unapply[..$methodTypeArgs](response: $className[..$classTypeNames]) = Some(
           (..${fieldsExceptHeaders.map(f ⇒ q"response.${f.name}")},response.headers)

@@ -6,13 +6,12 @@ import com.fasterxml.jackson.core.JsonParser
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value._
 import com.hypertino.hyperbus.serialization.{MessageDeserializer, RequestHeader}
-import com.hypertino.hyperbus.transport.api.Headers
 import com.hypertino.hyperbus.transport.api.uri.Uri
 
-trait DynamicBody extends Body with Links {
+trait DynamicBody extends Body with HalLinks {
   def content: Value
 
-  lazy val links: Links.LinksMap = content.__links.to[Option[Links.LinksMap]].getOrElse(Map.empty)
+  lazy val links: Links = content.__links.to[Option[Links]].getOrElse(Map.empty)
 
   def serialize(writer: Writer): Unit = {
     import com.hypertino.binders._

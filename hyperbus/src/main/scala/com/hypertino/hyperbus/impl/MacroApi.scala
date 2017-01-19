@@ -1,8 +1,7 @@
 package com.hypertino.hyperbus.impl
 
-import com.hypertino.hyperbus.model.{Body, Response}
+import com.hypertino.hyperbus.model.{Body, Header, Response}
 import com.hypertino.hyperbus.serialization.{ResponseBodyDeserializer, ResponseHeader}
-import com.hypertino.hyperbus.transport.api.Header
 import com.hypertino.hyperbus.transport.api.matchers.{Any, RequestMatcher, Specific}
 import com.hypertino.hyperbus.transport.api.uri._
 

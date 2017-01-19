@@ -3,7 +3,7 @@ package com.hypertino.hyperbus.transport.api
 import java.io.{StringWriter, Writer}
 
 import com.hypertino.binders.value.Value
-import com.hypertino.hyperbus.model.{Body, Request}
+import com.hypertino.hyperbus.model.{Body, Header, Headers, Request}
 import com.hypertino.hyperbus.serialization.RequestDeserializer
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.transport.api.uri.Uri

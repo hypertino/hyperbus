@@ -5,12 +5,11 @@ import java.io.ByteArrayOutputStream
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value.LstV
 import com.hypertino.hyperbus.model.annotations.body
-import com.hypertino.hyperbus.transport.api.Headers
 import org.scalatest.{FlatSpec, FreeSpec, Matchers}
 
 @body("test-created-body")
 case class TestCreatedBody(resourceId: String,
-                           @fieldName("_links") links: Links.LinksMap = Map(
+                           @fieldName("_links") links: Links = Links(
                              DefLink.LOCATION -> Left(Link("/resources/{resourceId}", templated = true))))
   extends CreatedBody
 

@@ -44,7 +44,7 @@ object MessageDeserializer {
       val headers =
         if (fieldName2 == "headers") {
           factory.withJsonParser(jp) { deserializer =>
-            deserializer.unbind[com.hypertino.hyperbus.transport.api.Headers]
+            deserializer.unbind[com.hypertino.hyperbus.model.Headers]
           }
         } else {
           throw DeserializeException(s"'headers' field expected, but found: '$fieldName2'")
@@ -96,7 +96,7 @@ object MessageDeserializer {
       val headers =
         if (fieldName2 == "headers") {
           factory.withJsonParser(jp) { deserializer =>
-            deserializer.unbind[com.hypertino.hyperbus.transport.api.Headers]
+            deserializer.unbind[com.hypertino.hyperbus.model.Headers]
           }
         } else {
           throw DeserializeException(s"'headers' field expected, but found: '$fieldName2'")

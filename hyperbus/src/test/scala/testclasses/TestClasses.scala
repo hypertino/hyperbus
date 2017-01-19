@@ -12,7 +12,7 @@ case class TestBody2(resourceData: Long) extends Body
 
 @body("created-body")
 case class TestCreatedBody(resourceId: String,
-                           @fieldName("_links") links: Links.LinksMap = Links.location("/resources/{resourceId}", templated = true))
+                           @fieldName("_links") links: Links = Links.location("/resources/{resourceId}", templated = true))
   extends CreatedBody
 
 @body("some-another-body")
@@ -65,8 +65,8 @@ case class SomeTransaction(transactionId: String) extends Body
 case class SomeTransactionCreated(
                                       transactionId: String,
                                       path: String,
-                                      @fieldName("_links") links: Links.LinksMap
-                                    ) extends Body with Links with CreatedBody
+                                      @fieldName("_links") links: Links
+                                    ) extends Body with HalLinks with CreatedBody
 
 @request(Method.PUT, "/some/{path:*}")
 case class SomeContentPut(

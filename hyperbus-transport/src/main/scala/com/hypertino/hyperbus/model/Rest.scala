@@ -4,7 +4,7 @@ import java.io.Writer
 
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.hyperbus.serialization.MessageSerializer
-import com.hypertino.hyperbus.transport.api.{Header, TransportMessage, TransportRequest, TransportResponse}
+import com.hypertino.hyperbus.transport.api.{TransportMessage, TransportRequest, TransportResponse}
 
 import scala.collection.mutable
 
@@ -25,22 +25,24 @@ trait NoContentType {
   def contentType: Option[String] = None
 }
 
-trait Links {
-  def links: Links.LinksMap
+trait HalLinks {
+  def links: Links
 }
 
 object Links {
-  type LinksMap = Map[String, Either[Link, Seq[Link]]]
-
-  def apply(selfHref: String, templated: Boolean = false, typ: Option[String] = None): LinksMap = {
+  def apply(selfHref: String, templated: Boolean = false, typ: Option[String] = None): Links = {
     new LinksBuilder() self(selfHref, templated, typ) result()
   }
 
-  def location(locationHref: String, templated: Boolean = false, typ: Option[String] = None): LinksMap = {
+  def location(locationHref: String, templated: Boolean = false, typ: Option[String] = None): Links = {
     new LinksBuilder() location (locationHref, templated, typ) result()
   }
 
-  def apply(key: String, link: Link): LinksMap = new LinksBuilder() add(key, link) result()
+  def apply(key: String, link: Link): Links = new LinksBuilder() add(key, link) result()
+
+  def apply(vargs: (String, Either[Link, Seq[Link]])*): Links = {
+    new LinksBuilder() add vargs result()
+  }
 }
 
 class LinksBuilder(private [this] val args: mutable.Map[String, Either[Link, Seq[Link]]]) {
@@ -83,7 +85,7 @@ class LinksBuilder(private [this] val args: mutable.Map[String, Either[Link, Seq
     }
     this
   }
-  def result(): Links.LinksMap = args.toMap
+  def result(): Links = args.toMap
 }
 
 trait Message[+B <: Body] extends TransportMessage with MessagingContext {
