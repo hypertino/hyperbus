@@ -1,6 +1,7 @@
 package com.hypertino.hyperbus.model
 
 import com.hypertino.hyperbus.serialization._
+import com.hypertino.hyperbus.transport.api.Headers
 
 object StandardResponse {
 

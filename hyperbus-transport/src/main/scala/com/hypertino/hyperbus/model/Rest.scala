@@ -4,7 +4,7 @@ import java.io.Writer
 
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.hyperbus.serialization.MessageSerializer
-import com.hypertino.hyperbus.transport.api.{TransportMessage, TransportRequest, TransportResponse}
+import com.hypertino.hyperbus.transport.api.{Header, TransportMessage, TransportRequest, TransportResponse}
 
 import scala.collection.mutable
 

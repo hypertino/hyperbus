@@ -6,6 +6,7 @@ import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value._
 import com.hypertino.hyperbus.model.annotations.{body, request}
 import com.hypertino.hyperbus.serialization._
+import com.hypertino.hyperbus.transport.api.Headers
 import com.hypertino.hyperbus.transport.api.uri.Uri
 import org.scalatest.{FlatSpec, FreeSpec, Matchers}
 

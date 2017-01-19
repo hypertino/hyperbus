@@ -66,7 +66,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
           def statusCode: Int = ${className.toTermName}.statusCode
 
           def copy[S <: $upperBound](body: S = this.body, headers: Map[String, Seq[String]] = this.headers): $className[S] = {
-            ${className.toTermName}[S](body, com.hypertino.hyperbus.model.Headers.plain(headers))
+            ${className.toTermName}[S](body, com.hypertino.hyperbus.transport.api.Headers.plain(headers))
           }
 
           def canEqual(other: Any): Boolean = other.isInstanceOf[$className[_ <: $upperBound]]
@@ -94,7 +94,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
       q"""
         def statusCode: Int = $statusCode
 
-        def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headers: com.hypertino.hyperbus.model.Headers):
+        def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headers: com.hypertino.hyperbus.transport.api.Headers):
           $className[..$classTypeNames] = {
           new $className[..$classTypeNames](..${fieldsExceptHeaders.map(_.name)},
             headers = new com.hypertino.hyperbus.model.HeadersBuilder(headers)
@@ -106,7 +106,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
 
         def apply[..$methodTypeArgs](..$fieldsExceptHeaders)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className[..$classTypeNames]
-          = apply(..${fieldsExceptHeaders.map(_.name)}, com.hypertino.hyperbus.model.Headers()(mcx))
+          = apply(..${fieldsExceptHeaders.map(_.name)}, com.hypertino.hyperbus.transport.api.Headers()(mcx))
 
         def unapply[..$methodTypeArgs](response: $className[..$classTypeNames]) = Some(
           (..${fieldsExceptHeaders.map(f ⇒ q"response.${f.name}")},response.headers)

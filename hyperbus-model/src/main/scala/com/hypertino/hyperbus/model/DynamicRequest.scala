@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonParser
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value._
 import com.hypertino.hyperbus.serialization.{MessageDeserializer, RequestHeader}
+import com.hypertino.hyperbus.transport.api.Headers
 import com.hypertino.hyperbus.transport.api.uri.Uri
 
 trait DynamicBody extends Body with Links {

@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream
 
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.hyperbus.model.annotations.body
+import com.hypertino.hyperbus.transport.api.Headers
 import org.scalatest.{FlatSpec, FreeSpec, Matchers}
 
 @body("test-created-body")

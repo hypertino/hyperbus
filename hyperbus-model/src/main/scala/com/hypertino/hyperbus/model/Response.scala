@@ -16,7 +16,7 @@ trait ClientError extends ErrorResponse
 
 // we need this to help with code completion in IDE
 trait ResponseObjectApi[PB <: Body, R <: Response[PB]] {
-  def apply[B <: PB](body: B, headers: com.hypertino.hyperbus.model.Headers): R
+  def apply[B <: PB](body: B, headers: com.hypertino.hyperbus.transport.api.Headers): R
   def apply[B <: PB](body: B)(implicit mcx: com.hypertino.hyperbus.model.MessagingContext): R
   // def unapply[B <: PB](response: Response[PB]): Option[(B,Map[String,Seq[String]])] TODO: this doesn't works, find a workaround
 }
