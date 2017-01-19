@@ -1,5 +1,7 @@
 package com.hypertino.hyperbus.model
 
+import com.hypertino.hyperbus.IdGenerator
+
 import scala.collection.mutable
 
 object Header {
@@ -20,18 +22,18 @@ class Headers private[model] (private [this] val v: Map[String, Seq[String]]) ex
 
 object Headers {
   def apply(vargs: (String, Seq[String])*)
-           (implicit mcx: com.hypertino.hyperbus.model.MessagingContextFactory): Headers = {
+           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): Headers = {
     val builder = new HeadersBuilder()
     builder ++= vargs
     builder withContext mcx result()
   }
 
   def apply(map: Map[String, Seq[String]])
-           (implicit mcx: com.hypertino.hyperbus.model.MessagingContextFactory): Headers = {
+           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): Headers = {
     new HeadersBuilder(map) withContext mcx result()
   }
 
-  def apply()(implicit mcx: com.hypertino.hyperbus.model.MessagingContextFactory): Headers = {
+  def apply()(implicit mcx: com.hypertino.hyperbus.model.MessagingContext): Headers = {
     new HeadersBuilder() withContext mcx result()
   }
 
@@ -64,20 +66,19 @@ class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Seq[
     this
   }
 
-  def withCorrelation(messageId: String, correlationId: String) = {
-    mapBuilder += com.hypertino.hyperbus.model.Header.MESSAGE_ID -> Seq(messageId)
-    if (messageId != correlationId) {
-      mapBuilder += Header.CORRELATION_ID → Seq(correlationId)
-    }
-    else {
-      mapBuilder += Header.CORRELATION_ID → Seq.empty[String]
-    }
+  def withCorrelation(correlationId: Option[String]) = {
+    mapBuilder ++= correlationId.map(c ⇒ Header.CORRELATION_ID → Seq(c))
     this
   }
 
-  def withContext(contextFactory: com.hypertino.hyperbus.model.MessagingContextFactory) = {
-    val ctxVal = contextFactory.newContext()
-    withCorrelation(ctxVal.messageId, ctxVal.correlationId)
+  def withContext(mcx: com.hypertino.hyperbus.model.MessagingContext) = {
+    withMessageId(mcx.createMessageId())
+    withCorrelation(mcx.correlationId)
+  }
+
+  def withMessageId(messageId: String): HeadersBuilder = {
+    mapBuilder += Header.MESSAGE_ID → Seq(messageId)
+    this
   }
 
   def withContentType(contentType: Option[String]): HeadersBuilder = {

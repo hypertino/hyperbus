@@ -42,6 +42,7 @@ class Hyperbus(val transportManager: TransportManager,
         log.trace(Map("messageId" → in.messageId, "correlationId" → in.correlationId,
           "subscriptionId" → this.hashCode.toHexString), s"hyperbus ~> $in")
       }
+      implicit val mcx: MessagingContext = in
       val futureOut = handler(in) recover {
         case z: Response[_] ⇒ z
         case t: Throwable ⇒ unhandledException(in, t)
@@ -128,15 +129,15 @@ class Hyperbus(val transportManager: TransportManager,
     transportManager.shutdown(duration)
   }
 
-  protected def exceptionSerializer(exception: Throwable, writer: Writer): Unit = {
-    exception match {
-      case r: ErrorResponse ⇒ r.serialize(writer)
-      case t ⇒
-        val error = InternalServerError(ErrorBody(DefError.INTERNAL_ERROR, Some(t.getMessage)))
-        logError("Unhandled exception", error, t)
-        error.serialize(writer)
-    }
-  }
+//  protected def exceptionSerializer(exception: Throwable, writer: Writer): Unit = {
+//    exception match {
+//      case r: ErrorResponse ⇒ r.serialize(writer)
+//      case t ⇒
+//        val error = InternalServerError(ErrorBody(DefError.INTERNAL_ERROR, Some(t.getMessage)))
+//        logError("Unhandled exception", error, t)
+//        error.serialize(writer)
+//    }
+//  }
 
   val macroApiImpl = new MacroApi {
     def responseDeserializer(responseHeader: ResponseHeader,
@@ -154,7 +155,7 @@ class Hyperbus(val transportManager: TransportManager,
     msg + " " + safe(() => request.uri.toString) + safe(() => request.headers.toString)
   }
 
-  protected def unhandledException(request: Request[Body], exception: Throwable): Response[Body] = {
+  protected def unhandledException(implicit request: Request[Body], exception: Throwable): Response[Body] = {
     val errorBody = ErrorBody(DefError.INTERNAL_ERROR, Some(
       safeErrorMessage(s"Unhandled exception: ${exception.getMessage}", request)
     ))

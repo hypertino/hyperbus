@@ -22,8 +22,6 @@ trait EntityWithHeaders {
 trait TransportMessage extends EntityWithHeaders {
   def messageId: String
 
-  def correlationId: String
-
   def serialize(writer: Writer)
 
   def serializeToString: String = {

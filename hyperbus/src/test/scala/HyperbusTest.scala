@@ -89,12 +89,9 @@ class ServerTransportTest extends ServerTransport {
 }
 
 class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
-  implicit val mcx = new MessagingContextFactory {
-    override def newContext(): MessagingContext = new MessagingContext {
-      override def correlationId: String = "123"
-
-      override def messageId: String = "123"
-    }
+  implicit val mcx = new MessagingContext {
+    override def createMessageId() = "123"
+    override def correlationId = None
   }
 
   "<~ " should "send a request (client)" in {

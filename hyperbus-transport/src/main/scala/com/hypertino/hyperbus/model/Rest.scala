@@ -86,12 +86,12 @@ class LinksBuilder(private [this] val args: mutable.Map[String, Either[Link, Seq
   def result(): Links.LinksMap = args.toMap
 }
 
-trait Message[+B <: Body] extends TransportMessage with MessagingContextFactory {
+trait Message[+B <: Body] extends TransportMessage with MessagingContext {
   def body: B
 
   def messageId = header(Header.MESSAGE_ID)
 
-  def correlationId = headerOption(Header.CORRELATION_ID).getOrElse(messageId)
+  def correlationId = headerOption(Header.CORRELATION_ID).orElse(Some(messageId))
 
   def newContext() = MessagingContext(correlationId)
 

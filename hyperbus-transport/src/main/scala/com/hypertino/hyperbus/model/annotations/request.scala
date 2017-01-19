@@ -127,7 +127,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       //val name = TermName(if(fmap._1.isEmpty) "em" else "apply")
       q"""def apply(
             ..${fmap._1}
-         )(implicit mcx: com.hypertino.hyperbus.model.MessagingContextFactory): $className =
+         )(implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className =
          apply(..${fmap._2}, headers = com.hypertino.hyperbus.model.Headers()(mcx))"""
     }
 

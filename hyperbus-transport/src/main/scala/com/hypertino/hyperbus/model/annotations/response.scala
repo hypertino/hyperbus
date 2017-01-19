@@ -65,8 +65,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
           extends ..$bases with scala.Product {
           def statusCode: Int = ${className.toTermName}.statusCode
 
-          def copy[S <: $upperBound](body: S = this.body, headers: Map[String, Seq[String]] = this.headers)
-            (implicit mcx: com.hypertino.hyperbus.model.MessagingContextFactory): $className[S] = {
+          def copy[S <: $upperBound](body: S = this.body, headers: Map[String, Seq[String]] = this.headers): $className[S] = {
             ${className.toTermName}[S](body, com.hypertino.hyperbus.model.Headers.plain(headers))
           }
 
@@ -106,7 +105,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
         }
 
         def apply[..$methodTypeArgs](..$fieldsExceptHeaders)
-          (implicit mcx: com.hypertino.hyperbus.model.MessagingContextFactory): $className[..$classTypeNames]
+          (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className[..$classTypeNames]
           = apply(..${fieldsExceptHeaders.map(_.name)}, com.hypertino.hyperbus.model.Headers()(mcx))
 
         def unapply[..$methodTypeArgs](response: $className[..$classTypeNames]) = Some(

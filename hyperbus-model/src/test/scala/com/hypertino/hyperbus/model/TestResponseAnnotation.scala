@@ -18,12 +18,9 @@ object TestCreatedBody extends BodyObjectApi[TestCreatedBody]
 
 
 class TestResponseAnnotation extends FlatSpec with Matchers {
-  implicit val mcx = new MessagingContextFactory {
-    override def newContext(): MessagingContext = new MessagingContext {
-      override def correlationId: String = "abc"
-
-      override def messageId: String = "123"
-    }
+  implicit val mcx = new MessagingContext {
+    override def createMessageId() = "123"
+    override def correlationId = Some("abc")
   }
 
   "Response" should "serialize" in {

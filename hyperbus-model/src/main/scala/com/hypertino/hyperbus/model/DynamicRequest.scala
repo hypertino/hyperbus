@@ -83,7 +83,7 @@ object DynamicRequest {
   }
 
   def apply(uri: Uri, method: String, body: DynamicBody)
-           (implicit contextFactory: MessagingContextFactory): DynamicRequest = {
-    apply(uri, method, body, Headers())
+           (implicit mcx: MessagingContext): DynamicRequest = {
+    apply(uri, method, body, Headers()(mcx))
   }
 }

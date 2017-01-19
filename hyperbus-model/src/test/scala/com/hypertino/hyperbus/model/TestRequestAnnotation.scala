@@ -50,12 +50,9 @@ case class TestOuterResource(body: TestOuterBody) extends Request[TestOuterBody]
 object TestOuterResource extends RequestObjectApi[TestOuterResource]
 
 class TestRequestAnnotation extends FlatSpec with Matchers {
-  implicit val mcx = new MessagingContextFactory {
-    override def newContext(): MessagingContext = new MessagingContext {
-      override def correlationId: String = "123"
-
-      override def messageId: String = "123"
-    }
+  implicit val mcx = new MessagingContext {
+    override def createMessageId() = "123"
+    override def correlationId = None
   }
 
   "TestPost1" should "serialize" in {
@@ -148,7 +145,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     request.method should equal("custom-method")
     request.uri should equal(Uri("/test"))
     request.messageId should equal("123")
-    request.correlationId should equal("123")
+    request.correlationId should equal(Some("123"))
     //request.body.contentType should equal(Some())
     request.body should equal(DynamicBody(Some("test-body-1"), ObjV("resourceId" -> "100500")))
   }

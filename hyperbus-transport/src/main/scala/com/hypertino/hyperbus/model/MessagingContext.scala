@@ -2,44 +2,23 @@ package com.hypertino.hyperbus.model
 
 import com.hypertino.hyperbus.IdGenerator
 
-trait MessagingContextFactory {
-  def newContext(): MessagingContext
-}
-
 trait MessagingContext {
-  def correlationId: String
-
-  def messageId: String
+  def createMessageId(): String = IdGenerator.create()
+  def correlationId: Option[String]
 }
 
 object MessagingContext {
-  def apply(withCorrelationId: String): MessagingContext = new MessagingContext {
-    val messageId = IdGenerator.create()
+  val empty = MessagingContext(None)
 
+  object Implicits {
+    implicit val empty: MessagingContext = MessagingContext.empty
+  }
+
+  def apply(withCorrelationId: Option[String]): MessagingContext = new MessagingContext {
     def correlationId = withCorrelationId
 
-    override def toString = s"MessagingContext(messageId=$messageId,correlationId=$correlationId)"
-  }
-}
-
-object MessagingContextFactory {
-  implicit val newContextFactory = new MessagingContextFactory {
-    def newContext() = new MessagingContext {
-      val messageId = IdGenerator.create()
-
-      def correlationId = messageId
-
-      override def toString = s"NewMessagingContext(messageId=$messageId)"
-    }
+    override def toString = s"MessagingContext(correlationId=$correlationId)"
   }
 
-  def withCorrelationId(aCorrelationId: String) = new MessagingContextFactory {
-    def newContext() = new MessagingContext {
-      val messageId = IdGenerator.create()
-
-      def correlationId = aCorrelationId
-
-      override def toString = s"MessagingContextWithCorrelation(messageId=$messageId,correlationId=$correlationId)"
-    }
-  }
+  def apply(withCorrelationId: String): MessagingContext = apply(Some(withCorrelationId))
 }

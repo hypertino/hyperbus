@@ -14,6 +14,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
+  implicit val mcx = MessagingContext("123")
+
   "Hyperbus " - {
     "Send and Receive" in {
 

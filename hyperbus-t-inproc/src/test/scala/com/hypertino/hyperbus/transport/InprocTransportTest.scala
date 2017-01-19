@@ -24,6 +24,7 @@ case class MockRequest(body: MockBody) extends Request[MockBody]
 case class MockResponse[+B <: MockBody](body: B) extends Response[B]
 
 class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
+  implicit val mcx = MessagingContext("123")
 
   //todo: add test for: + handler exception, decoder exception
 
