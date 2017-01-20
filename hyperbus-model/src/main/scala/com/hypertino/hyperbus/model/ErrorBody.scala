@@ -6,7 +6,6 @@ import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value._
 import com.hypertino.inflector.naming.PlainConverter
 import com.hypertino.hyperbus.IdGenerator
-import com.hypertino.hyperbus.serialization.JsonHalSerializerFactory
 
 trait ErrorBody extends DynamicBody {
   def code: String
@@ -69,7 +68,6 @@ private[model] case class ErrorBodyContainer(code: String,
 
   override def serialize(writer: Writer): Unit = {
     implicit val bindOptions = com.hypertino.hyperbus.serialization.MessageSerializer.bindOptions
-    implicit val jsonSerializerFactory = new JsonHalSerializerFactory[PlainConverter.type ]
     JsonBindersFactory.findFactory().withWriter(writer) { serializer =>
       serializer.bind(this.copyErrorBody(contentType = None)) // find other way to skip contentType
     }

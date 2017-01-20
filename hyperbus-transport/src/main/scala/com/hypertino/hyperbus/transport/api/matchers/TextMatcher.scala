@@ -57,4 +57,7 @@ case class Specific(value: String) extends TextMatcher {
   }
 }
 
+
+// todo: + ignore case flag, StartsWith, EndsWith
+
 private[api] case class TextMatcherPojo(value: Option[String], @fieldName("type") matchType: Option[String])

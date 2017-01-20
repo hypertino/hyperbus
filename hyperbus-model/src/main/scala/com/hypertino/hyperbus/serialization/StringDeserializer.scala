@@ -18,7 +18,6 @@ object StringDeserializer {
   def dynamicBody(content: Option[String]): DynamicBody = content match {
     case None ⇒ DynamicBody(Null)
     case Some(string) ⇒ {
-      implicit val jsf = new JsonHalSerializerFactory[PlainConverter.type]
       val value = JsonBindersFactory.findFactory().withStringParser(string) { case jsonParser ⇒ // dont remove this!
         jsonParser.unbind[Value]
       }

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonParser
 import com.hypertino.hyperbus.model._
 
 package object serialization {
-//  type MessageDeserializer[+T <: Message[Body]] = (RequestHeader, JsonParser) ⇒ T
   type RequestDeserializer[+T <: Request[Body]] = (RequestHeader, JsonParser) ⇒ T
   type ResponseDeserializer[+T <: Response[Body]] = (ResponseHeader, JsonParser) ⇒ T
   type ResponseBodyDeserializer = (Option[String], JsonParser) ⇒ Body
