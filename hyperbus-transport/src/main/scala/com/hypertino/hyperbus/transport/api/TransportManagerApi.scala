@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus.transport.api
 
-import com.hypertino.hyperbus.model.{Body, Request}
+import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import rx.lang.scala.Subscriber
@@ -14,13 +14,13 @@ import scala.concurrent.duration.FiniteDuration
   */
 
 trait TransportManagerApi {
-  def ask(message: TransportRequest, outputDeserializer: Deserializer[TransportResponse]): Future[TransportResponse]
+  def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Future[ResponseBase]
 
-  def publish(message: TransportRequest): Future[PublishResult]
+  def publish(message: RequestBase): Future[PublishResult]
 
   def onCommand[REQ <: Request[Body]](requestMatcher: RequestMatcher,
                 inputDeserializer: RequestDeserializer[REQ])
-               (handler: (REQ) => Future[TransportResponse]): Future[Subscription]
+               (handler: (REQ) => Future[ResponseBase]): Future[Subscription]
 
   def onEvent[REQ <: Request[Body]](requestMatcher: RequestMatcher,
               groupName: String,

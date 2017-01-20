@@ -2,7 +2,7 @@ package com.hypertino.hyperbus.transport.inproc
 
 import java.io.StringReader
 
-import com.hypertino.hyperbus.model.{Body, Request}
+import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import org.slf4j.LoggerFactory
@@ -14,15 +14,15 @@ import scala.util.control.NonFatal
 private[transport] case class InprocSubscriptionHandler[REQ <: Request[Body]]
   (
     inputDeserializer: RequestDeserializer[REQ],
-    handler: Either[REQ => Future[TransportResponse], Observer[REQ]]
+    handler: Either[REQ => Future[ResponseBase], Observer[REQ]]
   ) {
 
   def handleCommandOrEvent(serialize: Boolean,
                            subKey: SubKey,
-                           message: TransportRequest,
-                           outputDeserializer: Deserializer[TransportResponse],
+                           message: RequestBase,
+                           responseDeserializer: ResponseBaseDeserializer,
                            isPublish: Boolean,
-                           resultPromise: Promise[TransportResponse])
+                           resultPromise: Promise[ResponseBase])
                           (implicit executionContext: ExecutionContext): Boolean = {
     var commandHandlerFound = false
     var eventHandlerFound = false
@@ -41,7 +41,7 @@ private[transport] case class InprocSubscriptionHandler[REQ <: Request[Body]]
           requestHandler(messageForSubscriber) map { response ⇒
             if (!isPublish) {
               val finalResponse = if (serialize) {
-                reserializeResponse(serialize, response, outputDeserializer)
+                reserializeResponse(serialize, response, responseDeserializer)
               } else {
                 response
               }
@@ -75,7 +75,7 @@ private[transport] case class InprocSubscriptionHandler[REQ <: Request[Body]]
     commandHandlerFound || eventHandlerFound
   }
 
-  private def reserializeRequest(serialize: Boolean, message: TransportMessage, deserializer: RequestDeserializer[REQ]): REQ = {
+  private def reserializeRequest(serialize: Boolean, message: RequestBase, deserializer: RequestDeserializer[REQ]): REQ = {
     if (serialize) {
       MessageDeserializer.deserializeRequestWith(
         message.serializeToString
@@ -86,15 +86,9 @@ private[transport] case class InprocSubscriptionHandler[REQ <: Request[Body]]
     }
   }
 
-  private def reserializeResponse[OUT <: TransportResponse](serialize: Boolean, message: TransportMessage, deserializer: Deserializer[OUT]): OUT = {
+  private def reserializeResponse[OUT <: ResponseBase](serialize: Boolean, message: ResponseBase, deserializer: ResponseDeserializer[OUT]): OUT = {
     if (serialize) {
-      val stringReader = new StringReader(message.serializeToString)
-      try {
-        deserializer(stringReader)
-      }
-      finally {
-        stringReader.close()
-      }
+      MessageDeserializer.deserializeResponseWith(message.toString)(deserializer)
     }
     else {
       message.asInstanceOf[OUT]

@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.transport
 
 import com.typesafe.config.{Config, ConfigFactory}
-import com.hypertino.hyperbus.model.{Body, Request}
+import com.hypertino.hyperbus.model.{Body, Request, RequestBase, ResponseBase}
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.{Any, RegexMatcher, RequestMatcher, Specific}
@@ -13,17 +13,17 @@ import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 class MockClientTransport(config: Config) extends ClientTransport {
-  override def ask(message: TransportRequest, outputDeserializer: Deserializer[TransportResponse]): Future[TransportResponse] = ???
+  override def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Future[ResponseBase] = ???
 
   override def shutdown(duration: FiniteDuration): Future[Boolean] = ???
 
-  override def publish(message: TransportRequest): Future[PublishResult] = ???
+  override def publish(message: RequestBase): Future[PublishResult] = ???
 }
 
 class MockServerTransport(config: Config) extends ServerTransport {
   override def onCommand[REQ <: Request[Body]](requestMatcher: RequestMatcher,
                          inputDeserializer: RequestDeserializer[REQ])
-                        (handler: (REQ) => Future[TransportResponse]): Future[Subscription] = ???
+                        (handler: (REQ) => Future[ResponseBase]): Future[Subscription] = ???
 
   override def shutdown(duration: FiniteDuration): Future[Boolean] = ???
 

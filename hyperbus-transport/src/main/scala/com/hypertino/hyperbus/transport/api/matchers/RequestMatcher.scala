@@ -1,12 +1,12 @@
 package com.hypertino.hyperbus.transport.api.matchers
 
 import com.hypertino.binders.value.Lst
+import com.hypertino.hyperbus.model.RequestBase
 import com.typesafe.config.ConfigValue
-import com.hypertino.hyperbus.transport.api.TransportRequest
 import com.hypertino.hyperbus.transport.api.uri.{Uri, UriPojo}
 
 case class RequestMatcher(uri: Option[Uri], headers: Map[String, TextMatcher]) {
-  def matchMessage(message: TransportRequest): Boolean = {
+  def matchMessage(message: RequestBase): Boolean = {
     (uri.isEmpty || uri.get.matchUri(message.uri)) &&
       headers.map { case (headerName, headerMatcher) ⇒
         message.headers.get(headerName).map {

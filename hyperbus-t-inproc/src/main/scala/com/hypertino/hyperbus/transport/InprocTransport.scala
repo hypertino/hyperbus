@@ -1,11 +1,11 @@
 package com.hypertino.hyperbus.transport
 
 import com.typesafe.config.Config
-import com.hypertino.hyperbus.model.{Body, Request}
+import com.hypertino.hyperbus.model.{Body, Request, RequestBase, ResponseBase}
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
-import com.hypertino.hyperbus.transport.inproc.{InprocSubscription, InprocSubscriptionHandler, InprocSubscriptionHandler$, SubKey}
+import com.hypertino.hyperbus.transport.inproc.{InprocSubscription, InprocSubscriptionHandler, SubKey}
 import com.hypertino.hyperbus.util.ConfigUtils._
 import com.hypertino.hyperbus.util.Subscriptions
 import org.slf4j.LoggerFactory
@@ -27,8 +27,8 @@ class InprocTransport(serialize: Boolean = false)
   protected val log = LoggerFactory.getLogger(this.getClass)
 
   // todo: refactor this method, it's awful
-  protected def _ask(message: TransportRequest, outputDeserializer: Deserializer[TransportResponse], isPublish: Boolean): Future[_] = {
-    val resultPromise = Promise[TransportResponse]
+  protected def _ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer, isPublish: Boolean): Future[_] = {
+    val resultPromise = Promise[ResponseBase]
     var handled = false
     //var result: Future[OUT] = null
 
@@ -38,7 +38,7 @@ class InprocTransport(serialize: Boolean = false)
     }.foreach {
       case (subKey, subscriptionList) =>
         val subscriber = subscriptionList.getRandomSubscription
-        handled = subscriber.handleCommandOrEvent(serialize,subKey,message,outputDeserializer,isPublish,resultPromise) || handled
+        handled = subscriber.handleCommandOrEvent(serialize,subKey,message,responseDeserializer,isPublish,resultPromise) || handled
     }
 
     if (!handled) {
@@ -61,17 +61,17 @@ class InprocTransport(serialize: Boolean = false)
     }
   }
 
-  override def ask(message: TransportRequest, outputDeserializer: Deserializer[TransportResponse]): Future[TransportResponse] = {
-    _ask(message, outputDeserializer, isPublish = false).asInstanceOf[Future[TransportResponse]]
+  override def ask(message: RequestBase, outputDeserializer: ResponseBaseDeserializer): Future[ResponseBase] = {
+    _ask(message, outputDeserializer, isPublish = false).asInstanceOf[Future[ResponseBase]]
   }
 
-  override def publish(message: TransportRequest): Future[PublishResult] = {
+  override def publish(message: RequestBase): Future[PublishResult] = {
     _ask(message, null, isPublish = true).asInstanceOf[Future[PublishResult]]
   }
 
   override def onCommand[REQ <: Request[Body]](matcher: RequestMatcher,
                          inputDeserializer: RequestDeserializer[REQ])
-                        (handler: (REQ) => Future[TransportResponse]): Future[Subscription] = {
+                        (handler: (REQ) => Future[ResponseBase]): Future[Subscription] = {
 
     if (matcher.uri.isEmpty)
       throw new IllegalArgumentException("requestMatcher.uri is empty")

@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus.transport.api
 
-import com.hypertino.hyperbus.model.{Body, Request}
+import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import org.slf4j.LoggerFactory
@@ -25,15 +25,15 @@ class TransportManager(protected[this] val clientRoutes: Seq[TransportRoute[Clie
   def this(configuration: TransportConfiguration) = this(configuration.clientRoutes,
     configuration.serverRoutes, ExecutionContext.global)
 
-  def ask(message: TransportRequest, outputDeserializer: Deserializer[TransportResponse]): Future[TransportResponse] = {
-    this.lookupClientTransport(message).ask(message, outputDeserializer)
+  def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Future[ResponseBase] = {
+    this.lookupClientTransport(message).ask(message, responseDeserializer)
   }
 
-  def publish(message: TransportRequest): Future[PublishResult] = {
+  def publish(message: RequestBase): Future[PublishResult] = {
     this.lookupClientTransport(message).publish(message)
   }
 
-  protected def lookupClientTransport(message: TransportRequest): ClientTransport = {
+  protected def lookupClientTransport(message: RequestBase): ClientTransport = {
     clientRoutes.find { route ⇒
       route.matcher.matchMessage(message)
     } map (_.transport) getOrElse {
@@ -54,7 +54,7 @@ class TransportManager(protected[this] val clientRoutes: Seq[TransportRoute[Clie
 
   def onCommand[REQ <: Request[Body]](requestMatcher: RequestMatcher,
                 inputDeserializer: RequestDeserializer[REQ])
-               (handler: (REQ) => Future[TransportResponse]): Future[Subscription] = {
+               (handler: (REQ) => Future[ResponseBase]): Future[Subscription] = {
 
     val transport = lookupServerTransport(requestMatcher)
     transport.onCommand(

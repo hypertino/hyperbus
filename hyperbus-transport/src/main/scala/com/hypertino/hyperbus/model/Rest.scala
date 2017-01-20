@@ -1,10 +1,10 @@
 package com.hypertino.hyperbus.model
 
-import java.io.Writer
+import java.io.{StringWriter, Writer}
 
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.hyperbus.serialization.MessageSerializer
-import com.hypertino.hyperbus.transport.api.{TransportMessage, TransportRequest, TransportResponse}
+import com.hypertino.hyperbus.transport.api.uri.Uri
 
 import scala.collection.mutable
 
@@ -88,17 +88,27 @@ class LinksBuilder(private [this] val args: mutable.Map[String, Either[Link, Seq
   def result(): Links = args.toMap
 }
 
-trait Message[+B <: Body] extends TransportMessage with MessagingContext {
+trait Message[+B <: Body] extends MessagingContext with EntityWithHeaders {
+  def messageId: String
+
   def body: B
 
-  def newContext() = MessagingContext(correlationId)
+  def serialize(writer: Writer)
+
+  def serializeToString: String = {
+    val writer = new StringWriter()
+    serialize(writer)
+    writer.toString
+  }
 
   override def toString = {
     s"${getClass.getName}[${body.getClass.getName}]:$serializeToString"
   }
 }
 
-trait Request[+B <: Body] extends Message[B] with TransportRequest {
+trait Request[+B <: Body] extends Message[B] {
+  def uri: Uri
+
   def method: String = header(Header.METHOD).toString
 
   protected def assertMethod(value: String): Unit = {
@@ -114,7 +124,7 @@ trait RequestObjectApi[R <: Request[Body]] {
   def method: String
 }
 
-trait Response[+B <: Body] extends Message[B] with TransportResponse {
+trait Response[+B <: Body] extends Message[B] {
   def statusCode: Int
 
   override def serialize(writer: Writer) = MessageSerializer.serializeResponse(this, writer)

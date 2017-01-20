@@ -22,14 +22,14 @@ class ClientTransportTest(output: String) extends ClientTransport {
 
   def input = messageBuf.toString()
 
-  override def ask(message: TransportRequest, outputDeserializer: Deserializer[TransportResponse]): Future[TransportResponse] = {
+  override def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Future[ResponseBase] = {
     messageBuf.append(message.serializeToString)
 
-    val out = outputDeserializer(new StringReader(output))
+    val out = MessageDeserializer.deserializeResponseWith(new StringReader(output))(responseDeserializer)
     Future.successful(out)
   }
 
-  override def publish(message: TransportRequest): Future[PublishResult] = {
+  override def publish(message: RequestBase): Future[PublishResult] = {
     ask(message, null) map { x =>
       new PublishResult {
         def sent = None
@@ -49,16 +49,16 @@ case class ServerSubscriptionTest(id: String) extends Subscription
 class ServerTransportTest extends ServerTransport {
   var sUriFilter: Uri = null
   var sInputDeserializer: RequestDeserializer[Request[Body]] = null
-  var sHandler: (TransportRequest) ⇒ Future[TransportResponse] = null
+  var sHandler: (RequestBase) ⇒ Future[ResponseBase] = null
   var sSubscriptionId: String = null
   val idCounter = new AtomicLong(0)
 
   override def onCommand[REQ <: Request[Body]](matcher: RequestMatcher,
                          inputDeserializer: RequestDeserializer[REQ])
-                        (handler: (REQ) => Future[TransportResponse]): Future[Subscription] = {
+                        (handler: (REQ) => Future[ResponseBase]): Future[Subscription] = {
 
     sInputDeserializer = inputDeserializer
-    sHandler = handler.asInstanceOf[(TransportRequest) ⇒ Future[TransportResponse]]
+    sHandler = handler.asInstanceOf[(RequestBase) ⇒ Future[ResponseBase]]
     Future {
       ServerSubscriptionTest(idCounter.incrementAndGet().toHexString)
     }
@@ -355,9 +355,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
   "<|" should "publish static request (client)" in {
     val rsp = """{"status":409,"headers":{"messageId":"123"},"body":{"code":"failed","errorId":"abcde12345"}}"""
-    var sentEvents = List[TransportRequest]()
+    var sentEvents = List[RequestBase]()
     val clientTransport = new ClientTransportTest(rsp) {
-      override def publish(message: TransportRequest): Future[PublishResult] = {
+      override def publish(message: RequestBase): Future[PublishResult] = {
         Future {
           sentEvents = sentEvents :+ message
           new PublishResult {
@@ -378,9 +378,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
   "<|" should "publish dynamic request (client)" in {
     val rsp = """{"status":409,"headers":{"messageId":"123"},"body":{"code":"failed","errorId":"abcde12345"}}"""
-    var sentEvents = List[TransportRequest]()
+    var sentEvents = List[RequestBase]()
     val clientTransport = new ClientTransportTest(rsp) {
-      override def publish(message: TransportRequest): Future[PublishResult] = {
+      override def publish(message: RequestBase): Future[PublishResult] = {
         Future {
           sentEvents = sentEvents :+ message
           new PublishResult {
