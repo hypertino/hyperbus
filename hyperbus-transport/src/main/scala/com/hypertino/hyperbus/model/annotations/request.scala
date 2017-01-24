@@ -39,21 +39,11 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val q"case class $className(..$fields) extends ..$bases { ..$body }" = existingClass
 
     val classFields: Seq[ValDef] = if (fields.exists(_.name.toString == "headers")) fields else {
-      fields :+ q"val headers: com.hypertino.hyperbus.model.Headers"
+      fields :+ q"val headers: com.hypertino.hyperbus.model.RequestHeaders"
     }
 
     val (bodyFieldName, bodyType) = getBodyField(fields)
     //println(s"rhs = $defaultValue, ${defaultValue.isEmpty}")
-
-    val uriParts = UriParser.extractParameters(uriPattern).map { arg ⇒
-      q"$arg -> this.${TermName(arg)}.toString" // todo: remove toString if string, + inner fields?
-    }
-
-    val uriPartsMap = if (uriParts.isEmpty) {
-      q"Map.empty[String, String]"
-    } else {
-      q"Map(..$uriParts)"
-    }
 
     val equalExpr = classFields.map(_.name).foldLeft[Tree](q"true") { (cap, name) ⇒
       q"(o.$name == this.$name) && $cap"
@@ -81,16 +71,13 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         @com.hypertino.hyperbus.model.annotations.method($method)
         class $className(..${classFields.map(stripDefaultValue)}, plain__init: Boolean)
           extends ..$bases with scala.Product {
-          assertMethod(${className.toTermName}.method)
           ..$body
-          import com.hypertino.hyperbus.transport.api.uri._
-          lazy val uri = Uri(${className.toTermName}.uriPattern, $uriPartsMap)
 
           def copy(
             ..${classFields.map { case ValDef(_, name, tpt, _) ⇒
               q"val $name: $tpt = this.$name"
             }}): $className = {
-            ${className.toTermName}(..${fieldsNoHeaders.map(_.name)}, headers = com.hypertino.hyperbus.model.Headers.plain(headers))
+            new $className(..${fieldsNoHeaders.map(_.name)}, headers = this.headers, plain__init = false)
           }
 
           def canEqual(other: Any): Boolean = other.isInstanceOf[$className]
@@ -114,9 +101,10 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       """
 
     val fieldsWithDefVal = fieldsNoHeaders.filter(_.rhs.nonEmpty) :+
-      q"val headers: com.hypertino.hyperbus.model.Headers = com.hypertino.hyperbus.model.Headers()(mcx)"
+      q"val headers: com.hypertino.hyperbus.model.RequestHeaders = com.hypertino.hyperbus.model.RequestHeaders()(mcx)".asInstanceOf[ValDef]
 
-    val defMethods = fieldsWithDefVal.map { case currentField: ValDef ⇒
+
+    val defMethods = fieldsWithDefVal.map { currentField: ValDef ⇒
       val fmap = fieldsNoHeaders.foldLeft((Seq.empty[Tree], Seq.empty[Tree], false)) { case ((seqFields, seqVals, withDefaultValue), f) ⇒
         val defV = withDefaultValue || f.name == currentField.name
 
@@ -128,49 +116,67 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       q"""def apply(
             ..${fmap._1}
          )(implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className =
-         apply(..${fmap._2}, headers = com.hypertino.hyperbus.model.Headers()(mcx))"""
+         apply(..${fmap._2}, com.hypertino.hyperbus.model.HeadersMap.empty)(mcx)"""
     }
 
     //println(defMethods)
+    val uriParts = UriParser.extractParameters(uriPattern).map { arg ⇒
+      q"$arg -> ${TermName(arg)}.toString" // todo: remove toString if string, + inner fields?
+    }
+
+    val uriPartsMap = if (uriParts.isEmpty) {
+      q"Map.empty[String, String]"
+    } else {
+      q"Map(..$uriParts)"
+    }
 
     val ctxVal = fresh("ctx")
     val bodyVal = fresh("body")
+    val requestHeadersVal = fresh("requestHeaders")
+    val argsVal = fresh("args")
     val companionExtra =
       q"""
-        def apply(..${fieldsNoHeaders.map(stripDefaultValue)}, headers: com.hypertino.hyperbus.model.Headers): $className = {
+        def apply(..${fieldsNoHeaders.map(stripDefaultValue)}, headersMap: com.hypertino.hyperbus.model.HeadersMap)
+          (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
+
           new $className(..${fieldsNoHeaders.map(_.name)},
-            headers = new com.hypertino.hyperbus.model.HeadersBuilder(headers)
+            headers = com.hypertino.hyperbus.model.RequestHeaders(new com.hypertino.hyperbus.model.HeadersBuilder(headersMap)
+              .withUri(${className.toTermName}.uriPattern.formatUri($uriPartsMap))
               .withMethod(${className.toTermName}.method)
               .withContentType(body.contentType)
-              .result(),
+              .withContext(mcx)
+              .result()),
             plain__init = false
           )
         }
 
         ..$defMethods
 
-        def apply(requestHeader: com.hypertino.hyperbus.serialization.RequestHeader, jsonParser : com.fasterxml.jackson.core.JsonParser): $className = {
-          val $bodyVal = ${bodyType.toTermName}(requestHeader.contentType, jsonParser)
+        def apply(reader: java.io.Reader, headersMap: com.hypertino.hyperbus.model.HeadersMap): $className = {
+          val $requestHeadersVal = com.hypertino.hyperbus.model.RequestHeaders(headersMap)
+          val $bodyVal = ${bodyType.toTermName}(reader, $requestHeadersVal.contentType)
 
-          //todo: extract uri parts!
+          //todo: typed uri parts? int/long, etc
 
-          new $className(
-            ..${
-                fieldsNoHeaders.filterNot(_.name == bodyFieldName).map { field ⇒
-                q"${field.name} = requestHeader.uri.args(${field.name.toString}).specific"
-              }
-            },
-            $bodyFieldName = $bodyVal,
-            headers = requestHeader.headers,
-            plain__init = true
-          )
+          withUriArgs($requestHeadersVal.uri) { args =>
+            new $className(
+              ..${
+                  fieldsNoHeaders.filterNot(_.name == bodyFieldName).map { field ⇒
+                  q"${field.name} = args(${field.name.toString})"
+                }
+              },
+              $bodyFieldName = $bodyVal,
+              headers = $requestHeadersVal,
+              plain__init = true
+            )
+          }
         }
 
         def unapply(request: $className) = Some((
           ..${classFields.map(f ⇒ q"request.${f.name}")}
         ))
 
-        def uriPattern = $uriPattern
+        def uriPattern = com.hypertino.hyperbus.transport.api.uri.UriPattern($uriPattern)
         def method: String = $method
     """
 
@@ -184,7 +190,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         """
     } getOrElse {
       q"""
-        object ${className.toTermName} {
+        object ${className.toTermName} extends com.hypertino.hyperbus.model.RequestObjectApi[${className.toTypeName}] {
           ..$companionExtra
         }
       """
@@ -196,7 +202,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         $newCompanion
       """
     )
-    //println(block)
+    println(block)
     block
   }
 

@@ -10,7 +10,7 @@ trait MacroApi {
                            responseBodyJson: com.fasterxml.jackson.core.JsonParser,
                            bodyDeserializer: PartialFunction[ResponseHeader, ResponseBodyDeserializer]): Response[Body]
 
-  private def uriWithAnyValue(uriPattern: String): Uri = Uri(
+  private def uriWithAnyValue(uriPattern: String): UriPattern = UriPattern(
     Specific(uriPattern),
     UriParser.extractParameters(uriPattern).map(_ → Any).toMap
   )

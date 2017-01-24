@@ -80,7 +80,7 @@ object UriParser {
       result += TextToken(buf.toString())
     }
 
-    result.toSeq
+    result
   }
 
   def matchType(s: String): MatchType = s match {

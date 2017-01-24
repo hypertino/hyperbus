@@ -15,7 +15,7 @@ object MessagingContext {
   }
 
   def apply(withCorrelationId: Option[String]): MessagingContext = new MessagingContext {
-    def correlationId = withCorrelationId
+    def correlationId: Option[String] = withCorrelationId
 
     override def toString = s"MessagingContext(correlationId=$correlationId)"
   }

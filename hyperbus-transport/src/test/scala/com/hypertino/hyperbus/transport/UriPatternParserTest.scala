@@ -1,9 +1,10 @@
 package com.hypertino.hyperbus.transport
 
+import com.hypertino.hyperbus.transport.api.matchers.Specific
 import com.hypertino.hyperbus.transport.api.uri._
 import org.scalatest.{FreeSpec, Matchers}
 
-class UriParserTest extends FreeSpec with Matchers {
+class UriPatternParserTest extends FreeSpec with Matchers {
   "UriParserTest " - {
     "Extract parameters" in {
       val p: String ⇒ Seq[String] = UriParser.extractParameters
@@ -32,9 +33,41 @@ class UriParserTest extends FreeSpec with Matchers {
       p("{abc:*}") should equal(Seq(ParameterToken("abc", PathMatchType)))
     }
 
-    "Format URI" in {
-      val uri = Uri("x/{abc}/y/{def}", Map("abc" → "123", "def" → "456"))
-      uri.formatted should equal("x/123/y/456")
+    "UriPattern should match with params" in {
+      val uriPattern = UriPattern("x/{abc}/y/{def}")
+      val r = uriPattern.matchUri("x/1/y/2")
+      r should not be empty
+      r.get should contain theSameElementsAs Map("abc" → "1", "def" → "2")
+    }
+
+    "UriPattern shouldn't match with params" in {
+      val uriPattern = UriPattern("x/{abc}/y/{def}")
+      uriPattern.matchUri("x") shouldBe empty
+    }
+
+    "UriPattern match" in {
+      val uriPattern = UriPattern("abc/xyz")
+      val r = uriPattern.matchUri("abc/xyz")
+      r should not be empty
+      r.get shouldBe empty
+    }
+
+    "UriPattern shouldn't match" in {
+      val uriPattern = UriPattern("abc/xyz")
+      uriPattern.matchUri("x") shouldBe empty
+    }
+
+    "UriPattern match with path" in {
+      val uriPattern = UriPattern("x/{abc:*}")
+      val r = uriPattern.matchUri("x/1/y/2")
+      r should not be empty
+      r.get should contain theSameElementsAs Map("abc" → "1/y/2")
+    }
+
+    "UriPattern shouldn't match with path" in {
+      val uriPattern = UriPattern("x/{abc:*}")
+      uriPattern.matchUri("x") shouldBe empty
+      uriPattern.matchUri("x/") shouldBe empty
     }
   }
 }

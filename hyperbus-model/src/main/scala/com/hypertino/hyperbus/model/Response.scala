@@ -1,5 +1,7 @@
 package com.hypertino.hyperbus.model
 
+import java.io.Reader
+
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value.Value
 import com.hypertino.hyperbus.model.annotations.response
@@ -13,13 +15,6 @@ trait ErrorResponse extends Response[ErrorBody]
 trait ServerError extends ErrorResponse
 
 trait ClientError extends ErrorResponse
-
-// we need this to help with code completion in IDE
-trait ResponseObjectApi[PB <: Body, R <: Response[PB]] {
-  def apply[B <: PB](body: B, headers: com.hypertino.hyperbus.model.Headers): R
-  def apply[B <: PB](body: B)(implicit mcx: com.hypertino.hyperbus.model.MessagingContext): R
-  // def unapply[B <: PB](response: Response[PB]): Option[(B,Map[String,Seq[String]])] TODO: this doesn't works, find a workaround
-}
 
 // ----------------- Normal responses -----------------
 
@@ -39,14 +34,14 @@ trait CreatedBody extends Body with HalLinks {
 object Created extends ResponseObjectApi[CreatedBody, Created[CreatedBody]]
 
 object DynamicCreatedBody {
-  def apply(contentType: Option[String], content: Value): DynamicBody with CreatedBody = DynamicCreatedBodyContainer(contentType, content)
+  def apply(content: Value, contentType: Option[String]): DynamicBody with CreatedBody = DynamicCreatedBodyContainer(contentType, content)
 
-  def apply(content: Value): DynamicBody with CreatedBody = apply(None, content)
+  def apply(content: Value): DynamicBody with CreatedBody = apply(content, None)
 
-  def apply(contentType: Option[String], jsonParser: com.fasterxml.jackson.core.JsonParser): DynamicBody with CreatedBody = {
-    import com.hypertino.binders.json.JsonBinders._
-    JsonBindersFactory.findFactory().withJsonParser(jsonParser) { deserializer =>
-      apply(contentType, deserializer.unbind[Value])
+  def apply(reader: Reader, contentType: Option[String]): DynamicBody = {
+    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
+    JsonBindersFactory.findFactory().withReader(reader) { deserializer =>
+      apply(deserializer.unbind[Value], contentType)
     }
   }
 

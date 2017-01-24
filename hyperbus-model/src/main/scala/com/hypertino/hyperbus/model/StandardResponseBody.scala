@@ -1,17 +1,19 @@
 package com.hypertino.hyperbus.model
 
-import com.hypertino.hyperbus.serialization.ResponseHeader
+import java.io.Reader
+
 
 object StandardResponseBody {
-  def apply(responseHeader: ResponseHeader, responseBodyJson: com.fasterxml.jackson.core.JsonParser): Body = {
-    if (responseHeader.status >= 400 && responseHeader.status <= 599)
-      ErrorBody(responseHeader.contentType, responseBodyJson)
+  def apply(reader: Reader, responseHeaders: ResponseHeaders): Body = {
+    if (responseHeaders.statusCode >= 400 && responseHeaders.statusCode <= 599)
+      ErrorBody(reader, responseHeaders.contentType)
     else {
-      responseHeader.status match {
+      responseHeaders.statusCode match {
         case Status.CREATED ⇒
-          DynamicCreatedBody(responseHeader.contentType, responseBodyJson)
+          DynamicCreatedBody(reader, responseHeaders.contentType)
+
         case _ ⇒
-          DynamicBody(responseHeader.contentType, responseBodyJson)
+          DynamicBody(reader, responseHeaders.contentType)
       }
     }
   }

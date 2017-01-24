@@ -4,10 +4,10 @@ import com.hypertino.binders.value.{LstV, Text, Value}
 
 import scala.collection.mutable
 
-class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Value), Map[String, Value]]) {
+class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Value), HeadersMap]) {
   def this() = this(Map.newBuilder[String, Value])
 
-  def this(headers: Map[String, Value]) = this {
+  def this(headers: HeadersMap) = this {
     Map.newBuilder[String, Value] ++= headers
   }
 
@@ -16,7 +16,7 @@ class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Valu
     this
   }
 
-  def ++=(headers: Map[String, Value]) = {
+  def ++=(headers: HeadersMap) = {
     mapBuilder ++= headers
     this
   }
@@ -51,7 +51,12 @@ class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Valu
     this
   }
 
-  def result(): Headers = {
+  def withUri(uri: String) = {
+    mapBuilder += Header.URI → Text(uri)
+    this
+  }
+
+  def result(): HeadersMap = {
     mapBuilder.result().filterNot(_._2.isEmpty)
   }
 }

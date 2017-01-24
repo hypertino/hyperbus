@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.hypertino.hyperbus.model.{Body, Request, RequestBase, ResponseBase}
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
-import com.hypertino.hyperbus.transport.api.matchers.{Any, RegexMatcher, RequestMatcher, Specific}
+import com.hypertino.hyperbus.transport.api.matchers._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FreeSpec, Matchers}
 import rx.lang.scala.Observer
@@ -48,12 +48,11 @@ class TransportManagerConfigurationTest extends FreeSpec with ScalaFutures with 
           client-routes: [
             {
               match: {
-                uri: {
-                  pattern: { value: "/topic/{userId}", type: Specific }
-                  args: { userId: { type: Any } }
+                u: {
+                  value: "/topic", type: Specific
                 }
-                headers: {
-                  method: { value: "post" }
+                m: {
+                  value: "post"
                 }
               }
               transport: mock-client
@@ -62,9 +61,8 @@ class TransportManagerConfigurationTest extends FreeSpec with ScalaFutures with 
           server-routes: [
             {
               match: {
-                uri: {
-                  pattern: { value: "/topic/{userId}", type: Specific }
-                  args: { userId: { value: ".*", type: Regex } }
+                u: {
+                  value: "/topic/{userId}", type: Pattern
                 }
               }
               transport: mock-server
@@ -75,23 +73,12 @@ class TransportManagerConfigurationTest extends FreeSpec with ScalaFutures with 
 
       val sbc = TransportConfigurationLoader.fromConfig(config)
 
-      assert(sbc.clientRoutes.nonEmpty)
-      assert(sbc.clientRoutes.head.matcher.uri.nonEmpty)
-      sbc.clientRoutes.head.matcher.uri.get.pattern should equal(Specific("/topic/{userId}"))
-      sbc.clientRoutes.head.matcher.uri.get.args should equal(Map(
-        "userId" → Any
-      ))
-      sbc.clientRoutes.head.matcher.headers should equal(Map(
-        "method" → Specific("post")
-      ))
+      sbc.clientRoutes should not be empty
+      sbc.clientRoutes.head.matcher.headers should contain theSameElementsAs Map("u" → Specific("/topic"), "m" → Specific("post"))
       sbc.clientRoutes.head.transport shouldBe a[MockClientTransport]
 
-      assert(sbc.serverRoutes.nonEmpty)
-      assert(sbc.serverRoutes.head.matcher.uri.nonEmpty)
-      sbc.serverRoutes.head.matcher.uri.get.pattern should equal(Specific("/topic/{userId}"))
-      sbc.serverRoutes.head.matcher.uri.get.args should equal(Map(
-        "userId" → RegexMatcher(".*")
-      ))
+      sbc.serverRoutes should not be empty
+      sbc.serverRoutes.head.matcher.headers should contain theSameElementsAs Map("u" → PatternMatcher("/topic/{userId}"))
       sbc.serverRoutes.head.transport shouldBe a[MockServerTransport]
     }
   }

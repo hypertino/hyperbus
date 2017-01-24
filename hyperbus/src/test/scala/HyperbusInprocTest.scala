@@ -4,7 +4,7 @@ import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.transport._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.{Any, RequestMatcher}
-import com.hypertino.hyperbus.transport.api.uri.Uri
+import com.hypertino.hyperbus.transport.api.uri.UriPattern$
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FreeSpec, Matchers}
 import testclasses._
@@ -106,8 +106,8 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
 
   def newHyperbus() = {
     val tr = new InprocTransport
-    val cr = List(TransportRoute[ClientTransport](tr, RequestMatcher(Some(Uri(Any)))))
-    val sr = List(TransportRoute[ServerTransport](tr, RequestMatcher(Some(Uri(Any)))))
+    val cr = List(TransportRoute[ClientTransport](tr, RequestMatcher(Some(UriPattern(Any)))))
+    val sr = List(TransportRoute[ServerTransport](tr, RequestMatcher(Some(UriPattern(Any)))))
     val transportManager = new TransportManager(cr, sr, ExecutionContext.global)
     new Hyperbus(transportManager, logMessages = true)
   }

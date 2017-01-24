@@ -6,18 +6,18 @@ import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value._
 import com.hypertino.hyperbus.model.annotations.{body, request}
 import com.hypertino.hyperbus.serialization._
-import com.hypertino.hyperbus.transport.api.uri.Uri
+import com.hypertino.hyperbus.transport.api.uri.UriPattern$
 import org.scalatest.{FlatSpec, FreeSpec, Matchers}
 
 @request(Method.POST, "/test-post-1/{id}")
 case class TestPost1(id: String, body: TestBody1) extends Request[TestBody1]
 
 trait TestPost1ObjectApi {
-  def apply(id: String, x: TestBody1, headers: Headers): TestPost1
+  def apply(id: String, x: TestBody1, headers: HeadersMap)(implicit mcx: MessagingContext): TestPost1
 }
 
 object TestPost1 extends RequestObjectApi[TestPost1] with TestPost1ObjectApi {
-  def apply(id: String, x: String, headers: Headers): TestPost1 = TestPost1(id, TestBody1(x), headers)
+  def apply(id: String, x: String, headers: HeadersMap)(implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headers)(mcx)
 }
 
 @body("test-inner-body")
@@ -68,7 +68,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "TestPost1" should "deserialize" in {
     val str = """{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"method":"post","contentType":"test-body-1","messageId":"123"},"body":{"data":"abcde"}}"""
     val post1 = MessageDeserializer.deserializeRequestWith(str) { (requestHeader, jsonParser) ⇒
-      requestHeader.uri should equal(Uri("/test-post-1/{id}", Map("id" → "155")))
+      requestHeader.uri should equal(UriPattern("/test-post-1/{id}", Map("id" → "155")))
       requestHeader.contentType should equal(Some("test-body-1"))
       requestHeader.method should equal("post")
       requestHeader.messageId should equal("123")
@@ -78,7 +78,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
 
     post1.body should equal(TestBody1("abcde"))
     post1.id should equal("155")
-    post1.uri should equal(Uri("/test-post-1/{id}", Map(
+    post1.uri should equal(UriPattern("/test-post-1/{id}", Map(
       "id" → "155"
     )))
   }
@@ -98,7 +98,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
 
     post1.body should equal(TestBody1("abcde"))
     post1.id should equal("155")
-    post1.uri should equal(Uri("/test-post-1/{id}", Map(
+    post1.uri should equal(UriPattern("/test-post-1/{id}", Map(
       "id" → "155"
     )))
     post1.headers.get("test") should equal(Some(LstV("a","b")))
@@ -119,7 +119,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "TestOuterPost" should "deserialize" in {
     val str = """{"uri":{"pattern":"/test-outer-resource"},"headers":{"method":"get","contentType":"test-outer-body","messageId":"123"},"body":{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"href":"/test-inner-resource","templated":false}}},"collection":[{"innerData":"xyz","_links":{"self":{"href":"/test-inner-resource","templated":false}}},{"innerData":"yey","_links":{"self":{"href":"/test-inner-resource","templated":false}}}]}}}"""
     val outer = MessageDeserializer.deserializeRequestWith(str) { (requestHeader, jsonParser) ⇒
-      requestHeader.uri should equal(Uri("/test-outer-resource"))
+      requestHeader.uri should equal(UriPattern("/test-outer-resource"))
       requestHeader.contentType should equal(Some("test-outer-body"))
       requestHeader.method should equal("get")
       requestHeader.messageId should equal("123")
@@ -135,7 +135,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     )
 
     outer.body should equal(outerBody)
-    outer.uri should equal(Uri("/test-outer-resource"))
+    outer.uri should equal(UriPattern("/test-outer-resource"))
   }
 
   "DynamicRequest" should "decode" in {
@@ -143,7 +143,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     val request = DynamicRequest(str)
     request shouldBe a[Request[_]]
     request.method should equal("custom-method")
-    request.uri should equal(Uri("/test"))
+    request.uri should equal(UriPattern("/test"))
     request.messageId should equal("123")
     request.correlationId should equal(Some("123"))
     //request.body.contentType should equal(Some())

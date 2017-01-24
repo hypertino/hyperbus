@@ -37,7 +37,7 @@ class TransportManager(protected[this] val clientRoutes: Seq[TransportRoute[Clie
     clientRoutes.find { route ⇒
       route.matcher.matchMessage(message)
     } map (_.transport) getOrElse {
-      throw new NoTransportRouteException(s"${message.uri} with headers: ${message.headers}")
+      throw new NoTransportRouteException(s"Message headers: ${message.headers}")
     }
   }
 
@@ -89,7 +89,7 @@ class TransportManager(protected[this] val clientRoutes: Seq[TransportRoute[Clie
     serverRoutes.find { route ⇒
       route.matcher.matchRequestMatcher(requestMatcher)
     } map (_.transport) getOrElse {
-      throw new NoTransportRouteException(s"${requestMatcher.uri} with header matchers: ${requestMatcher.headers}")
+      throw new NoTransportRouteException(s"${requestMatcher.headers}")
     }
   }
 

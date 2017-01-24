@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus.model
 
-import java.io.Writer
+import java.io.{Reader, Writer}
 
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value._
@@ -51,9 +51,9 @@ object ErrorBody {
     (errorBody.code, errorBody.description, errorBody.errorId, errorBody.extra, errorBody.contentType)
   )
 
-  def apply(contentType: Option[String], jsonParser: com.fasterxml.jackson.core.JsonParser): ErrorBody = {
-    import com.hypertino.binders._
-    com.hypertino.binders.json.JsonBindersFactory.findFactory().withJsonParser(jsonParser) { deserializer =>
+  def apply(reader: Reader, contentType: Option[String]): DynamicBody = {
+    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
+    JsonBindersFactory.findFactory().withReader(reader) { deserializer =>
       deserializer.unbind[ErrorBodyContainer].copyErrorBody(contentType = contentType)
     }
   }
@@ -67,7 +67,7 @@ private[model] case class ErrorBodyContainer(code: String,
   def message = code + description.map(": " + _).getOrElse("") + ". #" + errorId
 
   override def serialize(writer: Writer): Unit = {
-    implicit val bindOptions = com.hypertino.hyperbus.serialization.MessageSerializer.bindOptions
+    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
     JsonBindersFactory.findFactory().withWriter(writer) { serializer =>
       serializer.bind(this.copyErrorBody(contentType = None)) // find other way to skip contentType
     }

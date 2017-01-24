@@ -7,7 +7,7 @@ import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.{Any, RequestMatcher, Specific}
-import com.hypertino.hyperbus.transport.api.uri.Uri
+import com.hypertino.hyperbus.transport.api.uri.UriPattern$
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, FreeSpec, Matchers}
 import rx.lang.scala.Observer
@@ -47,7 +47,7 @@ class ClientTransportTest(output: String) extends ClientTransport {
 case class ServerSubscriptionTest(id: String) extends Subscription
 
 class ServerTransportTest extends ServerTransport {
-  var sUriFilter: Uri = null
+  var sUriFilter: UriPattern = null
   var sInputDeserializer: RequestDeserializer[Request[Body]] = null
   var sHandler: (RequestBase) ⇒ Future[ResponseBase] = null
   var sSubscriptionId: String = null
@@ -118,7 +118,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     )
 
     val hyperbus = newHyperbus(ct, null)
-    val f = hyperbus <~ DynamicRequest(Uri("/resources"),
+    val f = hyperbus <~ DynamicRequest(UriPattern("/resources"),
       Method.POST,
       DynamicBody(
         Some("test-1"),
@@ -327,7 +327,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     hyperbus.onCommand(RequestMatcher(
-      Some(Uri("/test")),
+      Some(UriPattern("/test")),
       Map(Header.METHOD → Specific(Method.GET)))
     ) { request =>
       Future {
@@ -338,7 +338,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     val req = """{"uri":{"pattern":"/test"},"headers":{"method":"get","contentType":"some-content","messageId":"123"},"body":"haha"}"""
     val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
     msg should equal(DynamicRequest(
-      RequestHeader(Uri("/test"), Map(
+      RequestHeader(UriPattern("/test"), Map(
         Header.METHOD → Method.GET,
         Header.CONTENT_TYPE → "some-content",
         Header.MESSAGE_ID → "123")
@@ -393,7 +393,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val hyperbus = newHyperbus(clientTransport, null)
-    val futureResult = hyperbus <| DynamicRequest(Uri("/resources"), Method.POST,
+    val futureResult = hyperbus <| DynamicRequest(UriPattern("/resources"), Method.POST,
       DynamicBody(Some("test-1"), ObjV("resourceData" → "ha ha")))
     whenReady(futureResult) { r =>
       sentEvents.size should equal(1)
@@ -435,7 +435,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
     hyperbus.onEvent(
       RequestMatcher(
-        Some(Uri("/test")),
+        Some(UriPattern("/test")),
         Map(Header.METHOD → Specific(Method.GET))),
       Some("group1"),
       observer
@@ -512,8 +512,8 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
   }
 
   def newHyperbus(ct: ClientTransport, st: ServerTransport) = {
-    val cr = List(TransportRoute(ct, RequestMatcher(Some(Uri(Any)))))
-    val sr = List(TransportRoute(st, RequestMatcher(Some(Uri(Any)))))
+    val cr = List(TransportRoute(ct, RequestMatcher(Some(UriPattern(Any)))))
+    val sr = List(TransportRoute(st, RequestMatcher(Some(UriPattern(Any)))))
     val transportManager = new TransportManager(cr, sr, ExecutionContext.global)
     new Hyperbus(transportManager, Some("group1"), logMessages = true)
   }

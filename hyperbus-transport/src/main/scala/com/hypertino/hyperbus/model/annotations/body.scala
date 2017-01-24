@@ -40,10 +40,9 @@ private[annotations] trait BodyAnnotationMacroImpl extends AnnotationMacroImplBa
       ..$body
       def contentType = ${className.toTermName}.contentType
       override def serialize(writer: java.io.Writer) = {
-        import com.hypertino.hyperbus.serialization.MessageSerializer.bindOptions
-        com.hypertino.binders.json.JsonBindersFactory.findFactory().withWriter(writer) { case $serializerVal =>
-          $serializerVal.bind[$className](this)
-        }
+        import com.hypertino.binders.json.JsonBinders._
+        implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
+        this.writeJson(writer)
       }
     """
 
@@ -66,10 +65,10 @@ private[annotations] trait BodyAnnotationMacroImpl extends AnnotationMacroImplBa
     val companionExtra =
       q"""
         def contentType = $contentType
-        def apply(contentType: Option[String], jsonParser : com.fasterxml.jackson.core.JsonParser): $className = {
-          com.hypertino.binders.json.JsonBindersFactory.findFactory().withJsonParser(jsonParser) { case $deserializerVal =>
-            $deserializerVal.unbind[$className]
-          }
+        def apply(reader: java.io.Reader, contentType: Option[String]): $className = {
+          import com.hypertino.binders.json.JsonBinders._
+          implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
+          reader.readJson[$className]
         }
         """
 

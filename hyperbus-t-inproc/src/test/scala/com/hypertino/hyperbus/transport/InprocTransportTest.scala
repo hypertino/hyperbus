@@ -6,7 +6,7 @@ import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.model.annotations.{body, request, response}
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
-import com.hypertino.hyperbus.transport.api.uri.Uri
+import com.hypertino.hyperbus.transport.api.uri.UriPattern$
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FreeSpec, Matchers}
 import rx.lang.scala.{Observer, Subscriber}
@@ -31,7 +31,7 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
   "InprocTransport " - {
     "Simple Test" in {
       val t = new InprocTransport
-      t.onCommand(RequestMatcher(Some(Uri("/mock"))), null) { msg: MockRequest =>
+      t.onCommand(RequestMatcher(Some(UriPattern("/mock"))), null) { msg: MockRequest =>
         Future {
           MockResponse(MockBody(msg.body.test.reverse))
         }
@@ -46,7 +46,7 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
 
     "NoTransportRouteException Test" in {
       val t = new InprocTransport
-      t.onCommand(RequestMatcher(Some(Uri("notexists"))), null) { msg: MockRequest =>
+      t.onCommand(RequestMatcher(Some(UriPattern("notexists"))), null) { msg: MockRequest =>
         Future {
           MockResponse(MockBody(msg.body.test.reverse))
         }
@@ -61,7 +61,7 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
 
     "Complex ask Test (Service and Subscribers)" in {
       val t = new InprocTransport
-      t.onCommand(RequestMatcher(Some(Uri("/mock"))), null) { msg: MockRequest =>
+      t.onCommand(RequestMatcher(Some(UriPattern("/mock"))), null) { msg: MockRequest =>
         Future {
           MockResponse(MockBody(msg.body.test.reverse))
         }
@@ -76,9 +76,9 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
         }
       }
 
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group1", null, group1subscriber)
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group1", null, group1subscriber)
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group1", null, group1subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group1", null, group1subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group1", null, group1subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group1", null, group1subscriber)
 
       val group2 = new AtomicInteger(0)
       val group2promise = Promise[Unit]()
@@ -89,8 +89,8 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
         }
       }
 
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group2", null, group2subscriber)
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group2", null, group2subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group2", null, group2subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group2", null, group2subscriber)
 
       val f = t.ask(MockRequest(MockBody("hey")), null).asInstanceOf[Future[MockResponse[MockBody]]]
 
@@ -112,13 +112,13 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
       val t = new InprocTransport
 
       val processor = new AtomicInteger(0)
-      val onCommandFuture1 = t.onCommand(RequestMatcher(Some(Uri("/mock"))), null) { msg: MockRequest =>
+      val onCommandFuture1 = t.onCommand(RequestMatcher(Some(UriPattern("/mock"))), null) { msg: MockRequest =>
         Future {
           processor.incrementAndGet()
           MockResponse(MockBody(msg.body.test.reverse))
         }
       }
-      val onCommandFuture2 = t.onCommand(RequestMatcher(Some(Uri("/mock"))), null) { msg: MockRequest =>
+      val onCommandFuture2 = t.onCommand(RequestMatcher(Some(UriPattern("/mock"))), null) { msg: MockRequest =>
         Future {
           processor.incrementAndGet()
           MockResponse(MockBody(msg.body.test.reverse))
@@ -134,9 +134,9 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
         }
       }
 
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group1", null, group1observer)
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group1", null, group1observer)
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group1", null, group1observer)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group1", null, group1observer)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group1", null, group1observer)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group1", null, group1observer)
 
       val group2 = new AtomicInteger(0)
       val group2promise = Promise[Unit]()
@@ -147,8 +147,8 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
         }
       }
 
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group2", null, group2subscriber)
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group2", null, group2subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group2", null, group2subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group2", null, group2subscriber)
 
       val f: Future[PublishResult] = t.publish(MockRequest(MockBody("hey")))
 
@@ -180,9 +180,9 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
         }
       }
 
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group1", null, group1subscriber)
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group1", null, group1subscriber)
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group1", null, group1subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group1", null, group1subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group1", null, group1subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group1", null, group1subscriber)
 
       val group2 = new AtomicInteger(0)
       val group2promise = Promise[Unit]()
@@ -193,8 +193,8 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
         }
       }
 
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group2", null, group2subscriber)
-      t.onEvent(RequestMatcher(Some(Uri("/mock"))), "group2", null, group2subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group2", null, group2subscriber)
+      t.onEvent(RequestMatcher(Some(UriPattern("/mock"))), "group2", null, group2subscriber)
 
       val f: Future[PublishResult] = t.publish(MockRequest(MockBody("hey")))
 
@@ -214,14 +214,14 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
       val t = new InprocTransport
       val receivers = new AtomicInteger(0)
 
-      t.onCommand(RequestMatcher(Some(Uri("/mock"))), null) { msg: MockRequest =>
+      t.onCommand(RequestMatcher(Some(UriPattern("/mock"))), null) { msg: MockRequest =>
         Future {
           receivers.incrementAndGet()
           MockResponse(MockBody(msg.body.test.reverse))
         }
       }
 
-      t.onCommand(RequestMatcher(Some(Uri("/mock"))), null) { msg: MockRequest =>
+      t.onCommand(RequestMatcher(Some(UriPattern("/mock"))), null) { msg: MockRequest =>
         Future {
           receivers.incrementAndGet()
           MockResponse(MockBody(msg.body.test.reverse))
@@ -251,13 +251,13 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers {
 
     "Unsubscribe Test" in {
       val t = new InprocTransport
-      val id1Future = t.onCommand(RequestMatcher(Some(Uri("/mock"))), null) { msg: MockRequest =>
+      val id1Future = t.onCommand(RequestMatcher(Some(UriPattern("/mock"))), null) { msg: MockRequest =>
         Future {
           MockResponse(MockBody(msg.body.test.reverse))
         }
       }
 
-      val id2Future = t.onCommand(RequestMatcher(Some(Uri("/mock"))), null) { msg: MockRequest =>
+      val id2Future = t.onCommand(RequestMatcher(Some(UriPattern("/mock"))), null) { msg: MockRequest =>
         Future {
           MockResponse(MockBody(msg.body.test.reverse))
         }

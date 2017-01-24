@@ -3,6 +3,7 @@ package com.hypertino.hyperbus.transport.api.matchers
 import com.typesafe.config.ConfigValue
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.hyperbus.transport.api.TransportConfigurationError
+import com.hypertino.hyperbus.transport.api.uri.UriPattern
 
 import scala.util.matching.Regex
 
@@ -23,6 +24,9 @@ object TextMatcher {
 
   def apply(value: Option[String], matchType: Option[String]): TextMatcher = matchType match {
     case Some("Any") ⇒ Any
+    case Some("Pattern") ⇒ PatternMatcher(value.getOrElse(
+      throw new TransportConfigurationError("Please provide value for Pattern matcher"))
+    )
     case Some("Regex") ⇒ RegexMatcher(value.getOrElse(
       throw new TransportConfigurationError("Please provide value for Regex matcher"))
     )
@@ -46,7 +50,7 @@ case class RegexMatcher(value: String) extends TextMatcher {
   def matchText(other: TextMatcher) = other match {
     case Specific(otherValue) ⇒ valueRegex.findFirstMatchIn(otherValue).isDefined
     case RegexMatcher(otherRegexValue) ⇒ otherRegexValue == value
-    case _ ⇒ other.matchText(this)
+    case _ ⇒ false
   }
 }
 
@@ -57,6 +61,15 @@ case class Specific(value: String) extends TextMatcher {
   }
 }
 
+case class PatternMatcher(value: String) extends TextMatcher {
+  lazy val uriPattern = UriPattern(value)
+
+  def matchText(other: TextMatcher) = other match {
+    case Specific(otherValue) ⇒ uriPattern.matchUri(otherValue).isDefined
+    case PatternMatcher(otherPattern) ⇒ value == otherPattern
+    case _ ⇒ other.matchText(this)
+  }
+}
 
 // todo: + ignore case flag, StartsWith, EndsWith
 

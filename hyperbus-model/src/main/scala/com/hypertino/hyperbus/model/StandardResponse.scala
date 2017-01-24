@@ -1,27 +1,30 @@
 package com.hypertino.hyperbus.model
 
+import java.io.Reader
+
 import com.hypertino.hyperbus.serialization._
 
 object StandardResponse {
 
-  def apply(responseHeader: ResponseHeader,
-            responseBodyJson: com.fasterxml.jackson.core.JsonParser,
-            bodyDeserializer: PartialFunction[ResponseHeader, ResponseBodyDeserializer]): Response[Body] = {
+  def apply(headersMap: HeadersMap,
+            reader: Reader,
+            bodyDeserializer: PartialFunction[ResponseHeaders, ResponseBodyDeserializer]): Response[Body] = {
+    val responseHeaders = ResponseHeaders(headersMap)
     val body =
-      if (bodyDeserializer.isDefinedAt(responseHeader))
-        bodyDeserializer(responseHeader)(responseHeader.contentType, responseBodyJson)
+      if (bodyDeserializer.isDefinedAt(responseHeaders))
+        bodyDeserializer(responseHeaders)(reader, responseHeaders.contentType)
       else
-        StandardResponseBody(responseHeader, responseBodyJson)
-    apply(responseHeader, body)
+        StandardResponseBody(reader, responseHeaders)
+
+    apply(body, responseHeaders)
   }
 
-  def apply(responseHeader: ResponseHeader, responseBodyJson: com.fasterxml.jackson.core.JsonParser): Response[Body] = {
-    apply(responseHeader, responseBodyJson, PartialFunction.empty)
-  }
+//  def apply(reader: Reader, responseHeaders: ResponseHeaders): Response[Body] = {
+//    apply(responseHeader, responseBodyJson, PartialFunction.empty)
+//  }
 
-  def apply(responseHeader: ResponseHeader, body: Body): Response[Body] = {
-    val headers = Headers.plain(responseHeader.headers)
-    responseHeader.status match {
+  def apply(body: Body, headers: ResponseHeaders): Response[Body] = {
+    headers.statusCode match {
       case Status.OK => Ok(body, headers)
       case Status.CREATED => Created(body.asInstanceOf[CreatedBody], headers)
       case Status.ACCEPTED => Accepted(body, headers)
