@@ -18,4 +18,8 @@ package object model {
     def empty = Map.empty[String, Value]
     def apply(elems: (String, Value)*): HeadersMap = (Map.newBuilder[String, Value] ++= elems).result()
   }
+
+  implicit class HeadersMapWrapper(val h: HeadersMap) extends AnyVal {
+    def safe(name: String): Value = h.getOrElse(name, throw new NoSuchHeaderException(name))
+  }
 }

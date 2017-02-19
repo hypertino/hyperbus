@@ -33,7 +33,7 @@ class InprocTransport(serialize: Boolean = false)
     //var result: Future[OUT] = null
 
     // todo: filter is redundant for inproc?
-    subscriptions.get(message.uri.pattern.specific).subRoutes.filter { subRoute ⇒
+    subscriptions.get(message.headers.hri.serviceAddress).subRoutes.filter { subRoute ⇒
       subRoute._1.requestMatcher.matchMessage(message)
     }.foreach {
       case (subKey, subscriptionList) =>
@@ -43,7 +43,7 @@ class InprocTransport(serialize: Boolean = false)
 
     if (!handled) {
       Future.failed {
-        new NoTransportRouteException(s"Handler is not found for ${message.uri} with header matchers: ${message.headers}")
+        new NoTransportRouteException(s"Handler is not found for service ${message.headers.hri.serviceAddress} with header: ${message.headers}")
       }
     }
     else if (isPublish) {

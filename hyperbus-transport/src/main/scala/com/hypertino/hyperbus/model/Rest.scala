@@ -3,11 +3,8 @@ package com.hypertino.hyperbus.model
 import java.io.{Reader, StringReader, StringWriter, Writer}
 
 import com.hypertino.binders.annotations.fieldName
-import com.hypertino.hyperbus.transport.api.uri.UriPattern
 
-import scala.collection.mutable
-
-case class Link(href: String, templated: Boolean = false, @fieldName("type") typ: Option[String] = None)
+case class Link(hri: HRI, @fieldName("type") typ: Option[String] = None)
 
 trait Body {
   def contentType: Option[String]
@@ -27,7 +24,7 @@ trait NoContentType {
 trait HalLinks {
   def links: Links
 }
-
+/*
 object Links {
   def apply(selfHref: String, templated: Boolean = false, typ: Option[String] = None): Links = {
     new LinksBuilder() self(selfHref, templated, typ) result()
@@ -86,6 +83,7 @@ class LinksBuilder(private [this] val args: mutable.Map[String, Either[Link, Seq
   }
   def result(): Links = args.toMap
 }
+*/
 
 trait Message[+B <: Body, +H <: Headers] {
   def headers: H
@@ -115,12 +113,12 @@ trait Message[+B <: Body, +H <: Headers] {
 
 trait Request[+B <: Body] extends Message[B, RequestHeaders] {
 
-  protected def assertHeaderValue(name: String, value: String): Unit = {
-    val v = headers.stringHeader(name)
-    if (v != value) {
-      throw new IllegalArgumentException(s"Incorrect $name value: $v != $value (headers?)")
-    }
-  }
+//  protected def assertHeaderValue(name: String, value: String): Unit = {
+//    val v = headers.stringHeader(name)
+//    if (v != value) {
+//      throw new IllegalArgumentException(s"Incorrect $name value: $v != $value (headers?)")
+//    }
+//  }
 }
 
 trait Response[+B <: Body] extends Message[B, ResponseHeaders] {
@@ -137,7 +135,7 @@ trait |[L <: Response[Body], R <: Response[Body]] extends Response[Body]
 trait ! extends Response[Body]
 
 trait RequestObjectApi[R <: Request[Body]] {
-  def uriPattern: UriPattern
+  def serviceAddress: String
 
   def method: String
 
@@ -159,13 +157,14 @@ trait RequestObjectApi[R <: Request[Body]] {
       stringReader.close()
     }
   }
-
+/*
   def withUriArgs(uri: String)(constructor: Map[String, String] ⇒ R): R = {
     uriPattern.matchUri(uri) match {
       case Some(map) ⇒ constructor(map)
       case None ⇒ throw new UriMatchException(uri, uriPattern)
     }
   }
+*/
 }
 
 trait ResponseObjectApi[PB <: Body, R <: Response[PB]] {
@@ -176,4 +175,4 @@ trait ResponseObjectApi[PB <: Body, R <: Response[PB]] {
   // def unapply[B <: PB](response: Response[PB]): Option[(B,Map[String,Seq[String]])] TODO: this doesn't works, find a workaround
 }
 
-class UriMatchException(val uri: String, val uriPattern: UriPattern, cause: Throwable = null) extends RuntimeException(s"$uri doesn't match pattern $uriPattern", cause)
+// class UriMatchException(val uri: String, val uriPattern: UriPattern, cause: Throwable = null) extends RuntimeException(s"$uri doesn't match pattern $uriPattern", cause)

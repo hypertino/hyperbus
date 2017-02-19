@@ -4,7 +4,7 @@ import org.slf4j.{Logger, MDC}
 
 object LogUtils {
 
-  implicit class ExtendConfig(log: Logger) {
+  implicit class ExtendConfig(val log: Logger) extends AnyVal {
     def trace(mdc: Map[String, Any], s: String) = {
       mdc.foreach(kv ⇒ MDC.put(kv._1, kv._2.toString))
       log.trace(s)

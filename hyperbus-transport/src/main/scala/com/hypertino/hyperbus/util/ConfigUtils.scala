@@ -8,7 +8,7 @@ object ConfigUtils {
 
   import scala.collection.JavaConversions._
 
-  implicit class ExtendConfig(config: Config) {
+  implicit class ExtendConfig(val config: Config) extends AnyVal {
     def getOptionString(key: String): Option[String] =
       if (config.hasPath(key)) Some(config.getString(key)) else None
 

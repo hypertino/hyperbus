@@ -51,8 +51,9 @@ class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Valu
     this
   }
 
-  def withUri(uri: String) = {
-    mapBuilder += Header.URI → Text(uri)
+  def withHRI(hri: HRI) = {
+    import com.hypertino.binders.value.ValueBinders._
+    mapBuilder += Header.HRI → hri.toValue
     this
   }
 

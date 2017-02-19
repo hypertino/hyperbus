@@ -3,7 +3,6 @@ package com.hypertino.hyperbus.transport.api
 import com.typesafe.config.{Config, ConfigFactory}
 import com.hypertino.hyperbus.model.{Body, Request}
 import com.hypertino.hyperbus.transport.api.matchers.{Any, RequestMatcher}
-import com.hypertino.hyperbus.transport.api.uri.UriPattern$
 import com.hypertino.hyperbus.util.ConfigUtils
 
 class TransportConfigurationError(message: String) extends RuntimeException(message)

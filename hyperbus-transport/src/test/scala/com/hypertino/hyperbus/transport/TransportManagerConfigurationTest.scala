@@ -62,7 +62,7 @@ class TransportManagerConfigurationTest extends FreeSpec with ScalaFutures with 
             {
               match: {
                 u: {
-                  value: "/topic/{userId}", type: Pattern
+                  value: "/topic/.*", type: Regex
                 }
               }
               transport: mock-server
@@ -78,7 +78,7 @@ class TransportManagerConfigurationTest extends FreeSpec with ScalaFutures with 
       sbc.clientRoutes.head.transport shouldBe a[MockClientTransport]
 
       sbc.serverRoutes should not be empty
-      sbc.serverRoutes.head.matcher.headers should contain theSameElementsAs Map("u" → PatternMatcher("/topic/{userId}"))
+      sbc.serverRoutes.head.matcher.headers should contain theSameElementsAs Map("u" → RegexMatcher("/topic/.*"))
       sbc.serverRoutes.head.transport shouldBe a[MockServerTransport]
     }
   }

@@ -4,42 +4,36 @@ import java.io.Writer
 import java.net.URI
 
 import com.hypertino.binders.value.Value
+import com.hypertino.binders.value.ValueBinders._
 
 trait Headers {
-  // todo: !!! rename this !!!
-  def map : HeadersMap
+  def all : HeadersMap
 
-  def stringHeaderOption(name: String): Option[String] = map.get(name).map(_.toString)
+  def messageId: String = all.safe(Header.MESSAGE_ID).toString
 
-  def stringHeader(name: String): String = stringHeaderOption(name).getOrElse(throw new NoSuchHeaderException(name))
+  def correlationId: Option[String] = all.get(Header.CORRELATION_ID).map(_.toString).orElse(Some(messageId))
 
-  def messageId: String = stringHeader(Header.MESSAGE_ID)
-
-  def correlationId: Option[String] = stringHeaderOption(Header.CORRELATION_ID).orElse(Some(messageId))
-
-  def contentType: Option[String] = stringHeaderOption(Header.CONTENT_TYPE)
+  def contentType: Option[String] = all.get(Header.CONTENT_TYPE).map(_.toString)
 
   def serialize(writer: Writer) : Unit = {
     import com.hypertino.binders.json.JsonBinders._
     implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
-    map.writeJson(writer)
+    all.writeJson(writer)
   }
 }
 
-case class RequestHeaders(map: HeadersMap) extends Headers {
-  lazy val parsedUri: URI = new URI(uri)
+case class RequestHeaders(all: HeadersMap) extends Headers {
+  def hri: HRI = all.safe(Header.HRI).to[HRI]
 
-  def uri: String = stringHeader(Header.URI)
-
-  def method: String = stringHeader(Header.METHOD)
+  def method: String = all.safe(Header.METHOD).toString
 }
 
 object RequestHeaders {
   val empty = RequestHeaders(Map.empty)
 }
 
-case class ResponseHeaders(map: HeadersMap) extends Headers {
-  lazy val statusCode: Int = map(Header.STATUS_CODE).toInt
+case class ResponseHeaders(all: HeadersMap) extends Headers {
+  lazy val statusCode: Int = all(Header.STATUS_CODE).toInt
 }
 
 object ResponseHeaders {

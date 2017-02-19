@@ -5,7 +5,7 @@ import java.io.{StringWriter, Writer}
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization.{RequestDeserializer, ResponseBaseDeserializer, ResponseDeserializer}
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
-import com.hypertino.hyperbus.transport.api.uri.UriPattern$
+
 import rx.lang.scala.Observer
 
 import scala.concurrent.Future

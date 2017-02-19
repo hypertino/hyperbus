@@ -5,9 +5,11 @@ import com.hypertino.hyperbus.model.{Header, RequestBase}
 import com.typesafe.config.ConfigValue
 
 case class RequestMatcher(headers: Map[String, TextMatcher]) {
+  def serviceAddressMatcher: Option[TextMatcher] = headers.get(Header.HRI)
+
   def matchMessage(message: RequestBase): Boolean = {
     headers.map { case (headerName, headerMatcher) ⇒
-      message.headers.map.get(headerName).map {
+      message.headers.all.get(headerName).map {
         case Lst(items) ⇒ items.exists(item ⇒ headerMatcher.matchText(Specific(item.toString)))
         case other ⇒ headerMatcher.matchText(Specific(other.toString))
       } getOrElse {
@@ -32,7 +34,7 @@ object RequestMatcher {
   val any = RequestMatcher(Any)
 
   def apply(uriMatcher: TextMatcher): RequestMatcher = new RequestMatcher(
-    Map(Header.URI → uriMatcher)
+    Map(Header.HRI → uriMatcher)
   )
 
   private[transport] def apply(config: ConfigValue): RequestMatcher = {
