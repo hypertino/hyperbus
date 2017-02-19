@@ -3,7 +3,6 @@ package com.hypertino.hyperbus.model
 import java.io.{Reader, StringReader, StringWriter, Writer}
 
 import com.hypertino.binders.annotations.fieldName
-import com.hypertino.binders.json.api.JsonParserApi
 import com.hypertino.hyperbus.transport.api.uri.UriPattern
 
 import scala.collection.mutable

@@ -202,7 +202,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         $newCompanion
       """
     )
-    println(block)
+    // println(block)
     block
   }
 

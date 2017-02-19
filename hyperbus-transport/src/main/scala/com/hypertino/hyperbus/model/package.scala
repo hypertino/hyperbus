@@ -2,6 +2,8 @@ package com.hypertino.hyperbus
 
 import com.hypertino.binders.value.Value
 
+import scala.collection.generic.{GenMapFactory, MapFactory}
+
 package object model {
   type HeadersMap = Map[String, Value]
   type Links = Map[String, Either[Link, Seq[Link]]]
@@ -14,5 +16,6 @@ package object model {
 
   object HeadersMap {
     def empty = Map.empty[String, Value]
+    def apply(elems: (String, Value)*): HeadersMap = (Map.newBuilder[String, Value] ++= elems).result()
   }
 }

@@ -1,5 +1,6 @@
 package com.hypertino.hyperbus.model
 
+import java.io.Reader
 import java.net.{URLDecoder, URLEncoder}
 
 import com.hypertino.binders.json.JsonBindersFactory
@@ -34,9 +35,9 @@ object QueryBody {
 
   def apply(content: Value): QueryBodyContainer = QueryBodyContainer(None, content)
 
-  def apply(contentType: Option[String], jsonParser: com.fasterxml.jackson.core.JsonParser): QueryBody = {
+  def apply(reader: Reader, contentType: Option[String]): QueryBody = {
     import com.hypertino.binders.json.JsonBinders._
-    JsonBindersFactory.findFactory().withJsonParser(jsonParser) { deserializer =>
+    JsonBindersFactory.findFactory().withReader(reader) { deserializer =>
       apply(contentType, deserializer.unbind[Value])
     }
   }

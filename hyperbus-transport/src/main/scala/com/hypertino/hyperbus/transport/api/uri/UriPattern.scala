@@ -3,6 +3,10 @@ package com.hypertino.hyperbus.transport.api.uri
 import scala.collection.{immutable, mutable}
 import scala.language.postfixOps
 
+/*
+todo: support scheme, service-name, queryString, etc.
+*/
+
 case class UriPattern(pattern: String) {
   lazy val tokens: Seq[Token] = skipConsecutiveSlashes(UriParser.tokens(pattern))
   lazy val params: Set[String] = tokens.collect {
