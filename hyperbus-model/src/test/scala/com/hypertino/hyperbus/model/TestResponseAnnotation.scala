@@ -3,7 +3,6 @@ package com.hypertino.hyperbus.model
 import java.io.ByteArrayOutputStream
 
 import com.hypertino.binders.annotations.fieldName
-import com.hypertino.binders.value.LstV
 import com.hypertino.hyperbus.model.annotations.body
 import org.scalatest.{FlatSpec, FreeSpec, Matchers}
 

@@ -122,7 +122,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
       Method.POST,
       DynamicBody(
         Some("test-1"),
-        ObjV("resourceData" → "ha ha")
+        Obj.from("resourceData" → "ha ha")
       )
     )
 
@@ -394,7 +394,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
     val hyperbus = newHyperbus(clientTransport, null)
     val futureResult = hyperbus <| DynamicRequest(UriPattern("/resources"), Method.POST,
-      DynamicBody(Some("test-1"), ObjV("resourceData" → "ha ha")))
+      DynamicBody(Some("test-1"), Obj.from("resourceData" → "ha ha")))
     whenReady(futureResult) { r =>
       sentEvents.size should equal(1)
     }

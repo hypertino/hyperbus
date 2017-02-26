@@ -3,6 +3,7 @@ package com.hypertino.hyperbus.model
 import java.io.{Reader, StringReader, StringWriter, Writer}
 
 import com.hypertino.binders.annotations.fieldName
+import com.hypertino.binders.value.Obj
 import com.hypertino.hyperbus.serialization.MessageReader
 
 import scala.collection.mutable
@@ -101,6 +102,7 @@ trait Message[+B <: Body, +H <: Headers] {
 
   def serialize(writer: Writer): Unit = {
     headers.serialize(writer)
+    writer.write("\r\n")
     body.serialize(writer)
   }
 
@@ -148,7 +150,7 @@ trait RequestObjectApi[R <: Request[Body]] {
 
   def method: String
 
-  def apply(reader: Reader, headersMap: HeadersMap): R
+  def apply(reader: Reader, headersObj: Obj): R
   def apply(reader: Reader): R = MessageReader(reader, apply(_, _))
   def apply(message: String): R = MessageReader(message, apply(_, _))
 
@@ -165,7 +167,7 @@ trait RequestObjectApi[R <: Request[Body]] {
 trait ResponseObjectApi[PB <: Body, R <: Response[PB]] {
   def statusCode: Int
   def apply[B <: PB](body: B, headers: ResponseHeaders): R
-  def apply[B <: PB](body: B, headersMap: HeadersMap)(implicit mcx: MessagingContext): R
+  def apply[B <: PB](body: B, headersObj: Obj)(implicit mcx: MessagingContext): R
   def apply[B <: PB](body: B)(implicit mcx: MessagingContext): R
   // def unapply[B <: PB](response: Response[PB]): Option[(B,Map[String,Seq[String]])] TODO: this doesn't works, find a workaround
 }

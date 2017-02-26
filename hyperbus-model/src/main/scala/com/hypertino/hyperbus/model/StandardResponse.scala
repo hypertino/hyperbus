@@ -2,14 +2,15 @@ package com.hypertino.hyperbus.model
 
 import java.io.Reader
 
+import com.hypertino.binders.value.Obj
 import com.hypertino.hyperbus.serialization._
 
 object StandardResponse {
 
-  def apply(headersMap: HeadersMap,
+  def apply(headersObj: Obj,
             reader: Reader,
             bodyDeserializer: PartialFunction[ResponseHeaders, ResponseBodyDeserializer]): Response[Body] = {
-    val responseHeaders = ResponseHeaders(headersMap)
+    val responseHeaders = ResponseHeaders(headersObj)
     val body =
       if (bodyDeserializer.isDefinedAt(responseHeaders))
         bodyDeserializer(responseHeaders)(reader, responseHeaders.contentType)

@@ -10,7 +10,6 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 
 package object model {
-  type HeadersMap = Map[String, Value]
   type Links = Map[String, Either[Link, Seq[Link]]]
   type RequestBase = Request[Body]
   type ResponseBase = Response[Body]
@@ -19,14 +18,9 @@ package object model {
     MessagingContext(requestBase.headers.correlationId)
   }
 
-  object HeadersMap {
-    def empty = Map.empty[String, Value]
-    def apply(elems: (String, Value)*): HeadersMap = (scala.collection.mutable.LinkedHashMap[String, Value]() ++= elems).toMap
-  }
-
-  implicit class HeadersMapWrapper(val h: HeadersMap) extends AnyVal {
-    def safe(name: String): Value = h.getOrElse(name, throw new NoSuchHeaderException(name))
-    def byPath(path: Seq[String]): Value = h.getOrElse(path.head, Null)(path.tail)
+  implicit class HeadersMapWrapper(val h: Obj) {
+    def safe(name: String): Value = h.v.getOrElse(name, throw new NoSuchHeaderException(name))
+    def byPath(path: Seq[String]): Value = h.v.getOrElse(path.head, Null)(path.tail)
   }
 
   implicit class ValueWrapper(val v: Value) extends AnyVal {
@@ -42,7 +36,7 @@ package object model {
   implicit object RequestBaseCanFuzzyMatchable extends CanFuzzyMatchable[RequestBase] {
     override def indexProperties(bloomFilter: TrieMap[Any, AtomicLong], a: RequestBase): Seq[Any] = {
       val r = mutable.MutableList[Any]()
-      a.headers.all.foreach { case (k, v) ⇒
+      a.headers.all.v.foreach { case (k, v) ⇒
         appendIndexProperties(bloomFilter, k, v, r)
       }
       r

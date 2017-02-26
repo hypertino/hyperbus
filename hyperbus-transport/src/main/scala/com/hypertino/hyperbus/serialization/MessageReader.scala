@@ -2,13 +2,33 @@ package com.hypertino.hyperbus.serialization
 
 import java.io.{Reader, StringReader}
 
-import com.hypertino.hyperbus.model.{Body, Headers, HeadersMap, Message}
+import com.fasterxml.jackson.core.{JsonFactory, JsonParser}
+import com.hypertino.binders.json.{JacksonParserAdapter, JsonBindersFactory}
+import com.hypertino.binders.value.{Obj, Value}
+import com.hypertino.hyperbus.model.{Body, Headers, Message}
 
 object MessageReader {
   def apply[M <: Message[_ <: Body,_ <: Headers]](reader: Reader, concreteDeserializer: MessageDeserializer[M]): M = {
-    import com.hypertino.binders.json.JsonBinders._
-    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
-    val headers = reader.readJson[HeadersMap]
+    val jacksonFactory = new JsonFactory()
+    jacksonFactory.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE)
+
+    val jp = jacksonFactory.createParser(reader)
+    val headers = try {
+      val adapter = new JacksonParserAdapter(jp)
+      val headers = JsonBindersFactory.findFactory().withJsonParserApi(adapter) { jpa ⇒
+        jpa.unbind[Value].asInstanceOf[Obj]
+      }
+
+      jp.nextToken()
+      val offset = jp.getTokenLocation.getCharOffset
+      reader.reset()
+      reader.skip(offset)
+      headers
+    }
+    finally {
+      jp.close()
+    }
+
     concreteDeserializer(reader, headers)
   }
 

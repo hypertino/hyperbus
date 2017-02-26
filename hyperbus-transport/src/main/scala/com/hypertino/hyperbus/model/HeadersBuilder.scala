@@ -5,31 +5,27 @@ import com.hypertino.binders.value._
 class HeadersBuilder(private[this] val mapBuilder: scala.collection.mutable.LinkedHashMap[String, Value]) {
   def this() = this(scala.collection.mutable.LinkedHashMap[String, Value]())
 
-  def this(headers: HeadersMap) = this {
-    scala.collection.mutable.LinkedHashMap() ++= headers
-  }
-
-  def +=(kv: (String, Value)) = {
-    mapBuilder += kv._1 → LstV(kv._2)
+  def +=(kv: (String, Value)): HeadersBuilder = {
+    mapBuilder += kv._1 → kv._2
     this
   }
 
-  def ++=(headers: HeadersMap) = {
+  def ++=(headers: Obj): HeadersBuilder = {
+    mapBuilder ++= headers.v
+    this
+  }
+
+  def ++=(headers: Seq[(String, Value)]): HeadersBuilder = {
     mapBuilder ++= headers
     this
   }
 
-  def ++=(headers: Seq[(String, Value)]) = {
-    mapBuilder ++= headers
-    this
-  }
-
-  def withCorrelation(correlationId: Option[String]) = {
+  def withCorrelation(correlationId: Option[String]): HeadersBuilder = {
     mapBuilder ++= correlationId.map(c ⇒ Header.CORRELATION_ID → Text(c))
     this
   }
 
-  def withContext(mcx: com.hypertino.hyperbus.model.MessagingContext) = {
+  def withContext(mcx: com.hypertino.hyperbus.model.MessagingContext): HeadersBuilder = {
     withMessageId(mcx.createMessageId())
     withCorrelation(mcx.correlationId)
   }
@@ -44,17 +40,17 @@ class HeadersBuilder(private[this] val mapBuilder: scala.collection.mutable.Link
     this
   }
 
-  def withMethod(method: String) = {
+  def withMethod(method: String): HeadersBuilder = {
     mapBuilder += Header.METHOD → Text(method)
     this
   }
 
-  def withHRI(hri: HRI) = {
+  def withHRI(hri: HRI): HeadersBuilder = {
     mapBuilder += Header.HRI → hri.toValue
     this
   }
 
-  def result(): HeadersMap = {
-    mapBuilder.filterNot(_._2.isEmpty).toMap
+  def result(): Obj = {
+    new Obj(mapBuilder.filterNot(_._2.isEmpty))
   }
 }

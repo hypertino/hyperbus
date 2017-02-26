@@ -2,7 +2,7 @@ package com.hypertino.hyperbus.model
 import java.io.{Reader, Writer}
 
 import com.hypertino.binders.json.JsonBindersFactory
-import com.hypertino.binders.value.Value
+import com.hypertino.binders.value.{Obj, Value}
 
 trait DynamicBody extends Body with HalLinks {
   def content: Value
@@ -48,19 +48,20 @@ object DynamicRequest extends RequestObjectApi[DynamicRequest] {
   override def serviceAddress: String = invalidOperation("serviceAddress")
   override def method: String = invalidOperation("serviceAddress")
 
-  def apply(reader: Reader, headersMap: HeadersMap): DynamicRequest = {
-    val headers = RequestHeaders(headersMap)
+  def apply(reader: Reader, headersObj: Obj): DynamicRequest = {
+    val headers = RequestHeaders(headersObj)
     val body = DynamicBody(reader, headers.contentType)
     new DynamicRequest(body, headers)
   }
 
-  def apply(hri: HRI, method: String, body: DynamicBody, headers: HeadersMap)
+  def apply(hri: HRI, method: String, body: DynamicBody, headersObj: Obj)
            (implicit mcx: MessagingContext): DynamicRequest = {
-    DynamicRequest(body, RequestHeaders(new HeadersBuilder(headers)
+    DynamicRequest(body, RequestHeaders(new HeadersBuilder()
       .withHRI(hri)
       .withMethod(method)
       .withContentType(body.contentType)
       .withContext(mcx)
+      .++=(headersObj)
       .result())
     )
   }
@@ -76,7 +77,7 @@ object DynamicRequest extends RequestObjectApi[DynamicRequest] {
     )
   }
 
-  def apply(body: DynamicBody, headers: HeadersMap): DynamicRequest = {
+  def apply(body: DynamicBody, headers: Obj): DynamicRequest = {
     DynamicRequest(body, RequestHeaders(headers))
   }
 
