@@ -1,14 +1,12 @@
 package com.hypertino.hyperbus.model
 
-import com.hypertino.binders.value.{LstV, Text, Value}
+import com.hypertino.binders.value._
 
-import scala.collection.mutable
-
-class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Value), HeadersMap]) {
-  def this() = this(Map.newBuilder[String, Value])
+class HeadersBuilder(private[this] val mapBuilder: scala.collection.mutable.LinkedHashMap[String, Value]) {
+  def this() = this(scala.collection.mutable.LinkedHashMap[String, Value]())
 
   def this(headers: HeadersMap) = this {
-    Map.newBuilder[String, Value] ++= headers
+    scala.collection.mutable.LinkedHashMap() ++= headers
   }
 
   def +=(kv: (String, Value)) = {
@@ -52,12 +50,11 @@ class HeadersBuilder(private[this] val mapBuilder: mutable.Builder[(String, Valu
   }
 
   def withHRI(hri: HRI) = {
-    import com.hypertino.binders.value.ValueBinders._
     mapBuilder += Header.HRI → hri.toValue
     this
   }
 
   def result(): HeadersMap = {
-    mapBuilder.result().filterNot(_._2.isEmpty)
+    mapBuilder.filterNot(_._2.isEmpty).toMap
   }
 }

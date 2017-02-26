@@ -2,37 +2,35 @@ package com.hypertino.hyperbus.util
 
 import scala.collection.concurrent.TrieMap
 
-trait ComplexElement[ME, REMOVE] {
-  def upsert(upsertPart: ME): ME
-
-  def remove(removePart: REMOVE): ME
-
-  def isEmpty: Boolean
+trait CanComplexElement[T] {
+  def upsert(existing: T, upsert: T): T
+  def remove[A](existing: T, remove: A): T
+  def isEmpty(existing: T): Boolean
 }
 
 // todo: this is too complicated, refactoring or documentation is needed
-class ComplexTrieMap[K, REMOVE, V <: ComplexElement[V, REMOVE]] {
+class ComplexTrieMap[K, V] {
   protected val map = new TrieMap[K, V]
 
   def get(key: K): Option[V] = map.get(key)
 
   def getOrElse(key: K, default: => V): V = map.getOrElse(key, default)
 
-  def upsert(key: K, value: V): Unit = {
+  def upsert(key: K, value: V)(implicit evidence: CanComplexElement[V]): Unit = {
     this.synchronized {
       map.putIfAbsent(key, value).map { existing =>
-        val n = existing.upsert(value)
+        val n = evidence.upsert(existing, value)
         val x = map.put(key, n)
         x
       }
     }
   }
 
-  def remove(key: K, value: REMOVE): Unit = {
+  def remove[A](key: K, value: A)(implicit evidence: CanComplexElement[V]): Unit = {
     this.synchronized {
       map.get(key).map { existing =>
-        val nv = existing.remove(value)
-        if (nv.isEmpty)
+        val nv = evidence.remove(existing, value)
+        if (evidence.isEmpty(nv))
           map.remove(key)
         else
           map.put(key, nv)
@@ -44,5 +42,5 @@ class ComplexTrieMap[K, REMOVE, V <: ComplexElement[V, REMOVE]] {
 
   def map[O](code: ((K, V)) ⇒ O): Iterable[O] = map.map(code)
 
-  def clear() = map.clear()
+  def clear(): Unit = map.clear()
 }

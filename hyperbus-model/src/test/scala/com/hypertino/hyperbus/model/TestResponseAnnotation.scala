@@ -10,7 +10,7 @@ import org.scalatest.{FlatSpec, FreeSpec, Matchers}
 @body("test-created-body")
 case class TestCreatedBody(resourceId: String,
                            @fieldName("_links") links: Links = Links(
-                             DefLink.LOCATION -> Left(Link("/resources/{resourceId}", templated = true))))
+                             DefLink.LOCATION -> Left(Link(HRI("hb://resources/{resourceId}")))))
   extends CreatedBody
 
 // with NoContentType

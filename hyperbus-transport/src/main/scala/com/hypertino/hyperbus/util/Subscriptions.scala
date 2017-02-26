@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.concurrent.TrieMap
 import scala.util.Random
 
+/*
 case class SubscriptionWithId[T](subscriptionId: String, subscription: T)
 
 class SubscriptionList[T](private val seq: IndexedSeq[SubscriptionWithId[T]]) {
@@ -98,3 +99,5 @@ class Subscriptions[K, T] {
     routeKeyById.clear()
   }
 }
+
+*/

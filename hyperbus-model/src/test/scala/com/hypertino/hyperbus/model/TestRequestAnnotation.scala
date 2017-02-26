@@ -5,9 +5,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value._
 import com.hypertino.hyperbus.model.annotations.{body, request}
-import com.hypertino.hyperbus.serialization._
-import com.hypertino.hyperbus.transport.api.uri.UriPattern$
-import org.scalatest.{FlatSpec, FreeSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 
 @request(Method.POST, "hb://test")
 case class TestPost1(id: String, body: TestBody1) extends Request[TestBody1]
@@ -22,14 +20,14 @@ object TestPost1 extends RequestObjectApi[TestPost1] with TestPost1ObjectApi {
 
 @body("test-inner-body")
 case class TestInnerBody(innerData: String) extends Body {
-  def toEmbedded(links: Links = Links("/test-inner-resource")) = TestInnerBodyEmbedded(innerData, links)
+  def toEmbedded(links: Links = Links(HRI("hb://test-inner-resource"))) = TestInnerBodyEmbedded(innerData, links)
 }
 
 object TestInnerBody extends BodyObjectApi[TestInnerBody]
 
 @body("test-inner-body")
 case class TestInnerBodyEmbedded(innerData: String,
-                                 @fieldName("_links") links: Links = Links("/test-inner-resource")) extends Body with HalLinks {
+                                 @fieldName("_links") links: Links = Links(HRI("hb://test-inner-resource"))) extends Body with HalLinks {
 
   def toOuter: TestInnerBody = TestInnerBody(innerData)
 }
@@ -57,18 +55,18 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
 
   "TestPost1" should "serialize" in {
     val post1 = TestPost1("155", TestBody1("abcde"))
-    post1.serializeToString should equal("""{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"messageId":"123","method":"post","contentType":"test-body-1"},"body":{"data":"abcde"}}""")
+    post1.serializeToString should equal("""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"post","t":"test-body-1","i":"123"}{"data":"abcde"}""")
   }
 
   "TestPost1" should "serialize with headers" in {
     val post1 = TestPost1("155", TestBody1("abcde"), HeadersMap("test" → LstV("a")))
-    post1.serializeToString should equal("""{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"test":["a"],"messageId":"123","method":"post","contentType":"test-body-1"},"body":{"data":"abcde"}}""")
+    post1.serializeToString should equal("""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"post","t":"test-body-1","i":"123","test":["a"]}{"data":"abcde"}""")
   }
 
   "TestPost1" should "deserialize" in {
     val str = """{"uri":{"pattern":"/test-post-1/155"},"headers":{"method":"post","contentType":"test-body-1","messageId":"123"},"body":{"data":"abcde"}}"""
     val post = TestPost1(str)
-    post.headers.uri should equal("/test-post-1/{id}")
+    post.headers.hri should equal(HRI("hb://test-post-1", ObjV("id" -> "155")))
     post.headers.contentType should equal(Some("test-body-1"))
     post.headers.method should equal("post")
     post.headers.messageId should equal("123")

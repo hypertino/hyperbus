@@ -1,19 +1,23 @@
 package com.hypertino.hyperbus.transport
 
+import java.io.StringReader
+
 import com.typesafe.config.Config
-import com.hypertino.hyperbus.model.{Body, Request, RequestBase, ResponseBase}
+import com.hypertino.hyperbus.model.{Body, Message, Request, RequestBase, ResponseBase}
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
-import com.hypertino.hyperbus.transport.inproc.{InprocSubscription, InprocSubscriptionHandler, SubKey}
+import com.hypertino.hyperbus.transport.inproc.{InprocCommandSubscription, InprocEventSubscription}
 import com.hypertino.hyperbus.util.ConfigUtils._
-import com.hypertino.hyperbus.util.Subscriptions
-import org.slf4j.LoggerFactory
+import com.hypertino.hyperbus.util.FuzzyIndex
+import org.slf4j.{Logger, LoggerFactory}
 import rx.lang.scala.Observer
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Random
 
+// todo: log messages?
 class InprocTransport(serialize: Boolean = false)
                      (implicit val executionContext: ExecutionContext) extends ClientTransport with ServerTransport {
 
@@ -23,36 +27,71 @@ class InprocTransport(serialize: Boolean = false)
     scala.concurrent.ExecutionContext.global // todo: configurable ExecutionContext like in akka?
   )
 
-  protected val subscriptions = new Subscriptions[SubKey, InprocSubscriptionHandler[_]]
-  protected val log = LoggerFactory.getLogger(this.getClass)
+  protected val commandSubscriptions = new FuzzyIndex[InprocCommandSubscription]
+  protected val eventSubscriptions = new FuzzyIndex[InprocEventSubscription]
+  protected val log: Logger = LoggerFactory.getLogger(this.getClass)
 
   // todo: refactor this method, it's awful
   protected def _ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer, isPublish: Boolean): Future[_] = {
-    val resultPromise = Promise[ResponseBase]
-    var handled = false
-    //var result: Future[OUT] = null
+    // todo: handle serialization exceptions
 
-    // todo: filter is redundant for inproc?
-    subscriptions.get(message.headers.hri.serviceAddress).subRoutes.filter { subRoute ⇒
-      subRoute._1.requestMatcher.matchMessage(message)
-    }.foreach {
-      case (subKey, subscriptionList) =>
-        val subscriber = subscriptionList.getRandomSubscription
-        handled = subscriber.handleCommandOrEvent(serialize,subKey,message,responseDeserializer,isPublish,resultPromise) || handled
+    val resultPromise = Promise[Any]
+    val serialized = serialize(message)
+    val handled = getRandom(commandSubscriptions
+      .lookupAll(message)).map { subscription ⇒
+
+      val request: RequestBase = serialized.map { reader ⇒
+        MessageReader(reader, subscription.inputDeserializer)
+      } getOrElse {
+        message
+      }
+
+      val resultFuture = subscription.handler(request)
+      if (serialize) {
+        resultPromise.completeWith {
+          resultFuture.map { result ⇒
+            MessageReader(new StringReader(result.serializeToString), responseDeserializer)
+          } recover {
+            case r: ResponseBase ⇒
+              MessageReader(new StringReader(r.serializeToString), responseDeserializer)
+          }
+        }
+      }
+      else {
+        resultPromise.completeWith(resultFuture)
+      }
+      true
+    } getOrElse {
+      false
     }
 
-    if (!handled) {
+    if (!isPublish && !handled) {
       Future.failed {
-        new NoTransportRouteException(s"Handler is not found for service ${message.headers.hri.serviceAddress} with header: ${message.headers}")
+        new NoTransportRouteException(s"${message.headers.hri.serviceAddress} is not found. Headers: ${message.headers}")
       }
     }
-    else if (isPublish) {
+    else {
+      eventSubscriptions
+        .lookupAll(message)
+        .groupBy(_.group)
+        .foreach { subscriptions ⇒
+          val subscription = getRandom(subscriptions._2).get
+
+          val request: RequestBase = serialized.map { reader ⇒
+            MessageReader(reader, subscription.inputDeserializer)
+          } getOrElse {
+            message
+          }
+
+          subscription.handler.onNext(request)
+        }
+    }
+
+    if (isPublish) {
       Future.successful {
         new PublishResult {
           def sent = Some(true)
-
           def offset = None
-
           override def toString = s"PublishResult(sent=Some(true),offset=None)"
         }
       }
@@ -73,47 +112,61 @@ class InprocTransport(serialize: Boolean = false)
                          inputDeserializer: RequestDeserializer[REQ])
                         (handler: (REQ) => Future[ResponseBase]): Future[Subscription] = {
 
-    if (matcher.uri.isEmpty)
-      throw new IllegalArgumentException("requestMatcher.uri is empty")
-
-    val id = subscriptions.add(
-      matcher.uri.get.pattern.specific, // currently only Specific url's are supported, todo: add Regex, Any, etc...
-      SubKey(None, matcher),
-      InprocSubscriptionHandler(inputDeserializer, Left(handler))
-    )
-    Future.successful(InprocSubscription(id))
+    val s = InprocCommandSubscription(matcher, inputDeserializer, handler.asInstanceOf[RequestBase ⇒ Future[ResponseBase]])
+    commandSubscriptions.add(s)
+    Future.successful(s)
   }
 
   override def onEvent[REQ <: Request[Body]](matcher: RequestMatcher,
                        groupName: String,
                        inputDeserializer: RequestDeserializer[REQ],
                        observer: Observer[REQ]): Future[Subscription] = {
-    if (matcher.uri.isEmpty)
-      throw new IllegalArgumentException("requestMatcher.uri")
 
-    val id = subscriptions.add(
-      matcher.uri.get.pattern.specific, // currently only Specific url's are supported, todo: add Regex, Any, etc...
-      SubKey(Some(groupName), matcher),
-      InprocSubscriptionHandler(inputDeserializer, Right(observer))
-    )
-    Future.successful(InprocSubscription(id))
+    val s = InprocEventSubscription(matcher, groupName, inputDeserializer, observer.asInstanceOf[Observer[RequestBase]])
+    eventSubscriptions.add(s)
+    Future.successful(s)
   }
 
   override def off(subscription: Subscription): Future[Unit] = {
     subscription match {
-      case i: InprocSubscription ⇒
+      case i: InprocCommandSubscription ⇒
         Future {
-          subscriptions.remove(i.id)
+          commandSubscriptions.remove(i)
         }
+
+      case i: InprocEventSubscription ⇒
+        Future {
+          eventSubscriptions.remove(i)
+        }
+
       case other ⇒
         Future.failed {
-          new ClassCastException(s"InprocSubscription expected but ${other.getClass} is received")
+          new ClassCastException(s"InprocSubscription expected instead of ${other.getClass}")
         }
     }
   }
 
   override def shutdown(duration: FiniteDuration): Future[Boolean] = {
-    subscriptions.clear()
+    eventSubscriptions.clear()
+    commandSubscriptions.clear()
     Future.successful(true)
+  }
+
+  private def serialize(message: Message[_,_]): Option[StringReader] = {
+    if (serialize) {
+      Some(new StringReader(message.serializeToString))
+    }
+    else {
+      None
+    }
+  }
+
+  private val random = new Random()
+  def getRandom[T](seq: Seq[T]): Option[T] = {
+    val size = seq.size
+    if (size > 1)
+      Some(seq(random.nextInt(size)))
+    else
+      seq.headOption
   }
 }

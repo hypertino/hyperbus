@@ -1,11 +1,8 @@
 package com.hypertino.hyperbus.model
-
-import java.io._
+import java.io.{Reader, Writer}
 
 import com.hypertino.binders.json.JsonBindersFactory
-import com.hypertino.binders.value._
-import com.hypertino.hyperbus.serialization.MessageDeserializer
-import com.hypertino.hyperbus.transport.api.uri.UriPattern
+import com.hypertino.binders.value.Value
 
 trait DynamicBody extends Body with HalLinks {
   def content: Value
@@ -48,20 +45,19 @@ case class DynamicRequest(body: DynamicBody,
                           headers: RequestHeaders) extends Request[DynamicBody]
 
 object DynamicRequest extends RequestObjectApi[DynamicRequest] {
-  def uriPattern: UriPattern = ???
-
-  def method: String = ???
+  override def serviceAddress: String = invalidOperation("serviceAddress")
+  override def method: String = invalidOperation("serviceAddress")
 
   def apply(reader: Reader, headersMap: HeadersMap): DynamicRequest = {
-    val requestHeaders = RequestHeaders(headersMap)
-    val body = DynamicBody(reader, requestHeaders.contentType)
-    new DynamicRequest(body, requestHeaders)
+    val headers = RequestHeaders(headersMap)
+    val body = DynamicBody(reader, headers.contentType)
+    new DynamicRequest(body, headers)
   }
 
-  def apply(uri: String, method: String, body: DynamicBody, headers: HeadersMap)
+  def apply(hri: HRI, method: String, body: DynamicBody, headers: HeadersMap)
            (implicit mcx: MessagingContext): DynamicRequest = {
     DynamicRequest(body, RequestHeaders(new HeadersBuilder(headers)
-      .withUri(uri)
+      .withHRI(hri)
       .withMethod(method)
       .withContentType(body.contentType)
       .withContext(mcx)
@@ -69,10 +65,10 @@ object DynamicRequest extends RequestObjectApi[DynamicRequest] {
     )
   }
 
-  def apply(uri: String, method: String, body: DynamicBody)
+  def apply(hri: HRI, method: String, body: DynamicBody)
            (implicit mcx: MessagingContext): DynamicRequest = {
     DynamicRequest(body, RequestHeaders(new HeadersBuilder()
-      .withUri(uri)
+      .withHRI(hri)
       .withMethod(method)
       .withContentType(body.contentType)
       .withContext(mcx)
@@ -83,4 +79,6 @@ object DynamicRequest extends RequestObjectApi[DynamicRequest] {
   def apply(body: DynamicBody, headers: HeadersMap): DynamicRequest = {
     DynamicRequest(body, RequestHeaders(headers))
   }
+
+  private def invalidOperation(name: String): String = throw new UnsupportedOperationException(s"DynamicRequest.$name")
 }

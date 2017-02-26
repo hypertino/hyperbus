@@ -63,7 +63,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       ValDef(field.mods, field.name, field.tpt, rhs)
     }
 
-    val queryFields = fieldsExceptHeaders.filterNot(_.name.toString == bodyFieldName)
+    val queryFields = fieldsExceptHeaders.filterNot(_.name.decodedName == bodyFieldName.decodedName)
 
     val newClass =
       q"""
@@ -124,14 +124,13 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     }
     else {
       q"""
-          import com.hypertino.binders.value.ValueBinders._
-          com.hypertino.binders.value.ObjV(..${queryFields.map(_.name)})
+          com.hypertino.binders.value.ObjV(..${queryFields.map(f ⇒ q"${f.name.decodedName.toString} -> ${f.name}")})
       """
     }
 
     val ctxVal = fresh("ctx")
     val bodyVal = fresh("body")
-    val requestHeadersVal = fresh("requestHeaders")
+    val headersVal = fresh("headers")
     val argsVal = fresh("args")
     val hriVal = fresh("hri")
     val companionExtra =
@@ -139,11 +138,11 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         def apply(..${fieldsExceptHeaders.map(stripDefaultValue)}, headersMap: com.hypertino.hyperbus.model.HeadersMap)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
 
-          val $hriVal = com.hypertino.hyperbus.model.HRI(${className.toTermName}.service, $query)
+          val $hriVal = com.hypertino.hyperbus.model.HRI(${className.toTermName}.serviceAddress, $query)
 
           new $className(..${fieldsExceptHeaders.map(_.name)},
             headers = com.hypertino.hyperbus.model.RequestHeaders(new com.hypertino.hyperbus.model.HeadersBuilder(headersMap)
-              .withUri($hriVal)
+              .withHRI($hriVal)
               .withMethod(${className.toTermName}.method)
               .withContentType(body.contentType)
               .withContext(mcx)
@@ -155,23 +154,23 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         ..$defMethods
 
         def apply(reader: java.io.Reader, headersMap: com.hypertino.hyperbus.model.HeadersMap): $className = {
-          val $requestHeadersVal = com.hypertino.hyperbus.model.RequestHeaders(headersMap)
-          val $bodyVal = ${bodyType.toTermName}(reader, $requestHeadersVal.contentType)
+          val $headersVal = com.hypertino.hyperbus.model.RequestHeaders(headersMap)
+          val $bodyVal = ${bodyType.toTermName}(reader, $headersVal.contentType)
 
           //todo: typed uri parts? int/long, etc
+          //todo: uri part naming (fieldName?)
+          //todo: names starting with _
 
-          withUriArgs($requestHeadersVal.uri) { args =>
-            new $className(
-              ..${
-                  fieldsExceptHeaders.filterNot(_.name == bodyFieldName).map { field ⇒
-                  q"${field.name} = args(${field.name.toString})"
-                }
-              },
-              $bodyFieldName = $bodyVal,
-              headers = $requestHeadersVal,
-              plain__init = true
-            )
-          }
+          new $className(
+            ..${
+                queryFields.map { field ⇒
+                q"${field.name} = $headersVal.hri.query.${field.name}.to[${field.tpt}]"
+              }
+            },
+            $bodyFieldName = $bodyVal,
+            headers = $headersVal,
+            plain__init = true
+          )
         }
 
         def unapply(request: $className) = Some((
@@ -187,12 +186,15 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       q"""
           object $companion extends ..$bases {
             ..$body
+
+            import com.hypertino.binders.value._
             ..$companionExtra
           }
         """
     } getOrElse {
       q"""
         object ${className.toTermName} extends com.hypertino.hyperbus.model.RequestObjectApi[${className.toTypeName}] {
+          import com.hypertino.binders.value._
           ..$companionExtra
         }
       """
@@ -204,7 +206,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         $newCompanion
       """
     )
-    // println(block)
+    println(block)
     block
   }
 

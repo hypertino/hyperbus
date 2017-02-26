@@ -4,7 +4,6 @@ import java.io.Writer
 import java.net.URI
 
 import com.hypertino.binders.value.Value
-import com.hypertino.binders.value.ValueBinders._
 
 trait Headers {
   def all : HeadersMap

@@ -3,8 +3,11 @@ package com.hypertino.hyperbus.model
 import java.io.{Reader, StringReader, StringWriter, Writer}
 
 import com.hypertino.binders.annotations.fieldName
+import com.hypertino.hyperbus.serialization.MessageReader
 
-case class Link(hri: HRI, @fieldName("type") typ: Option[String] = None)
+import scala.collection.mutable
+
+case class Link(@fieldName("r") hri: HRI, @fieldName("type") typ: Option[String] = None)
 
 trait Body {
   def contentType: Option[String]
@@ -24,39 +27,44 @@ trait NoContentType {
 trait HalLinks {
   def links: Links
 }
-/*
+
 object Links {
-  def apply(selfHref: String, templated: Boolean = false, typ: Option[String] = None): Links = {
-    new LinksBuilder() self(selfHref, templated, typ) result()
+  def apply(selfRef: HRI, typ: Option[String] = None): Links = {
+    builder() self(selfRef, typ) result()
   }
 
-  def location(locationHref: String, templated: Boolean = false, typ: Option[String] = None): Links = {
-    new LinksBuilder() location (locationHref, templated, typ) result()
+  def location(locationRef: HRI, typ: Option[String] = None): Links = {
+    builder() location (locationRef, typ) result()
   }
 
-  def apply(key: String, link: Link): Links = new LinksBuilder() add(key, link) result()
+  def apply(key: String, link: Link): Links = builder() add(key, link) result()
 
   def apply(vargs: (String, Either[Link, Seq[Link]])*): Links = {
-    new LinksBuilder() add vargs result()
+    builder() add vargs result()
   }
+
+  def builder(): LinksBuilder = new LinksBuilder()
 }
 
 class LinksBuilder(private [this] val args: mutable.Map[String, Either[Link, Seq[Link]]]) {
   def this() = this(mutable.Map[String, Either[Link, Seq[Link]]]())
 
-  def self(selfHref: String, templated: Boolean = true, typ: Option[String] = None) = {
-    args += DefLink.SELF → Left(Link(selfHref, templated))
+  def self(selfRef: HRI, typ: Option[String] = None): LinksBuilder = {
+    args += DefLink.SELF → Left(Link(selfRef, typ))
     this
   }
-  def location(locationHref: String, templated: Boolean = true, typ: Option[String] = None) = {
-    args += DefLink.LOCATION → Left(Link(locationHref, templated))
+
+  def location(locationRef: HRI, typ: Option[String] = None): LinksBuilder = {
+    args += DefLink.LOCATION → Left(Link(locationRef, typ))
     this
   }
-  def add(key: String, href: String, templated: Boolean = true, typ: Option[String] = None): LinksBuilder = {
-    add(key, Link(href, templated, typ))
+
+  def add(key: String, ref: HRI, typ: Option[String] = None): LinksBuilder = {
+    add(key, Link(ref, typ))
     this
   }
-  def add(key: String, link : Link) = {
+
+  def add(key: String, link : Link): LinksBuilder = {
     args.get(key) match {
       case Some(Left(existingLink)) ⇒
         args += key → Right(Seq(existingLink, link))
@@ -69,6 +77,7 @@ class LinksBuilder(private [this] val args: mutable.Map[String, Either[Link, Seq
     }
     this
   }
+
   def add(links: Seq[(String, Either[Link, Seq[Link]])]): LinksBuilder = {
     if (args.isEmpty) {
       args ++= links
@@ -83,7 +92,7 @@ class LinksBuilder(private [this] val args: mutable.Map[String, Either[Link, Seq
   }
   def result(): Links = args.toMap
 }
-*/
+
 
 trait Message[+B <: Body, +H <: Headers] {
   def headers: H
@@ -140,24 +149,10 @@ trait RequestObjectApi[R <: Request[Body]] {
   def method: String
 
   def apply(reader: Reader, headersMap: HeadersMap): R
+  def apply(reader: Reader): R = MessageReader(reader, apply(_, _))
+  def apply(message: String): R = MessageReader(message, apply(_, _))
 
-  def apply(reader: Reader): R = {
-    import com.hypertino.binders.json.JsonBinders._
-    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
-    val headers = reader.readJson[HeadersMap]
-    apply(reader, headers)
-  }
-
-  def apply(message: String): R = {
-    val stringReader = new StringReader(message)
-    try {
-      apply(stringReader)
-    }
-    finally {
-      stringReader.close()
-    }
-  }
-/*
+  /*
   def withUriArgs(uri: String)(constructor: Map[String, String] ⇒ R): R = {
     uriPattern.matchUri(uri) match {
       case Some(map) ⇒ constructor(map)

@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.model
 
 import com.hypertino.binders.annotations.fieldName
-import com.hypertino.binders.value.Value
+import com.hypertino.binders.value.{Null, Value}
 
-case class HRI(@fieldName(HeaderHRI.SERVICE_ADDRESS) serviceAddress: String,
-               @fieldName(HeaderHRI.QUERY) query: Value)
+case class HRI(@fieldName("a") serviceAddress: String,
+               @fieldName("q") query: Value = Null)

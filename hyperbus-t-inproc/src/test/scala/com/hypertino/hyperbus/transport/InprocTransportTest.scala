@@ -6,7 +6,7 @@ import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.model.annotations.{body, request, response}
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
-import com.hypertino.hyperbus.transport.api.uri.UriPattern$
+
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FreeSpec, Matchers}
 import rx.lang.scala.{Observer, Subscriber}
