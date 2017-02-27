@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.transport.api.matchers
 
 import com.hypertino.binders.value.Lst
-import com.hypertino.hyperbus.model.{Header, RequestBase}
+import com.hypertino.hyperbus.model.{Header, HeaderHRI, RequestBase}
 import com.hypertino.hyperbus.util.{FuzzyIndexItemMetaInfo, FuzzyMatcher}
 import com.typesafe.config.ConfigValue
 
@@ -48,9 +48,10 @@ case class RequestMatcher(headers: Map[String, TextMatcher]) extends FuzzyMatche
 
 object RequestMatcher {
   val any = RequestMatcher(Any)
+  private val SA_KEY = Header.HRI + "." + HeaderHRI.SERVICE_ADDRESS
 
-  def apply(uriMatcher: TextMatcher): RequestMatcher = new RequestMatcher(
-    Map(Header.HRI → uriMatcher)
+  def apply(serviceAddressMatcher: TextMatcher): RequestMatcher = new RequestMatcher(
+    Map(SA_KEY → serviceAddressMatcher)
   )
 
   private[transport] def apply(config: ConfigValue): RequestMatcher = {

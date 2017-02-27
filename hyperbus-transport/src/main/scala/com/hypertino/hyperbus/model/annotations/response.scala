@@ -132,11 +132,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
           }
         """
     } getOrElse {
-      q"""
-        object ${className.toTermName} extends com.hypertino.hyperbus.model.ResponseObjectApi[Body, ${className.toTypeName}] {
-          ..$companionExtra
-        }
-      """
+      c.abort(c.enclosingPosition, s"Companion object for $className isn't found")
     }
 
     val block = q"""
@@ -144,7 +140,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
         $newCompanion
       """
 
-    //println(block)
+    println(block)
 
     c.Expr(
       block

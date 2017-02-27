@@ -7,8 +7,8 @@ import com.hypertino.hyperbus.serialization._
 
 object StandardResponse {
 
-  def apply(headersObj: Obj,
-            reader: Reader,
+  def apply(reader: Reader,
+            headersObj: Obj,
             bodyDeserializer: PartialFunction[ResponseHeaders, ResponseBodyDeserializer]): Response[Body] = {
     val responseHeaders = ResponseHeaders(headersObj)
     val body =

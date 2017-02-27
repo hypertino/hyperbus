@@ -85,18 +85,18 @@ class InprocTransport(serialize: Boolean = false)
 
           subscription.handler.onNext(request)
         }
-    }
 
-    if (isPublish) {
-      Future.successful {
-        new PublishResult {
-          def sent = Some(true)
-          def offset = None
-          override def toString = s"PublishResult(sent=Some(true),offset=None)"
+      if (isPublish) {
+        Future.successful {
+          new PublishResult {
+            def sent = Some(true)
+            def offset = None
+            override def toString = s"PublishResult(sent=Some(true),offset=None)"
+          }
         }
+      } else {
+        resultPromise.future
       }
-    } else {
-      resultPromise.future
     }
   }
 
