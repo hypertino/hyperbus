@@ -81,5 +81,5 @@ object DynamicRequest extends RequestObjectApi[DynamicRequest] {
     DynamicRequest(body, RequestHeaders(headers))
   }
 
-  private def invalidOperation(name: String): String = throw new UnsupportedOperationException(s"DynamicRequest.$name")
+  protected def invalidOperation(name: String): String = throw new UnsupportedOperationException(s"$getClass.$name")
 }

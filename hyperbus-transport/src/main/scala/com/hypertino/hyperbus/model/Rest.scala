@@ -147,21 +147,11 @@ trait ! extends Response[Body]
 
 trait RequestObjectApi[R <: Request[Body]] {
   def serviceAddress: String
-
   def method: String
 
   def apply(reader: Reader, headersObj: Obj): R
   def apply(reader: Reader): R = MessageReader(reader, apply(_, _))
   def apply(message: String): R = MessageReader(message, apply(_, _))
-
-  /*
-  def withUriArgs(uri: String)(constructor: Map[String, String] ⇒ R): R = {
-    uriPattern.matchUri(uri) match {
-      case Some(map) ⇒ constructor(map)
-      case None ⇒ throw new UriMatchException(uri, uriPattern)
-    }
-  }
-*/
 }
 
 trait ResponseObjectApi[PB <: Body, R <: Response[PB]] {

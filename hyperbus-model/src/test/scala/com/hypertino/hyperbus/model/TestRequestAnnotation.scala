@@ -5,6 +5,7 @@ import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value.{Obj, _}
 import com.hypertino.hyperbus.model.annotations.{body, request}
+import com.hypertino.hyperbus.serialization.MessageReader
 import org.scalatest.{FlatSpec, Matchers}
 
 @request(Method.POST, "hb://test")
@@ -42,7 +43,7 @@ case class TestOuterBody(outerData: String,
 
 object TestOuterBody extends BodyObjectApi[TestOuterBody]
 
-@request(Method.GET, "/test-outer-resource")
+@request(Method.GET, "hb://test-outer-resource")
 case class TestOuterResource(body: TestOuterBody) extends Request[TestOuterBody]
 
 object TestOuterResource extends RequestObjectApi[TestOuterResource]
@@ -80,89 +81,61 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
 
     post.body should equal(TestBody1("abcde"))
     post.id should equal("155")
-//    post.uri should equal(UriPattern("/test-post-1/{id}", Map(
-//      "id" → "155"
-//    )))
   }
 
-//  "TestPost1" should "deserialize from String" in {
-//    val str = """{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"messageId":"123","method":"post","contentType":"test-body-1"},"body":{"data":"abcde"}}"""
-//    val post1 = StringDeserializer.request[TestPost1](str)
-//    val post2 = TestPost1("155", TestBody1("abcde"))
-//    post1 should equal(post2)
-//  }
-//
-//  "TestPost1" should "deserialize with headers" in {
-//    val str = """{"uri":{"pattern":"/test-post-1/{id}","args":{"id":"155"}},"headers":{"method":"post","contentType":"test-body-1","messageId":"123","test":["a","b"]},"body":{"data":"abcde"}}"""
-//    val post1 = MessageDeserializer.deserializeRequestWith(str) { (requestHeader, jsonParser) ⇒
-//      TestPost1(requestHeader, jsonParser)
-//    }
-//
-//    post1.body should equal(TestBody1("abcde"))
-//    post1.id should equal("155")
-//    post1.uri should equal(UriPattern("/test-post-1/{id}", Map(
-//      "id" → "155"
-//    )))
-//    post1.headers.get("test") should equal(Some(LstV("a","b")))
-//  }
-//
-//  "TestOuterPost" should "serialize" in {
-//    val ba = new ByteArrayOutputStream()
-//    val inner1 = TestInnerBodyEmbedded("eklmn")
-//    val inner2 = TestInnerBodyEmbedded("xyz")
-//    val inner3 = TestInnerBodyEmbedded("yey")
-//    val postO = TestOuterResource(TestOuterBody("abcde",
-//      TestOuterBodyEmbedded(inner1, List(inner2, inner3))
-//    ))
-//    val str = postO.serializeToString
-//    str should equal("""{"uri":{"pattern":"/test-outer-resource"},"headers":{"messageId":"123","method":"get","contentType":"test-outer-body"},"body":{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"href":"/test-inner-resource","templated":false}}},"collection":[{"innerData":"xyz","_links":{"self":{"href":"/test-inner-resource","templated":false}}},{"innerData":"yey","_links":{"self":{"href":"/test-inner-resource","templated":false}}}]}}}""")
-//  }
-//
-//  "TestOuterPost" should "deserialize" in {
-//    val str = """{"uri":{"pattern":"/test-outer-resource"},"headers":{"method":"get","contentType":"test-outer-body","messageId":"123"},"body":{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"href":"/test-inner-resource","templated":false}}},"collection":[{"innerData":"xyz","_links":{"self":{"href":"/test-inner-resource","templated":false}}},{"innerData":"yey","_links":{"self":{"href":"/test-inner-resource","templated":false}}}]}}}"""
-//    val outer = MessageDeserializer.deserializeRequestWith(str) { (requestHeader, jsonParser) ⇒
-//      requestHeader.uri should equal(UriPattern("/test-outer-resource"))
-//      requestHeader.contentType should equal(Some("test-outer-body"))
-//      requestHeader.method should equal("get")
-//      requestHeader.messageId should equal("123")
-//      requestHeader.correlationId should equal(Some("123"))
-//      TestOuterResource(TestOuterBody(requestHeader.contentType, jsonParser))
-//    }
-//
-//    val inner1 = TestInnerBodyEmbedded("eklmn")
-//    val inner2 = TestInnerBodyEmbedded("xyz")
-//    val inner3 = TestInnerBodyEmbedded("yey")
-//    val outerBody = TestOuterBody("abcde",
-//      TestOuterBodyEmbedded(inner1, List(inner2, inner3))
-//    )
-//
-//    outer.body should equal(outerBody)
-//    outer.uri should equal(UriPattern("/test-outer-resource"))
-//  }
-//
-//  "DynamicRequest" should "decode" in {
-//    val str = """{"uri":{"pattern":"/test"},"headers":{"method":["custom-method"],"contentType":"test-body-1","messageId":"123"},"body":{"resourceId":"100500"}}"""
-//    val request = DynamicRequest(str)
-//    request shouldBe a[Request[_]]
-//    request.method should equal("custom-method")
-//    request.uri should equal(UriPattern("/test"))
-//    request.messageId should equal("123")
-//    request.correlationId should equal(Some("123"))
-//    //request.body.contentType should equal(Some())
-//    request.body should equal(DynamicBody(Some("test-body-1"), ObjV("resourceId" -> "100500")))
-//  }
-//
-//  "hashCode, equals, product" should "work" in {
-//    val post1 = TestPost1("155", TestBody1("abcde"))
-//    val post2 = TestPost1("155", TestBody1("abcde"))
-//    val post3 = TestPost1("155", TestBody1("abcdef"))
-//    post1 should equal(post2)
-//    post1.hashCode() should equal(post2.hashCode())
-//    post1 shouldNot equal(post3)
-//    post1.hashCode() shouldNot equal(post3.hashCode())
-//    post1.productElement(0) should equal("155")
-//    post1.productElement(1) should equal(TestBody1("abcde"))
-//    post1.productElement(2) shouldBe a[Map[_, _]]
-//  }
+  "TestOuterPost" should "serialize" in {
+    val ba = new ByteArrayOutputStream()
+    val inner1 = TestInnerBodyEmbedded("eklmn")
+    val inner2 = TestInnerBodyEmbedded("xyz")
+    val inner3 = TestInnerBodyEmbedded("yey")
+    val postO = TestOuterResource(TestOuterBody("abcde",
+      TestOuterBodyEmbedded(inner1, List(inner2, inner3))
+    ))
+    val str = postO.serializeToString
+    str should equal("""{"r":{"a":"hb://test-outer-resource"},"m":"get","t":"test-outer-body","i":"123"}""" + rn +
+      """{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}},"collection":[{"innerData":"xyz","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}},{"innerData":"yey","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}}]}}""")
+  }
+
+  "TestOuterPost" should "deserialize" in {
+    val str = """{"r":{"a":"hb://test-outer-resource"},"m":"get","t":"test-outer-body","i":"123"}""" + rn +
+      """{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}},"collection":[{"innerData":"xyz","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}},{"innerData":"yey","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}}]}}"""
+
+    val outer = TestOuterResource(str)
+
+    val inner1 = TestInnerBodyEmbedded("eklmn")
+    val inner2 = TestInnerBodyEmbedded("xyz")
+    val inner3 = TestInnerBodyEmbedded("yey")
+    val outerBody = TestOuterBody("abcde",
+      TestOuterBodyEmbedded(inner1, List(inner2, inner3))
+    )
+
+    outer.body should equal(outerBody)
+    outer.headers.hri should equal(HRI("hb://test-outer-resource"))
+  }
+
+  "DynamicRequest" should "decode" in {
+    val str = """{"r":{"a":"hb://test-outer-resource"},"m":"custom-method","t":"test-body-1","i":"123"}""" + rn +
+      """{"resourceId":"100500"}"""
+    val request = DynamicRequest(str)
+    request shouldBe a[Request[_]]
+    request.headers.method should equal("custom-method")
+    request.headers.hri should equal(HRI("hb://test-outer-resource"))
+    request.headers.messageId should equal("123")
+    request.correlationId should equal(Some("123"))
+    request.body should equal(DynamicBody(Obj.from("resourceId" -> "100500"), Some("test-body-1")))
+  }
+
+  "hashCode, equals, product" should "work" in {
+    val post1 = TestPost1("155", TestBody1("abcde"))
+    val post2 = TestPost1("155", TestBody1("abcde"))
+    val post3 = TestPost1("155", TestBody1("abcdef"))
+    post1 should equal(post2)
+    post1.hashCode() should equal(post2.hashCode())
+    post1 shouldNot equal(post3)
+    post1.hashCode() shouldNot equal(post3.hashCode())
+    post1.productElement(0) should equal("155")
+    post1.productElement(1) should equal(TestBody1("abcde"))
+    post1.productElement(2) shouldBe a[RequestHeaders]
+  }
 }
 
