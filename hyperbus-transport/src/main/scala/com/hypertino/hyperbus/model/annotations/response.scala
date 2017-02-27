@@ -140,7 +140,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
         $newCompanion
       """
 
-    println(block)
+    //println(block)
 
     c.Expr(
       block

@@ -39,7 +39,7 @@ class Hyperbus(val transportManager: TransportManager,
                                                                  val requestDeserializer: RequestDeserializer[REQ]) {
     def underlyingHandler(in: REQ): Future[ResponseBase] = {
       if (logMessages && log.isTraceEnabled) {
-        log.trace(Map("messageId" → in.messageId, "correlationId" → in.correlationId,
+        log.trace(Map("messageId" → in.headers.messageId, "correlationId" → in.correlationId,
           "subscriptionId" → this.hashCode.toHexString), s"hyperbus ~> $in")
       }
       implicit val mcx: MessagingContext = in
@@ -49,7 +49,7 @@ class Hyperbus(val transportManager: TransportManager,
       }
       if (logMessages && log.isTraceEnabled) {
         futureOut map { out ⇒
-          log.trace(Map("messageId" → out.messageId, "correlationId" → out.correlationId,
+          log.trace(Map("messageId" → out.headers.messageId, "correlationId" → out.headers.correlationId,
             "subscriptionId" → this.hashCode.toHexString), s"hyperbus <~(R)~  $out")
           out
         }
@@ -63,7 +63,7 @@ class Hyperbus(val transportManager: TransportManager,
                                                         responseDeserializer: ResponseDeserializer[RESP]): Future[RESP] = {
 
     if (logMessages && log.isTraceEnabled) {
-      log.trace(Map("messageId" → request.messageId, "correlationId" → request.correlationId), s"hyperbus <~ $request")
+      log.trace(Map("messageId" → request.headers.messageId, "correlationId" → request.correlationId), s"hyperbus <~ $request")
     }
     transportManager.ask(request, responseDeserializer) map { r ⇒
       (r: @unchecked) match {
@@ -71,7 +71,7 @@ class Hyperbus(val transportManager: TransportManager,
           throw throwable
         case other: RESP @unchecked ⇒
           if (logMessages && log.isTraceEnabled) {
-            log.trace(Map("messageId" → other.messageId, "correlationId" → other.correlationId), s"hyperbus ~(R)~> $other")
+            log.trace(Map("messageId" → other.headers.messageId, "correlationId" → other.headers.correlationId), s"hyperbus ~(R)~> $other")
           }
           other
       }
@@ -80,7 +80,7 @@ class Hyperbus(val transportManager: TransportManager,
 
   def publish[REQ <: Request[Body]](request: REQ): Future[PublishResult] = {
     if (logMessages && log.isTraceEnabled) {
-      log.trace(Map("messageId" → request.messageId, "correlationId" → request.correlationId), s"hyperbus <| $request")
+      log.trace(Map("messageId" → request.headers.messageId, "correlationId" → request.correlationId), s"hyperbus <| $request")
     }
     transportManager.publish(request)
   }
