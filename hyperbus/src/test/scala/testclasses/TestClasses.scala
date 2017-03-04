@@ -2,7 +2,7 @@ package testclasses
 
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.hyperbus.model.annotations.{body, request}
-import com.hypertino.hyperbus.model.{EmptyBody, QueryBody, _}
+import com.hypertino.hyperbus.model.{EmptyBody, _}
 
 @body("test-1")
 case class TestBody1(resourceData: String) extends Body
@@ -12,7 +12,7 @@ case class TestBody2(resourceData: Long) extends Body
 
 @body("created-body")
 case class TestCreatedBody(resourceId: String,
-                           @fieldName("_links") links: Links = Links.location("/resources/{resourceId}", templated = true))
+                           @fieldName("_links") links: Links = Links.location(HRI("/resources/")))
   extends CreatedBody
 
 @body("some-another-body")
@@ -46,7 +46,7 @@ case class StaticPostWithEmptyBody(body: EmptyBody) extends Request[EmptyBody]
   with DefinedResponse[NoContent[EmptyBody]]
 
 @request(Method.GET, "/empty")
-case class StaticGetWithQuery(body: QueryBody) extends Request[QueryBody]
+case class StaticGetWithQuery(body: EmptyBody) extends Request[EmptyBody]
   with DefinedResponse[Ok[DynamicBody]]
 
 @request(Method.POST, "/content-body-not-specified")

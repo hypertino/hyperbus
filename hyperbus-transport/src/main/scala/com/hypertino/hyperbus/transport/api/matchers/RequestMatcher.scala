@@ -48,11 +48,20 @@ case class RequestMatcher(headers: Map[String, TextMatcher]) extends FuzzyMatche
 
 object RequestMatcher {
   val any = RequestMatcher(Any)
-  private val SA_KEY = Header.HRI + "." + HeaderHRI.SERVICE_ADDRESS
 
   def apply(serviceAddressMatcher: TextMatcher): RequestMatcher = new RequestMatcher(
-    Map(SA_KEY → serviceAddressMatcher)
+    Map(HeaderHRI.FULL_SERVICE_ADDRESS → serviceAddressMatcher)
   )
+
+  def apply(serviceAddress: String, method: String, contentType: Option[String]): RequestMatcher = {
+    RequestMatcher(Map(
+      HeaderHRI.FULL_SERVICE_ADDRESS → Specific(serviceAddress),
+      Header.METHOD → Specific(method)) ++
+      contentType.map(c ⇒ Header.CONTENT_TYPE → Specific(c))
+    )
+  }
+
+  def apply(serviceAddress: String, method: String): RequestMatcher = apply(serviceAddress, method, None)
 
   private[transport] def apply(config: ConfigValue): RequestMatcher = {
     import com.hypertino.binders.config.ConfigBinders._

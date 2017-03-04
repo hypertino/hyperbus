@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.model._
-import com.hypertino.hyperbus.model.annotations.{contentType, method, uri}
+import com.hypertino.hyperbus.model.annotations.{contentType, method, serviceAddress}
 import com.hypertino.hyperbus.transport.api.Subscription
 import rx.lang.scala.{Observable, Observer}
 
@@ -77,7 +77,7 @@ private[hyperbus] trait HyperbusMacroImplementation {
     }
     val requestDeserializer = requestType.companion.decl(TermName("apply"))
     val methodGetter = requestType.companion.decl(TermName("method"))
-    val uriPattern = getUriAnnotation(requestType)
+    val serviceAddress = getServiceAddressAnnotation(requestType)
     val bodySymbol = getBodySymbol(requestType)
     val contentType: Option[String] = getContentTypeAnnotation(bodySymbol)
 
@@ -88,7 +88,7 @@ private[hyperbus] trait HyperbusMacroImplementation {
     val obj =
       q"""{
       val $thizVal = $thiz
-      val $rmVal = $thizVal.macroApiImpl.requestMatcher($uriPattern, $methodGetter, $contentType)
+      val $rmVal = $thizVal.macroApiImpl.requestMatcher($serviceAddress, $methodGetter, $contentType)
       $thizVal.onCommand[com.hypertino.hyperbus.model.Response[com.hypertino.hyperbus.model.Body],$requestType]($rmVal, $requestDeserializer _) {
         $requestVal: $requestType => $handler($requestVal)
       }
@@ -106,7 +106,7 @@ private[hyperbus] trait HyperbusMacroImplementation {
     }
     val requestDeserializer = requestType.companion.decl(TermName("apply"))
     val methodGetter = requestType.companion.decl(TermName("method"))
-    val uriPattern = getUriAnnotation(requestType)
+    val serviceAddress = getServiceAddressAnnotation(requestType)
     val bodySymbol = getBodySymbol(requestType)
     val contentType: Option[String] = getContentTypeAnnotation(bodySymbol)
 
@@ -117,7 +117,7 @@ private[hyperbus] trait HyperbusMacroImplementation {
     val obj =
       q"""{
       val $thizVal = $thiz
-      val $rmVal = $thizVal.macroApiImpl.requestMatcher($uriPattern, $methodGetter, $contentType)
+      val $rmVal = $thizVal.macroApiImpl.requestMatcher($serviceAddress, $methodGetter, $contentType)
       $thizVal.onEvent[$requestType]($rmVal, $groupName, $requestDeserializer _, $observer)
     }"""
 //    println(obj)
@@ -161,8 +161,8 @@ private[hyperbus] trait HyperbusMacroImplementation {
       q"""{
       val $thizVal = $thiz
       val $responseDeserializerVal = $thizVal.macroApiImpl.responseDeserializer(
-        _: com.hypertino.hyperbus.serialization.ResponseHeader,
-        _: com.fasterxml.jackson.core.JsonParser,
+        _: java.io.Reader,
+        _: com.hypertino.binders.value.Obj,
         _.contentType match {
           case ..$bodyCases
         }
@@ -244,9 +244,9 @@ private[hyperbus] trait HyperbusMacroImplementation {
     }
   }
 
-  private def getUriAnnotation(t: c.Type): String =
-    getStringAnnotation(t, c.typeOf[uri]).getOrElse {
-      c.abort(c.enclosingPosition, s"@uri annotation is not defined for $t.}")
+  private def getServiceAddressAnnotation(t: c.Type): String =
+    getStringAnnotation(t, c.typeOf[serviceAddress]).getOrElse {
+      c.abort(c.enclosingPosition, s"@serviceAddress annotation is not defined for $t.}")
     }
 
   private def getContentTypeAnnotation(t: c.Type): Option[String] = {

@@ -1,4 +1,3 @@
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, StringReader}
 import java.util.concurrent.atomic.AtomicLong
 
 import com.hypertino.binders.value._
@@ -6,10 +5,9 @@ import com.hypertino.hyperbus.Hyperbus
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
-import com.hypertino.hyperbus.transport.api.matchers.{Any, RequestMatcher, Specific}
-import com.hypertino.hyperbus.transport.api.uri.UriPattern$
+import com.hypertino.hyperbus.transport.api.matchers.{RequestMatcher, Specific}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{FlatSpec, FreeSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 import rx.lang.scala.Observer
 import testclasses._
 
@@ -25,7 +23,7 @@ class ClientTransportTest(output: String) extends ClientTransport {
   override def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Future[ResponseBase] = {
     messageBuf.append(message.serializeToString)
 
-    val out = MessageDeserializer.deserializeResponseWith(new StringReader(output))(responseDeserializer)
+    val out = MessageReader(output, responseDeserializer)
     Future.successful(out)
   }
 
@@ -47,7 +45,7 @@ class ClientTransportTest(output: String) extends ClientTransport {
 case class ServerSubscriptionTest(id: String) extends Subscription
 
 class ServerTransportTest extends ServerTransport {
-  var sUriFilter: UriPattern = null
+  //var sUriFilter: UriPattern = null
   var sInputDeserializer: RequestDeserializer[Request[Body]] = null
   var sHandler: (RequestBase) ⇒ Future[ResponseBase] = null
   var sSubscriptionId: String = null
@@ -118,11 +116,11 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     )
 
     val hyperbus = newHyperbus(ct, null)
-    val f = hyperbus <~ DynamicRequest(UriPattern("/resources"),
+    val f = hyperbus <~ DynamicRequest(HRI("/resources"),
       Method.POST,
       DynamicBody(
-        Some("test-1"),
-        Obj.from("resourceData" → "ha ha")
+        Obj.from("resourceData" → "ha ha"),
+        Some("test-1")
       )
     )
 
@@ -255,7 +253,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/resources"},"headers":{"method":"post","contentType":"test-1","messageId":"123"},"body":{"resourceData":"ha ha"}}"""
-    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
+    val msg = MessageReader(req, st.sInputDeserializer)
     msg should equal(testclasses.TestPost1(testclasses.TestBody1("ha ha")))
 
     val futureResult = st.sHandler(msg)
@@ -274,7 +272,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/resources"},"headers":{"method":"post","messageId":"123"},"body":{"resourceData":"ha ha"}}"""
-    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
+    val msg = MessageReader(req, st.sInputDeserializer)
     msg shouldBe a[testclasses.TestPost1]
     msg.body shouldBe a[testclasses.TestBody1]
     msg.body.asInstanceOf[testclasses.TestBody1].resourceData should equal("ha ha")
@@ -295,7 +293,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/empty"},"headers":{"method":"post","messageId":"123"},"body":null}"""
-    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
+    val msg = MessageReader(req, st.sInputDeserializer)
     msg should equal(StaticPostWithEmptyBody(EmptyBody))
 
     val futureResult = st.sHandler(msg)
@@ -314,8 +312,8 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/empty"},"headers":{"method":"post","contentType":"some-content","messageId":"123"},"body":"haha"}"""
-    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
-    msg should equal(StaticPostWithDynamicBody(DynamicBody(Some("some-content"), Text("haha"))))
+    val msg = MessageReader(req, st.sInputDeserializer)
+    msg should equal(StaticPostWithDynamicBody(DynamicBody("haha", Some("some-content"))))
 
     val futureResult = st.sHandler(msg)
     whenReady(futureResult) { r =>
@@ -326,24 +324,22 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
   "~>" should "call method for dynamic request (server)" in {
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
-    hyperbus.onCommand(RequestMatcher(
-      Some(UriPattern("/test")),
-      Map(Header.METHOD → Specific(Method.GET)))
-    ) { request =>
+    hyperbus.onCommand(RequestMatcher("/test", Method.GET, None)) { request =>
       Future {
         NoContent(EmptyBody)
       }
     }
 
     val req = """{"uri":{"pattern":"/test"},"headers":{"method":"get","contentType":"some-content","messageId":"123"},"body":"haha"}"""
-    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
+    val msg = MessageReader(req, st.sInputDeserializer)
     msg should equal(DynamicRequest(
-      RequestHeader(UriPattern("/test"), Map(
-        Header.METHOD → Method.GET,
+      HRI("/test"),
+      Method.GET,
+      DynamicBody("haha", Some("some-content")),
+      Obj.from(
         Header.CONTENT_TYPE → "some-content",
-        Header.MESSAGE_ID → "123")
-      ),
-      DynamicBody(Some("some-content"), Text("haha")))
+        Header.MESSAGE_ID → "123"
+      ))
     )
 
     val futureResult = st.sHandler(msg)
@@ -393,8 +389,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val hyperbus = newHyperbus(clientTransport, null)
-    val futureResult = hyperbus <| DynamicRequest(UriPattern("/resources"), Method.POST,
-      DynamicBody(Some("test-1"), Obj.from("resourceData" → "ha ha")))
+    val futureResult = hyperbus <| DynamicRequest(HRI("/resources"), Method.POST,
+      DynamicBody(Obj.from("resourceData" → "ha ha"), Some("test-1")))
+
     whenReady(futureResult) { r =>
       sentEvents.size should equal(1)
     }
@@ -434,9 +431,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     val observer = new Observer[DynamicRequest] {}
 
     hyperbus.onEvent(
-      RequestMatcher(
-        Some(UriPattern("/test")),
-        Map(Header.METHOD → Specific(Method.GET))),
+      RequestMatcher("/test", Method.GET),
       Some("group1"),
       observer
     )
@@ -453,7 +448,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     }
 
     val req = """{"uri":{"pattern":"/resources"},"headers":{"messageId":"123","method":"post","contentType":"test-1"},"body":{"resourceData":"ha ha"}}"""
-    val msg = MessageDeserializer.deserializeRequestWith(req)(st.sInputDeserializer)
+    val msg = MessageReader(req, st.sInputDeserializer)
     msg should equal(testclasses.TestPost1(testclasses.TestBody1("ha ha")))
 
     val futureResult = st.sHandler(msg)
@@ -512,8 +507,8 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
   }
 
   def newHyperbus(ct: ClientTransport, st: ServerTransport) = {
-    val cr = List(TransportRoute(ct, RequestMatcher(Some(UriPattern(Any)))))
-    val sr = List(TransportRoute(st, RequestMatcher(Some(UriPattern(Any)))))
+    val cr = List(TransportRoute(ct, RequestMatcher.any))
+    val sr = List(TransportRoute(st, RequestMatcher.any))
     val transportManager = new TransportManager(cr, sr, ExecutionContext.global)
     new Hyperbus(transportManager, Some("group1"), logMessages = true)
   }

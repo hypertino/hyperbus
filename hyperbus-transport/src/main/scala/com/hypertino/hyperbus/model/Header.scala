@@ -13,4 +13,7 @@ object Header {
 object HeaderHRI {
   val SERVICE_ADDRESS = "a"
   val QUERY = "q"
+
+  val FULL_SERVICE_ADDRESS: String = Header.HRI + "." + HeaderHRI.SERVICE_ADDRESS
+  val FULL_QUERY: String = Header.HRI + "." + HeaderHRI.QUERY
 }

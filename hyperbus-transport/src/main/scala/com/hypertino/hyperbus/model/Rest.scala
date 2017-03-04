@@ -122,8 +122,8 @@ trait Message[+B <: Body, +H <: Headers] {
   }
 }
 
-trait Request[+B <: Body] extends Message[B, RequestHeaders] {
-
+trait Request[+B <: Body] extends Message[B, RequestHeaders] with MessagingContext {
+  override def correlationId: Option[String] = headers.correlationId
 //  protected def assertHeaderValue(name: String, value: String): Unit = {
 //    val v = headers.stringHeader(name)
 //    if (v != value) {
@@ -132,8 +132,7 @@ trait Request[+B <: Body] extends Message[B, RequestHeaders] {
 //  }
 }
 
-trait Response[+B <: Body] extends Message[B, ResponseHeaders] {
-}
+trait Response[+B <: Body] extends Message[B, ResponseHeaders]
 
 // defines responses:
 // * single:                DefinedResponse[Created[TestCreatedBody]]

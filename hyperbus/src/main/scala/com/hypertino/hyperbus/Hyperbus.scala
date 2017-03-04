@@ -2,6 +2,7 @@ package com.hypertino.hyperbus
 
 import java.io.{Reader, Writer}
 
+import com.hypertino.binders.value.Obj
 import com.hypertino.hyperbus.impl.MacroApi
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
@@ -139,10 +140,10 @@ class Hyperbus(val transportManager: TransportManager,
 //  }
 
   val macroApiImpl = new MacroApi {
-    def responseDeserializer(responseHeader: ResponseHeader,
-                             responseBodyJson: com.fasterxml.jackson.core.JsonParser,
-                             bodyDeserializer: PartialFunction[ResponseHeader, ResponseBodyDeserializer]): Response[Body] = {
-      StandardResponse(responseHeader, responseBodyJson, bodyDeserializer)
+    def responseDeserializer(reader: Reader,
+                             headersObj: Obj,
+                             bodyDeserializer: PartialFunction[ResponseHeaders, ResponseBodyDeserializer]): Response[Body] = {
+      StandardResponse(reader, headersObj, bodyDeserializer)
     }
   }
 
@@ -151,7 +152,7 @@ class Hyperbus(val transportManager: TransportManager,
   }
 
   protected def safeErrorMessage(msg: String, request: Request[Body]): String = {
-    msg + " " + safe(() => request.uri.toString) + safe(() => request.headers.toString)
+    msg + " " + safe(() => request.headers.hri.toString) + safe(() => request.headers.toString)
   }
 
   protected def unhandledException(implicit request: Request[Body], exception: Throwable): Response[Body] = {
@@ -162,17 +163,7 @@ class Hyperbus(val transportManager: TransportManager,
     InternalServerError(errorBody)
   }
 
-  protected def responseSerializerNotFound(response: Response[Body]) = log.error("Can't serialize response: {}", response)
-
-  protected def getRouteKey(requestMatcher: RequestMatcher, groupName: Option[String]) = {
-    if (requestMatcher.uri.isEmpty)
-      throw new IllegalArgumentException(s"uri is not set on matcher: $requestMatcher")
-    val specificUri = requestMatcher.uri.get.pattern.specific // todo: implement other filters?
-
-    groupName.map {
-      specificUri + "#" + _
-    } getOrElse specificUri
-  }
+  //protected def responseSerializerNotFound(response: Response[Body]) = log.error("Can't serialize response: {}", response)
 
   protected def safe(t: () => String): String = Try(t()).getOrElse("???")
 }
