@@ -131,7 +131,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     whenReady(f) { r =>
       r shouldBe a[Created[_]]
       r.body shouldBe a[DynamicBody]
-      r.body shouldBe a[CreatedBody]
+      //r.asInstanceOf[Created[Body]].location should equal(HRI("/resources"))
     }
   }
 

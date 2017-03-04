@@ -11,9 +11,7 @@ case class TestBody1(resourceData: String) extends Body
 case class TestBody2(resourceData: Long) extends Body
 
 @body("created-body")
-case class TestCreatedBody(resourceId: String,
-                           @fieldName("_links") links: Links = Links.location(HRI("/resources/")))
-  extends CreatedBody
+case class TestCreatedBody(resourceId: String) extends Body
 
 @body("some-another-body")
 case class TestAnotherBody(resourceId: String) extends Body
@@ -64,9 +62,8 @@ case class SomeTransaction(transactionId: String) extends Body
 @body("some-transaction-created")
 case class SomeTransactionCreated(
                                       transactionId: String,
-                                      path: String,
-                                      @fieldName("_links") links: Links
-                                    ) extends Body with HalLinks with CreatedBody
+                                      path: String
+                                    ) extends Body
 
 @request(Method.PUT, "/some/{path:*}")
 case class SomeContentPut(

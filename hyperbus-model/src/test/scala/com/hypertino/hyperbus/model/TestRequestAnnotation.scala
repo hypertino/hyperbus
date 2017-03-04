@@ -19,34 +19,34 @@ object TestPost1 extends RequestObjectApi[TestPost1] with TestPost1ObjectApi {
   def apply(id: String, x: String, headers: Obj)(implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headers)(mcx)
 }
 
-@body("test-inner-body")
-case class TestInnerBody(innerData: String) extends Body {
-  def toEmbedded(links: Links = Links(HRI("hb://test-inner-resource"))) = TestInnerBodyEmbedded(innerData, links)
-}
-
-object TestInnerBody extends BodyObjectApi[TestInnerBody]
-
-@body("test-inner-body")
-case class TestInnerBodyEmbedded(innerData: String,
-                                 @fieldName("_links") links: Links = Links(HRI("hb://test-inner-resource"))) extends Body with HalLinks {
-
-  def toOuter: TestInnerBody = TestInnerBody(innerData)
-}
-
-object TestInnerBodyEmbedded extends BodyObjectApi[TestInnerBodyEmbedded]
-
-case class TestOuterBodyEmbedded(simple: TestInnerBodyEmbedded, collection: List[TestInnerBodyEmbedded])
-
-@body("test-outer-body")
-case class TestOuterBody(outerData: String,
-                         @fieldName("_embedded") embedded: TestOuterBodyEmbedded) extends Body
-
-object TestOuterBody extends BodyObjectApi[TestOuterBody]
-
-@request(Method.GET, "hb://test-outer-resource")
-case class TestOuterResource(body: TestOuterBody) extends Request[TestOuterBody]
-
-object TestOuterResource extends RequestObjectApi[TestOuterResource]
+//
+//@body("test-inner-body")
+//case class TestInnerBody(innerData: String) extends Body {
+//  def toEmbedded(links: Links = Links(HRI("hb://test-inner-resource"))) = TestInnerBodyEmbedded(innerData, links)
+//}
+//
+//object TestInnerBody extends BodyObjectApi[TestInnerBody]
+//
+//@body("test-inner-body")
+//case class TestInnerBodyEmbedded(innerData: String) extends Body {
+//  def toOuter: TestInnerBody = TestInnerBody(innerData)
+//}
+//
+//object TestInnerBodyEmbedded extends BodyObjectApi[TestInnerBodyEmbedded]
+//
+//case class TestOuterBodyEmbedded(simple: TestInnerBodyEmbedded, collection: List[TestInnerBodyEmbedded])
+//
+//@body("test-outer-body")
+//case class TestOuterBody(outerData: String,
+//                         @fieldName("_embedded") embedded: TestOuterBodyEmbedded) extends Body
+//
+//object TestOuterBody extends BodyObjectApi[TestOuterBody]
+//
+//
+//@request(Method.GET, "hb://test-outer-resource")
+//case class TestOuterResource(body: TestOuterBody) extends Request[TestOuterBody]
+//
+//object TestOuterResource extends RequestObjectApi[TestOuterResource]
 
 class TestRequestAnnotation extends FlatSpec with Matchers {
   implicit val mcx = new MessagingContext {
@@ -83,6 +83,9 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     post.id should equal("155")
   }
 
+  /*
+  todo: embedded and links!
+
   "TestOuterPost" should "serialize" in {
     val ba = new ByteArrayOutputStream()
     val inner1 = TestInnerBodyEmbedded("eklmn")
@@ -112,6 +115,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     outer.body should equal(outerBody)
     outer.headers.hri should equal(HRI("hb://test-outer-resource"))
   }
+  */
 
   "DynamicRequest" should "decode" in {
     val str = """{"r":{"a":"hb://test-outer-resource"},"m":"custom-method","t":"test-body-1","i":"123"}""" + rn +

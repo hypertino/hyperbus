@@ -27,7 +27,7 @@ object StandardResponse {
   def apply(body: Body, headers: ResponseHeaders): Response[Body] = {
     headers.statusCode match {
       case Status.OK => Ok(body, headers)
-      case Status.CREATED => Created(body.asInstanceOf[CreatedBody], headers)
+      case Status.CREATED => Created(body, headers)
       case Status.ACCEPTED => Accepted(body, headers)
       case Status.NON_AUTHORITATIVE_INFORMATION => NonAuthoritativeInformation(body, headers)
       case Status.NO_CONTENT => NoContent(body, headers)

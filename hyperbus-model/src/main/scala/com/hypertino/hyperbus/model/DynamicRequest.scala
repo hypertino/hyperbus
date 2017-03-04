@@ -4,10 +4,8 @@ import java.io.{Reader, Writer}
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value.{Obj, Value}
 
-trait DynamicBody extends Body with HalLinks {
+trait DynamicBody extends Body {
   def content: Value
-
-  lazy val links: Links = content.__links.to[Option[Links]].getOrElse(Map.empty)
 
   def serialize(writer: Writer): Unit = {
     implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions

@@ -10,7 +10,6 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 
 package object model {
-  type Links = Map[String, Either[Link, Seq[Link]]]
   type RequestBase = Request[Body]
   type ResponseBase = Response[Body]
 

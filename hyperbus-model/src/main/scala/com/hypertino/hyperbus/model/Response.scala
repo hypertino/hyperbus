@@ -3,7 +3,7 @@ package com.hypertino.hyperbus.model
 import java.io.Reader
 
 import com.hypertino.binders.json.JsonBindersFactory
-import com.hypertino.binders.value.Value
+import com.hypertino.binders.value.{Obj, Value}
 import com.hypertino.hyperbus.model.annotations.response
 
 trait NormalResponse extends Response[Body]
@@ -22,33 +22,22 @@ trait ClientError extends ErrorResponse
 
 object Ok extends ResponseObjectApi[Body, Ok[Body]]
 
-trait CreatedBody extends Body with HalLinks {
-  def location: Link = links(DefLink.LOCATION) match {
-    case Left(link) ⇒ link
-    case Right(sequence) ⇒ sequence.head
-  }
+@response(Status.CREATED) case class Created[+B <: Body](body: B) extends NormalResponse with Response[B] {
+  def location: HRI = headers.all.location.to[HRI]
 }
 
-@response(Status.CREATED) case class Created[+B <: CreatedBody](body: B) extends NormalResponse with Response[B]
+object Created extends ResponseObjectApi[Body, Created[Body]] {
+  import com.hypertino.binders.value._
 
-object Created extends ResponseObjectApi[CreatedBody, Created[CreatedBody]]
-
-object DynamicCreatedBody {
-  def apply(content: Value, contentType: Option[String]): DynamicBody with CreatedBody = DynamicCreatedBodyContainer(contentType, content)
-
-  def apply(content: Value): DynamicBody with CreatedBody = apply(content, None)
-
-  def apply(reader: Reader, contentType: Option[String]): DynamicBody = {
-    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
-    JsonBindersFactory.findFactory().withReader(reader) { deserializer =>
-      apply(deserializer.unbind[Value], contentType)
-    }
+  def apply[B <: Body](body: B, location: HRI, headersObj: Obj)(implicit mcx: MessagingContext): Created[B] = {
+    val headersNew = Obj(headersObj.v + Header.LOCATION → location.toValue)
+    apply(body, headersNew)(mcx)
   }
 
-  def unapply(dynamicBody: DynamicBody with CreatedBody) = Some((dynamicBody.contentType, dynamicBody.content))
+  def apply[B <: Body](body: B, location: HRI)(implicit mcx: MessagingContext): Created[B] = {
+    apply(body, Obj.from(Header.LOCATION → location.toValue))(mcx)
+  }
 }
-
-private[model] case class DynamicCreatedBodyContainer(contentType: Option[String], content: Value) extends DynamicBody with CreatedBody
 
 @response(Status.ACCEPTED) case class Accepted[+B <: Body](body: B) extends NormalResponse with Response[B]
 

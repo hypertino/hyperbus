@@ -8,6 +8,7 @@ object Header {
   val CORRELATION_ID = "c"
   val REVISION = "v"
   val STATUS_CODE = "s"
+  val LOCATION = "l"
 }
 
 object HeaderHRI {

@@ -8,8 +8,6 @@ import com.hypertino.hyperbus.serialization.MessageReader
 
 import scala.collection.mutable
 
-case class Link(@fieldName("r") hri: HRI, @fieldName("type") typ: Option[String] = None)
-
 trait Body {
   def contentType: Option[String]
 
@@ -24,76 +22,6 @@ trait BodyObjectApi[B <: Body] {
 trait NoContentType {
   def contentType: Option[String] = None
 }
-
-trait HalLinks {
-  def links: Links
-}
-
-object Links {
-  def apply(selfRef: HRI, typ: Option[String] = None): Links = {
-    builder() self(selfRef, typ) result()
-  }
-
-  def location(locationRef: HRI, typ: Option[String] = None): Links = {
-    builder() location (locationRef, typ) result()
-  }
-
-  def apply(key: String, link: Link): Links = builder() add(key, link) result()
-
-  def apply(vargs: (String, Either[Link, Seq[Link]])*): Links = {
-    builder() add vargs result()
-  }
-
-  def builder(): LinksBuilder = new LinksBuilder()
-}
-
-class LinksBuilder(private [this] val args: mutable.Map[String, Either[Link, Seq[Link]]]) {
-  def this() = this(mutable.Map[String, Either[Link, Seq[Link]]]())
-
-  def self(selfRef: HRI, typ: Option[String] = None): LinksBuilder = {
-    args += DefLink.SELF → Left(Link(selfRef, typ))
-    this
-  }
-
-  def location(locationRef: HRI, typ: Option[String] = None): LinksBuilder = {
-    args += DefLink.LOCATION → Left(Link(locationRef, typ))
-    this
-  }
-
-  def add(key: String, ref: HRI, typ: Option[String] = None): LinksBuilder = {
-    add(key, Link(ref, typ))
-    this
-  }
-
-  def add(key: String, link : Link): LinksBuilder = {
-    args.get(key) match {
-      case Some(Left(existingLink)) ⇒
-        args += key → Right(Seq(existingLink, link))
-
-      case Some(Right(existingLinks)) ⇒
-        args += key → Right(existingLinks :+ link)
-
-      case None ⇒
-        args += key → Left(link)
-    }
-    this
-  }
-
-  def add(links: Seq[(String, Either[Link, Seq[Link]])]): LinksBuilder = {
-    if (args.isEmpty) {
-      args ++= links
-    }
-    else {
-      links.foreach {
-        case (k, Left(v)) ⇒ add(k, v)
-        case (k, Right(v)) ⇒ v.foreach(vi ⇒ add(k, vi))
-      }
-    }
-    this
-  }
-  def result(): Links = args.toMap
-}
-
 
 trait Message[+B <: Body, +H <: Headers] {
   def headers: H
