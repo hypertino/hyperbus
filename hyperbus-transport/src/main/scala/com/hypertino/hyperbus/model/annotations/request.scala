@@ -77,7 +77,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
             ..${classFields.map { case ValDef(_, name, tpt, _) ⇒
               q"val $name: $tpt = this.$name"
             }}): $className = {
-            new $className(..${fieldsExceptHeaders.map(_.name)}, headers = this.headers, plain__init = false)
+            new $className(..${classFields.map(_.name)}, plain__init = false)
           }
 
           def canEqual(other: Any): Boolean = other.isInstanceOf[$className]

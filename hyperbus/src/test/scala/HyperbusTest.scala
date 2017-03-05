@@ -259,7 +259,6 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
     val orig = testclasses.TestPost1(testclasses.TestBody1("ha ha"))
     val msg = orig.copy(
-      body = orig.body,
       headers = RequestHeaders(orig.headers.all - Header.CONTENT_TYPE)
     )
     msg.headers.contentType shouldBe empty
@@ -417,7 +416,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 
     val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"))
 
-    val r = st.sHandler(msg).failed.futureValue
+    val r = st.sHandler(msg).futureValue
     r shouldBe a[Conflict[_]]
     r.asInstanceOf[Conflict[_]].body should equal(ErrorBody("failed", errorId = "abcde12345"))
   }
