@@ -19,6 +19,10 @@ object TestPost1 extends RequestObjectApi[TestPost1] with TestPost1ObjectApi {
   def apply(id: String, x: String, headers: Obj)(implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headers)(mcx)
 }
 
+@request(Method.GET, "hb://test")
+case class TestGet1(id: String, body: EmptyBody) extends Request[EmptyBody]
+
+
 //
 //@body("test-inner-body")
 //case class TestInnerBody(innerData: String) extends Body {
@@ -62,6 +66,17 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
         """{"data":"abcde"}""")
   }
 
+  "TestGet1 (with EmptyBody)" should "serialize" in {
+    val r = TestGet1("155", EmptyBody)
+    r.serializeToString should equal(
+      s"""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"get","i":"123"}""")
+  }
+
+  "TestGet1 (with EmptyBody)" should "deserialize" in {
+    val str = s"""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"get","i":"123"}"""
+    TestGet1.deserialize(str) should equal (TestGet1("155", EmptyBody))
+  }
+
   "TestPost1" should "serialize with headers" in {
     val post1 = TestPost1("155", TestBody1("abcde"), Obj.from("test" → Lst.from("a")))
     post1.serializeToString should equal(
@@ -72,7 +87,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "TestPost1" should "deserialize" in {
     val str = """{"r":{"q":{"id":"155"},"a":"hb://test-post-1"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
       """{"data":"abcde"}"""
-    val post = TestPost1(str)
+    val post = TestPost1.deserialize(str)
     post.headers.hri should equal(HRI("hb://test-post-1", Obj.from("id" -> "155")))
     post.headers.contentType should equal(Some("test-body-1"))
     post.headers.method should equal("post")
@@ -120,7 +135,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "DynamicRequest" should "decode" in {
     val str = """{"r":{"a":"hb://test-outer-resource"},"m":"custom-method","t":"test-body-1","i":"123"}""" + rn +
       """{"resourceId":"100500"}"""
-    val request = DynamicRequest(str)
+    val request = DynamicRequest.deserialize(str)
     request shouldBe a[Request[_]]
     request.headers.method should equal("custom-method")
     request.headers.hri should equal(HRI("hb://test-outer-resource"))

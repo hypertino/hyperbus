@@ -17,13 +17,14 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
 
   "Response" should "serialize" in {
     val msg = Created(TestCreatedBody("100500"), HRI("hb://test"))
-    msg.serializeToString should equal("""{"t":"test-created-body","i":"123","c":"abc","l":{"a":"hb://test"},"s":201}""" + rn +
+    msg.serializeToString should equal("""{"s":201,"t":"test-created-body","i":"123","c":"abc","l":{"a":"hb://test"}}""" + rn +
       """{"resourceId":"100500"}""")
   }
 
   "Response with headers" should "serialize" in {
     val msg = Created(TestCreatedBody("100500"), HRI("hb://test"), Obj.from("test" → "a"))
-    msg.serializeToString should equal("""{"status":201,"headers":{"test":["a"],"messageId":"123","correlationId":"abc","contentType":"test-created-body"},"body":{"resourceId":"100500","_links":{"location":{"href":"/resources/{resourceId}","templated":true}}}}""")
+    msg.serializeToString should equal("""{"s":201,"t":"test-created-body","i":"123","c":"abc","test":"a","l":{"a":"hb://test"}}""" + rn +
+      """{"resourceId":"100500"}""")
   }
 
   "hashCode, equals, product" should "work" in {
@@ -35,13 +36,13 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
     r1 shouldNot equal(r3)
     r1.hashCode() shouldNot equal(r3.hashCode())
     r1.productElement(0) shouldBe a[TestCreatedBody]
-    r1.productElement(1) shouldBe a[Map[_, _]]
+    r1.productElement(1) shouldBe a[ResponseHeaders]
 
     val o: Any = r1
     o match {
       case Created(body, headers) ⇒
         body shouldBe a[TestCreatedBody]
-        headers shouldBe a[Map[_, _]]
+        headers shouldBe a[ResponseHeaders]
       case _ ⇒ fail("unapply didn't matched for a response")
     }
   }

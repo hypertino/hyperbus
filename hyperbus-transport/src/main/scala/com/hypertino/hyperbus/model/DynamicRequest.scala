@@ -1,4 +1,5 @@
 package com.hypertino.hyperbus.model
+
 import java.io.{Reader, Writer}
 
 import com.hypertino.binders.json.JsonBindersFactory

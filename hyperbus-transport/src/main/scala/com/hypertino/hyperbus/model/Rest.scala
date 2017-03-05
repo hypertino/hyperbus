@@ -1,12 +1,9 @@
 package com.hypertino.hyperbus.model
 
-import java.io.{Reader, StringReader, StringWriter, Writer}
+import java.io.{Reader, StringWriter, Writer}
 
-import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value.Obj
 import com.hypertino.hyperbus.serialization.MessageReader
-
-import scala.collection.mutable
 
 trait Body {
   def contentType: Option[String]
@@ -30,8 +27,10 @@ trait Message[+B <: Body, +H <: Headers] {
 
   def serialize(writer: Writer): Unit = {
     headers.serialize(writer)
-    writer.write("\r\n")
-    body.serialize(writer)
+    if (!body.isInstanceOf[EmptyBody]) {
+      writer.write("\r\n")
+      body.serialize(writer)
+    }
   }
 
   def serializeToString: String = {
@@ -45,7 +44,7 @@ trait Message[+B <: Body, +H <: Headers] {
     }
   }
 
-  override def toString = {
+  override def toString: String = {
     s"${getClass.getName}[${body.getClass.getName}]:$serializeToString"
   }
 }
@@ -78,7 +77,7 @@ trait RequestObjectApi[R <: Request[Body]] {
 
   def apply(reader: Reader, headersObj: Obj): R
   def apply(reader: Reader): R = MessageReader(reader, apply(_, _))
-  def apply(message: String): R = MessageReader(message, apply(_, _))
+  def deserialize(message: String): R = MessageReader(message, apply(_, _))
 }
 
 trait ResponseObjectApi[PB <: Body, R <: Response[PB]] {

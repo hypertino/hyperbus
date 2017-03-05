@@ -50,6 +50,11 @@ class HeadersBuilder(private[this] val mapBuilder: scala.collection.mutable.Link
     this
   }
 
+  def withStatusCode(statusCode: Int): HeadersBuilder = {
+    mapBuilder += Header.STATUS_CODE → statusCode
+    this
+  }
+
   def result(): Obj = {
     new Obj(mapBuilder.filterNot(_._2.isEmpty))
   }

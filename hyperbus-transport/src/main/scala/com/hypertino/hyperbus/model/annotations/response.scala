@@ -106,6 +106,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
 
           new $className[..$classTypeNames](..${fieldsExceptHeaders.map(_.name)},
             headers = com.hypertino.hyperbus.model.ResponseHeaders(new com.hypertino.hyperbus.model.HeadersBuilder()
+              .withStatusCode(statusCode)
               .withContentType(body.contentType)
               .withContext(mcx)
               .++=(headersObj)

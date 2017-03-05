@@ -4,7 +4,6 @@ import java.io.{Reader, Writer}
 
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value._
-import com.hypertino.inflector.naming.PlainConverter
 import com.hypertino.hyperbus.IdGenerator
 
 trait ErrorBody extends DynamicBody {
