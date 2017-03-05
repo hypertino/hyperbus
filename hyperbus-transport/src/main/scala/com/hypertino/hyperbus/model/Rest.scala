@@ -76,20 +76,16 @@ trait RequestObjectApi[R <: Request[Body]] {
   def method: String
 
   def apply(reader: Reader, headersObj: Obj): R
-  def apply(reader: Reader): R = MessageReader(reader, apply(_, _))
-  def deserialize(message: String): R = MessageReader(message, apply(_, _))
+  def apply(reader: Reader): R = MessageReader.read(reader, apply(_ : Reader, _))
+  def from(s: String): R = MessageReader.from(s, apply(_ : Reader, _))
 }
 
 trait ResponseObjectApi[PB <: Body, R <: Response[PB]] {
   def statusCode: Int
 
-//  def apply[B <: PB](reader: Reader, headersObj: Obj): R
-//  def apply[B <: PB](reader: Reader): R = MessageReader(reader, apply[B](_, _))
-//  def apply[B <: PB](message: String): R = MessageReader(message, apply[B](_, _))
-//
-//  def apply[B <: PB](body: B, headers: ResponseHeaders): R
-//  def apply[B <: PB](body: B, headersObj: Obj)(implicit mcx: MessagingContext): R
-//  def apply[B <: PB](body: B)(implicit mcx: MessagingContext): R
+  def apply[B <: PB](body: B, headersObj: Obj)(implicit messagingContext: MessagingContext): R
+  def apply[B <: PB](body: B)(implicit messagingContext: MessagingContext): R
+
   // def unapply[B <: PB](response: Response[PB]): Option[(B,Map[String,Seq[String]])] TODO: this doesn't works, find a workaround
 }
 

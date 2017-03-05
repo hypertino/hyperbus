@@ -1,9 +1,5 @@
 package com.hypertino.hyperbus.model
 
-import java.io.Reader
-
-import com.hypertino.binders.json.JsonBindersFactory
-import com.hypertino.binders.value.{Obj, Value}
 import com.hypertino.hyperbus.model.annotations.response
 
 trait NormalResponse extends Response[Body]
@@ -16,28 +12,27 @@ trait ServerError extends ErrorResponse
 
 trait ClientError extends ErrorResponse
 
+trait ResponseApiWithLocation[PB <: Body, R <: Response[PB]] extends ResponseObjectApi[PB, R] {
+  import com.hypertino.binders.value._
+
+  def apply[B <: PB](body: B, location: HRI, headersObj: Obj)(implicit mcx: MessagingContext): R = {
+    apply[B](body, headersObj + Seq(Header.LOCATION → location.toValue))(mcx)
+  }
+
+  def apply[B <: PB](body: B, location: HRI)(implicit mcx: MessagingContext): R = {
+    apply[B](body, Obj.from(Header.LOCATION → location.toValue))(mcx)
+  }
+}
+
 // ----------------- Normal responses -----------------
 
 @response(Status.OK) case class Ok[+B <: Body](body: B) extends NormalResponse with Response[B]
 
-object Ok extends ResponseObjectApi[Body, Ok[Body]]
+object Ok extends ResponseApiWithLocation[Body, Ok[Body]]
 
-@response(Status.CREATED) case class Created[+B <: Body](body: B) extends NormalResponse with Response[B] {
-  def location: HRI = headers.all.location.to[HRI]
-}
+@response(Status.CREATED) case class Created[+B <: Body](body: B) extends NormalResponse with Response[B]
 
-object Created extends ResponseObjectApi[Body, Created[Body]] {
-  import com.hypertino.binders.value._
-
-  def apply[B <: Body](body: B, location: HRI, headersObj: Obj)(implicit mcx: MessagingContext): Created[B] = {
-    val headersNew = Obj(headersObj.v + Header.LOCATION → location.toValue)
-    apply(body, headersNew)(mcx)
-  }
-
-  def apply[B <: Body](body: B, location: HRI)(implicit mcx: MessagingContext): Created[B] = {
-    apply(body, Obj.from(Header.LOCATION → location.toValue))(mcx)
-  }
-}
+object Created extends ResponseApiWithLocation[Body, Created[Body]]
 
 @response(Status.ACCEPTED) case class Accepted[+B <: Body](body: B) extends NormalResponse with Response[B]
 
@@ -69,31 +64,31 @@ object MultiStatus extends ResponseObjectApi[Body, MultiStatus[Body]]
 
 @response(Status.MULTIPLE_CHOICES) case class MultipleChoices[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object MultipleChoices extends ResponseObjectApi[Body, MultipleChoices[Body]]
+object MultipleChoices extends ResponseApiWithLocation[Body, MultipleChoices[Body]]
 
 @response(Status.MOVED_PERMANENTLY) case class MovedPermanently[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object MovedPermanently extends ResponseObjectApi[Body, MovedPermanently[Body]]
+object MovedPermanently extends ResponseApiWithLocation[Body, MovedPermanently[Body]]
 
 @response(Status.FOUND) case class Found[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object Found extends ResponseObjectApi[Body, Found[Body]]
+object Found extends ResponseApiWithLocation[Body, Found[Body]]
 
 @response(Status.SEE_OTHER) case class SeeOther[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object SeeOther extends ResponseObjectApi[Body, SeeOther[Body]]
+object SeeOther extends ResponseApiWithLocation[Body, SeeOther[Body]]
 
 @response(Status.NOT_MODIFIED) case class NotModified[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object NotModified extends ResponseObjectApi[Body, NotModified[Body]]
+object NotModified extends ResponseApiWithLocation[Body, NotModified[Body]]
 
 @response(Status.USE_PROXY) case class UseProxy[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object UseProxy extends ResponseObjectApi[Body, UseProxy[Body]]
+object UseProxy extends ResponseApiWithLocation[Body, UseProxy[Body]]
 
 @response(Status.TEMPORARY_REDIRECT) case class TemporaryRedirect[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object TemporaryRedirect extends ResponseObjectApi[Body, TemporaryRedirect[Body]]
+object TemporaryRedirect extends ResponseApiWithLocation[Body, TemporaryRedirect[Body]]
 
 // ----------------- Exception base classes -----------------
 

@@ -77,7 +77,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
             ..${classFields.map { case ValDef(_, name, tpt, _) ⇒
               q"val $name: $tpt = this.$name"
             }}): $className = {
-            new $className(..${classFields.map(_.name)}, plain__init = false)
+            new $className(..${classFields.map(_.name)}, plain__init = true)
           }
 
           def canEqual(other: Any): Boolean = other.isInstanceOf[$className]
@@ -148,7 +148,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
               .withContext(mcx)
               .++=(headersObj)
               .result()),
-            plain__init = false
+            plain__init = true
           )
         }
 

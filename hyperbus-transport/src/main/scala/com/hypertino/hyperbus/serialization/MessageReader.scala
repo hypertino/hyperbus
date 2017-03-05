@@ -8,7 +8,7 @@ import com.hypertino.binders.value.{Obj, Value}
 import com.hypertino.hyperbus.model.{Body, Headers, Message}
 
 object MessageReader {
-  def apply[M <: Message[_ <: Body,_ <: Headers]](reader: Reader, concreteDeserializer: MessageDeserializer[M]): M = {
+  def read[M <: Message[_ <: Body,_ <: Headers]](reader: Reader, concreteDeserializer: MessageDeserializer[M]): M = {
     val jacksonFactory = new JsonFactory()
     jacksonFactory.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE)
 
@@ -32,10 +32,10 @@ object MessageReader {
     concreteDeserializer(reader, headers)
   }
 
-  def apply[M <: Message[_ <: Body,_ <: Headers]](message: String, concreteDeserializer: MessageDeserializer[M]): M = {
+  def from[M <: Message[_ <: Body,_ <: Headers]](message: String, concreteDeserializer: MessageDeserializer[M]): M = {
     val stringReader = new StringReader(message)
     try {
-      apply(stringReader, concreteDeserializer)
+      read(stringReader, concreteDeserializer)
     }
     finally {
       stringReader.close()

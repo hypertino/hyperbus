@@ -23,7 +23,7 @@ class ClientTransportTest(output: String) extends ClientTransport {
   override def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Future[ResponseBase] = {
     messageBuf.append(message.serializeToString)
 
-    val out = MessageReader(output, responseDeserializer)
+    val out = MessageReader.from(output, responseDeserializer)
     Future.successful(out)
   }
 

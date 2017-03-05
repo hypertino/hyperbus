@@ -32,6 +32,8 @@ object RequestHeaders {
 
 case class ResponseHeaders(all: Obj) extends Headers {
   lazy val statusCode: Int = all.v(Header.STATUS_CODE).toInt
+
+  def location: HRI = all.v(Header.LOCATION).to[HRI]
 }
 
 object ResponseHeaders {

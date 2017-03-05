@@ -76,9 +76,5 @@ object DynamicRequest extends RequestObjectApi[DynamicRequest] {
     )
   }
 
-  def apply(body: DynamicBody, headers: Obj): DynamicRequest = {
-    DynamicRequest(body, RequestHeaders(headers))
-  }
-
   protected def invalidOperation(name: String): String = throw new UnsupportedOperationException(s"$getClass.$name")
 }

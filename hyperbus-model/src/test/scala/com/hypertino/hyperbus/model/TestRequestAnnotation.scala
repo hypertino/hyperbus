@@ -74,7 +74,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
 
   "TestGet1 (with EmptyBody)" should "deserialize" in {
     val str = s"""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"get","i":"123"}"""
-    TestGet1.deserialize(str) should equal (TestGet1("155", EmptyBody))
+    TestGet1.from(str) should equal (TestGet1("155", EmptyBody))
   }
 
   "TestPost1" should "serialize with headers" in {
@@ -87,7 +87,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "TestPost1" should "deserialize" in {
     val str = """{"r":{"q":{"id":"155"},"a":"hb://test-post-1"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
       """{"data":"abcde"}"""
-    val post = TestPost1.deserialize(str)
+    val post = TestPost1.from(str)
     post.headers.hri should equal(HRI("hb://test-post-1", Obj.from("id" -> "155")))
     post.headers.contentType should equal(Some("test-body-1"))
     post.headers.method should equal("post")
@@ -135,7 +135,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "DynamicRequest" should "decode" in {
     val str = """{"r":{"a":"hb://test-outer-resource"},"m":"custom-method","t":"test-body-1","i":"123"}""" + rn +
       """{"resourceId":"100500"}"""
-    val request = DynamicRequest.deserialize(str)
+    val request = DynamicRequest.from(str)
     request shouldBe a[Request[_]]
     request.headers.method should equal("custom-method")
     request.headers.hri should equal(HRI("hb://test-outer-resource"))

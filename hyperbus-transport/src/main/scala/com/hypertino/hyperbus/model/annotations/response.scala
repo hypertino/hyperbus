@@ -66,7 +66,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
           def statusCode: Int = ${className.toTermName}.statusCode
 
           def copy[S <: $upperBound](body: S = this.body, headers: com.hypertino.hyperbus.model.ResponseHeaders = this.headers): $className[S] = {
-            new $className(body, headers, plain__init = false)
+            new $className(body, headers, plain__init = true)
           }
 
           def canEqual(other: Any): Boolean = other.isInstanceOf[$className[_ <: $upperBound]]
@@ -111,7 +111,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
               .withContext(mcx)
               .++=(headersObj)
               .result()),
-            plain__init = false
+            plain__init = true
           )
         }
 
