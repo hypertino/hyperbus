@@ -42,7 +42,7 @@ class ClientTransportTest(output: String) extends ClientTransport {
   }
 }
 
-case class ServerSubscriptionTest(id: String) extends Subscription
+case class ServerHyperbusSubscriptionTest(id: String) extends HyperbusSubscription
 
 class ServerTransportTest extends ServerTransport {
   //var sUriFilter: UriPattern = null
@@ -53,28 +53,28 @@ class ServerTransportTest extends ServerTransport {
 
   override def onCommand[REQ <: Request[Body]](matcher: RequestMatcher,
                          inputDeserializer: RequestDeserializer[REQ])
-                        (handler: (REQ) => Future[ResponseBase]): Future[Subscription] = {
+                        (handler: (REQ) => Future[ResponseBase]): Future[HyperbusSubscription] = {
 
     sInputDeserializer = inputDeserializer
     sHandler = handler.asInstanceOf[(RequestBase) ⇒ Future[ResponseBase]]
     Future {
-      ServerSubscriptionTest(idCounter.incrementAndGet().toHexString)
+      ServerHyperbusSubscriptionTest(idCounter.incrementAndGet().toHexString)
     }
   }
 
   override def onEvent[REQ <: Request[Body]](matcher: RequestMatcher,
                        groupName: String,
                        inputDeserializer: RequestDeserializer[REQ],
-                       subscriber: Observer[REQ]): Future[Subscription] = {
+                       subscriber: Observer[REQ]): Future[HyperbusSubscription] = {
     sInputDeserializer = inputDeserializer
     Future {
-      ServerSubscriptionTest(idCounter.incrementAndGet().toHexString)
+      ServerHyperbusSubscriptionTest(idCounter.incrementAndGet().toHexString)
     }
   }
 
-  override def off(subscription: Subscription): Future[Unit] = Future {
+  override def off(subscription: HyperbusSubscription): Future[Unit] = Future {
     subscription match {
-      case ServerSubscriptionTest(subscriptionId) ⇒
+      case ServerHyperbusSubscriptionTest(subscriptionId) ⇒
         sSubscriptionId = subscriptionId
         sInputDeserializer = null
         sHandler = null
@@ -371,7 +371,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
       override def onEvent[REQ <: Request[Body]](requestMatcher: RequestMatcher,
                                                  groupName: String,
                                                  inputDeserializer: RequestDeserializer[REQ],
-                                                 subscriber: Observer[REQ]): Future[Subscription] = {
+                                                 subscriber: Observer[REQ]): Future[HyperbusSubscription] = {
         receivedEvents += 1
         super.onEvent(requestMatcher, groupName, inputDeserializer, subscriber)
       }
@@ -389,7 +389,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
       override def onEvent[REQ <: Request[Body]](requestMatcher: RequestMatcher,
                                                  groupName: String,
                                                  inputDeserializer: RequestDeserializer[REQ],
-                                                 subscriber: Observer[REQ]): Future[Subscription] = {
+                                                 subscriber: Observer[REQ]): Future[HyperbusSubscription] = {
         receivedEvents += 1
         super.onEvent(requestMatcher, groupName, inputDeserializer, subscriber)
       }

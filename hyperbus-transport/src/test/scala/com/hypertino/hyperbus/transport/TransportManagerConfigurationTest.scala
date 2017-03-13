@@ -1,38 +1,35 @@
 package com.hypertino.hyperbus.transport
 
-import com.typesafe.config.{Config, ConfigFactory}
 import com.hypertino.hyperbus.model.{Body, Request, RequestBase, ResponseBase}
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers._
+import com.typesafe.config.{Config, ConfigFactory}
+import monix.eval.Task
+import monix.reactive.Observable
+import monix.reactive.observers.Subscriber
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FreeSpec, Matchers}
-import rx.lang.scala.Observer
 
-import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
 class MockClientTransport(config: Config) extends ClientTransport {
-  override def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Future[ResponseBase] = ???
+  override def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase] = ???
 
-  override def shutdown(duration: FiniteDuration): Future[Boolean] = ???
+  override def shutdown(duration: FiniteDuration): Task[Boolean] = ???
 
-  override def publish(message: RequestBase): Future[PublishResult] = ???
+  override def publish(message: RequestBase): Task[PublishResult] = ???
 }
 
 class MockServerTransport(config: Config) extends ServerTransport {
-  override def onCommand[REQ <: Request[Body]](requestMatcher: RequestMatcher,
-                         inputDeserializer: RequestDeserializer[REQ])
-                        (handler: (REQ) => Future[ResponseBase]): Future[Subscription] = ???
+  def commands[REQ <: Request[Body]](matcher: RequestMatcher,
+                                     inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = ???
 
-  override def shutdown(duration: FiniteDuration): Future[Boolean] = ???
+  def events[REQ <: Request[Body]](matcher: RequestMatcher,
+                                   groupName: String,
+                                   inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = ???
 
-  override def onEvent[REQ <: Request[Body]](requestMatcher: RequestMatcher,
-                       groupName: String,
-                       inputDeserializer: RequestDeserializer[REQ],
-                       subscriber: Observer[REQ]): Future[Subscription] = ???
-
-  override def off(subscription: Subscription): Future[Unit] = ???
+  override def shutdown(duration: FiniteDuration): Task[Boolean] = ???
 }
 
 class TransportManagerConfigurationTest extends FreeSpec with ScalaFutures with Matchers {

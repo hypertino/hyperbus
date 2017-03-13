@@ -2,7 +2,7 @@ package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.model.annotations.{contentType, method, serviceAddress}
-import com.hypertino.hyperbus.transport.api.Subscription
+import com.hypertino.hyperbus.transport.api.HyperbusSubscription
 import rx.lang.scala.{Observable, Observer}
 
 import scala.concurrent.Future
@@ -13,7 +13,7 @@ private[hyperbus] object HyperbusMacro {
 
   def onCommand[IN <: Request[Body] : c.WeakTypeTag]
   (c: whitebox.Context)
-  (handler: c.Expr[(IN) => Future[Response[Body]]]): c.Expr[Future[Subscription]] = {
+  (handler: c.Expr[(IN) => Future[Response[Body]]]): c.Expr[Future[HyperbusSubscription]] = {
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
@@ -23,7 +23,7 @@ private[hyperbus] object HyperbusMacro {
 
   def onEvent[IN: c.WeakTypeTag]
   (c: whitebox.Context)
-  (observer: c.Expr[Observer[IN]]): c.Expr[Future[Subscription]] = {
+  (observer: c.Expr[Observer[IN]]): c.Expr[Future[HyperbusSubscription]] = {
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
@@ -33,7 +33,7 @@ private[hyperbus] object HyperbusMacro {
 
   def onEventForGroup[IN: c.WeakTypeTag]
   (c: whitebox.Context)
-  (groupName: c.Expr[String], observer: c.Expr[Observer[IN]]): c.Expr[Future[Subscription]] = {
+  (groupName: c.Expr[String], observer: c.Expr[Observer[IN]]): c.Expr[Future[HyperbusSubscription]] = {
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
@@ -68,7 +68,7 @@ private[hyperbus] trait HyperbusMacroImplementation {
   import c.universe._
 
   def onCommand[IN <: Request[Body] : c.WeakTypeTag]
-  (handler: c.Expr[(IN) => Future[Response[Body]]]): c.Expr[Future[Subscription]] = {
+  (handler: c.Expr[(IN) => Future[Response[Body]]]): c.Expr[Future[HyperbusSubscription]] = {
 
     val thiz = c.prefix.tree
     val requestType = weakTypeOf[IN]
@@ -94,11 +94,11 @@ private[hyperbus] trait HyperbusMacroImplementation {
       }
     }"""
     //println(obj)
-    c.Expr[Future[Subscription]](obj)
+    c.Expr[Future[HyperbusSubscription]](obj)
   }
 
   def onEvent[IN: c.WeakTypeTag]
-  (groupName: Option[c.Expr[String]], observer: c.Expr[Observer[IN]]): c.Expr[Future[Subscription]] = {
+  (groupName: Option[c.Expr[String]], observer: c.Expr[Observer[IN]]): c.Expr[Future[HyperbusSubscription]] = {
     val thiz = c.prefix.tree
     val requestType = weakTypeOf[IN]
     if (requestType.companion == null) {
@@ -121,7 +121,7 @@ private[hyperbus] trait HyperbusMacroImplementation {
       $thizVal.onEvent[$requestType]($rmVal, $groupName, $requestDeserializer _, $observer)
     }"""
 //    println(obj)
-    c.Expr[Future[Subscription]](obj)
+    c.Expr[Future[HyperbusSubscription]](obj)
   }
 
   def ask[IN <: Request[Body] : c.WeakTypeTag](r: c.Expr[IN]): c.Expr[Any] = {

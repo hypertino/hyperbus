@@ -1,14 +1,13 @@
 package com.hypertino.hyperbus.transport.api
 
-import java.io.{StringWriter, Writer}
-
 import com.hypertino.hyperbus.model._
-import com.hypertino.hyperbus.serialization.{RequestDeserializer, ResponseBaseDeserializer, ResponseDeserializer}
+import com.hypertino.hyperbus.serialization.{RequestDeserializer, ResponseBaseDeserializer}
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
+import monix.eval.Task
+import monix.execution.Cancelable
+import monix.reactive.Observable
 
-import rx.lang.scala.Observer
-
-import scala.concurrent.Future
+import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
 
 trait PublishResult {
@@ -18,31 +17,24 @@ trait PublishResult {
 }
 
 trait ClientTransport {
-  def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Future[ResponseBase]
+  def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase]
 
-  def publish(message: RequestBase): Future[PublishResult]
+  def publish(message: RequestBase): Task[PublishResult]
 
-  def shutdown(duration: FiniteDuration): Future[Boolean]
+  def shutdown(duration: FiniteDuration): Task[Boolean]
 }
 
-trait Subscription
-
-case class EventStreamSubscription(observableSubscription: rx.lang.scala.Subscription, transportSubscription: Subscription) extends Subscription
+case class CommandEvent[REQ <: Request[Body]](request: REQ, responsePromise: Promise[ResponseBase])
 
 trait ServerTransport {
-  // todo: instead of ((Request[Body]) => Future[ResponseBase]) use class like Observer[-T] with contravariance
-  def onCommand[REQ <: Request[Body]](matcher: RequestMatcher,
-                inputDeserializer: RequestDeserializer[REQ])
-               (handler: (REQ) => Future[ResponseBase]): Future[Subscription]
+  def commands[REQ <: Request[Body]](matcher: RequestMatcher,
+                                     inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]]
 
-  def onEvent[REQ <: Request[Body]](matcher: RequestMatcher,
-              groupName: String,
-              inputDeserializer: RequestDeserializer[REQ],
-              observer: Observer[REQ]): Future[Subscription]
+  def events[REQ <: Request[Body]](matcher: RequestMatcher,
+                                   groupName: String,
+                                   inputDeserializer: RequestDeserializer[REQ]): Observable[REQ]
 
-  def off(subscription: Subscription): Future[Unit]
-
-  def shutdown(duration: FiniteDuration): Future[Boolean]
+  def shutdown(duration: FiniteDuration): Task[Boolean]
 }
 
 class NoTransportRouteException(message: String) extends RuntimeException(message)

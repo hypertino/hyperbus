@@ -3,8 +3,10 @@ package com.hypertino.hyperbus.transport.api
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
+import monix.eval.Task
+import monix.reactive.Observable
+import monix.reactive.observers.Subscriber
 import org.slf4j.LoggerFactory
-import rx.lang.scala.Subscriber
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -18,19 +20,31 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 class TransportManager(protected[this] val clientRoutes: Seq[TransportRoute[ClientTransport]],
                        protected[this] val serverRoutes: Seq[TransportRoute[ServerTransport]],
-                       implicit protected[this] val executionContext: ExecutionContext) extends TransportManagerApi {
+                       implicit protected[this] val executionContext: ExecutionContext) extends ClientTransport with ServerTransport {
 
   protected[this] val log = LoggerFactory.getLogger(this.getClass)
 
   def this(configuration: TransportConfiguration) = this(configuration.clientRoutes,
     configuration.serverRoutes, ExecutionContext.global)
 
-  def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Future[ResponseBase] = {
+  def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase] = {
     this.lookupClientTransport(message).ask(message, responseDeserializer)
   }
 
-  def publish(message: RequestBase): Future[PublishResult] = {
+  def publish(message: RequestBase): Task[PublishResult] = {
     this.lookupClientTransport(message).publish(message)
+  }
+
+  def commands[REQ <: Request[Body]](matcher: RequestMatcher,
+                                     inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = {
+    lookupServerTransport(matcher).commands(matcher, inputDeserializer)
+  }
+
+  def events[REQ <: Request[Body]](matcher: RequestMatcher,
+                                   groupName: String,
+                                   inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = {
+
+    lookupServerTransport(matcher).events(matcher, groupName, inputDeserializer)
   }
 
   protected def lookupClientTransport(message: RequestBase): ClientTransport = {
@@ -38,50 +52,6 @@ class TransportManager(protected[this] val clientRoutes: Seq[TransportRoute[Clie
       route.matcher.matchMessage(message)
     } map (_.transport) getOrElse {
       throw new NoTransportRouteException(s"Message headers: ${message.headers}")
-    }
-  }
-
-  def off(subscription: Subscription): Future[Unit] = {
-    subscription match {
-      case TransportSubscription(transport, underlyingSubscription) ⇒
-        transport.off(underlyingSubscription)
-      case other ⇒
-        Future.failed {
-          new ClassCastException(s"TransportSubscription expected but ${other.getClass} is received")
-        }
-    }
-  }
-
-  def onCommand[REQ <: Request[Body]](requestMatcher: RequestMatcher,
-                inputDeserializer: RequestDeserializer[REQ])
-               (handler: (REQ) => Future[ResponseBase]): Future[Subscription] = {
-
-    val transport = lookupServerTransport(requestMatcher)
-    transport.onCommand(
-      requestMatcher,
-      inputDeserializer)(handler) map { underlyingSubscription ⇒
-
-      val subscription = TransportSubscription(transport, underlyingSubscription)
-      log.info(s"New `onCommand` subscription on $requestMatcher: #${handler.hashCode.toHexString}. $subscription")
-      subscription
-    }
-  }
-
-  def onEvent[REQ <: Request[Body]](requestMatcher: RequestMatcher,
-              groupName: String,
-              inputDeserializer: RequestDeserializer[REQ],
-              subscriber: Subscriber[REQ]): Future[Subscription] = {
-
-    val transport = lookupServerTransport(requestMatcher)
-    transport.onEvent(
-      requestMatcher,
-      groupName,
-      inputDeserializer,
-      subscriber) map { underlyingSubscription ⇒
-
-      val subscription = TransportSubscription(transport, underlyingSubscription)
-      log.info(s"New `onEvent` subscription on $requestMatcher: #$subscription")
-      subscription
     }
   }
 
@@ -93,18 +63,12 @@ class TransportManager(protected[this] val clientRoutes: Seq[TransportRoute[Clie
     }
   }
 
-  def shutdown(duration: FiniteDuration): Future[Boolean] = {
-    val client = Future.sequence(clientRoutes.map(_.transport.shutdown(duration)))
-    val server = Future.sequence(serverRoutes.map(_.transport.shutdown(duration)))
-    client flatMap { c ⇒
-      server map { s ⇒
-        s.forall(_ == true) && c.forall(_ == true)
-      }
+  def shutdown(duration: FiniteDuration): Task[Boolean] = {
+    Task.zipMap2(
+      Task.gatherUnordered(clientRoutes.map(_.transport.shutdown(duration))),
+      Task.gatherUnordered(serverRoutes.map(_.transport.shutdown(duration)))
+    ) { (c, s) ⇒
+      s.forall(_ == true) && c.forall(_ == true)
     }
   }
 }
-
-private[transport] case class TransportSubscription(
-                                                     transport: ServerTransport,
-                                                     underlyingSubscription: Subscription
-                                                   ) extends Subscription

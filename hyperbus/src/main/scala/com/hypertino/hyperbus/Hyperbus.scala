@@ -26,12 +26,12 @@ class Hyperbus(val transportManager: TransportManager,
 
   protected val log = LoggerFactory.getLogger(this.getClass)
 
-  def onEvent(requestMatcher: RequestMatcher, groupName: Option[String], observer: Observer[DynamicRequest]): Future[Subscription] = {
+  def onEvent(requestMatcher: RequestMatcher, groupName: Option[String], observer: Observer[DynamicRequest]): Future[HyperbusSubscription] = {
     onEvent[DynamicRequest](requestMatcher, groupName, DynamicRequest.apply, observer)
   }
 
   def onCommand(requestMatcher: RequestMatcher)
-               (handler: DynamicRequest => Future[_ <: Response[Body]]): Future[Subscription] = {
+               (handler: DynamicRequest => Future[_ <: Response[Body]]): Future[HyperbusSubscription] = {
     onCommand[Response[Body], DynamicRequest](requestMatcher, DynamicRequest.apply)(handler)
   }
 
@@ -88,7 +88,7 @@ class Hyperbus(val transportManager: TransportManager,
 
   def onCommand[RESP <: Response[Body], REQ <: Request[Body]](requestMatcher: RequestMatcher,
                                                               requestDeserializer: RequestDeserializer[REQ])
-                                                             (handler: (REQ) => Future[RESP]): Future[Subscription] = {
+                                                             (handler: (REQ) => Future[RESP]): Future[HyperbusSubscription] = {
 
     val subscription = new RequestReplySubscription[REQ](handler, requestDeserializer)
     transportManager.onCommand(requestMatcher, subscription.requestDeserializer)(subscription.underlyingHandler)
@@ -97,8 +97,8 @@ class Hyperbus(val transportManager: TransportManager,
   def onEvent[REQ <: Request[Body]](requestMatcher: RequestMatcher,
                                     groupName: Option[String],
                                     requestDeserializer: RequestDeserializer[REQ],
-                                    observer: Observer[REQ]): Future[Subscription] = {
-    val transportSubscriptionPromise = Promise[Subscription]()
+                                    observer: Observer[REQ]): Future[HyperbusSubscription] = {
+    val transportSubscriptionPromise = Promise[HyperbusSubscription]()
     val observableSubscription = Observable { subscriber: Subscriber[REQ] ⇒
       val finalGroupName = groupName.getOrElse {
         defaultGroupName.getOrElse {
@@ -110,13 +110,13 @@ class Hyperbus(val transportManager: TransportManager,
       )
     }.subscribe(observer)
     transportSubscriptionPromise.future map { transportSubscription ⇒
-      EventStreamSubscription(observableSubscription, transportSubscription)
+      EventStreamHyperbusSubscription(observableSubscription, transportSubscription)
     }
   }
 
-  def off(subscription: Subscription): Future[Unit] = {
+  def off(subscription: HyperbusSubscription): Future[Unit] = {
     subscription match {
-      case EventStreamSubscription(observableSubscription, transportSubscription) ⇒
+      case EventStreamHyperbusSubscription(observableSubscription, transportSubscription) ⇒
         transportManager.off(transportSubscription) map { _ ⇒
           observableSubscription.unsubscribe()
         }

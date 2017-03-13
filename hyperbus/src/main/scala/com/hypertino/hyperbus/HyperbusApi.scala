@@ -17,9 +17,9 @@ trait HyperbusApi {
 
   def <|[REQ <: Request[Body]](request: REQ): Future[PublishResult] = macro HyperbusMacro.publish[REQ]
 
-  def |>[REQ <: Request[Body]](observer: Observer[REQ]) : Future[Subscription] = macro HyperbusMacro.onEvent[REQ]
+  def |>[REQ <: Request[Body]](observer: Observer[REQ]) : Future[HyperbusSubscription] = macro HyperbusMacro.onEvent[REQ]
 
-  def ~>[REQ <: Request[Body]](handler: REQ => Future[Response[Body]]): Future[Subscription] = macro HyperbusMacro.onCommand[REQ]
+  def ~>[REQ <: Request[Body]](handler: REQ => Future[Response[Body]]): Future[HyperbusSubscription] = macro HyperbusMacro.onCommand[REQ]
 
   def <~(request: DynamicRequest): Future[Response[DynamicBody]] = {
     ask[Response[DynamicBody],DynamicRequest](request,
@@ -38,17 +38,17 @@ trait HyperbusApi {
 
   def onCommand[RESP <: Response[Body], REQ <: Request[Body]](requestMatcher: RequestMatcher,
                                                               requestDeserializer: RequestDeserializer[REQ])
-                                                             (handler: (REQ) => Future[RESP]): Future[Subscription]
+                                                             (handler: (REQ) => Future[RESP]): Future[HyperbusSubscription]
 
   def onEvent[REQ <: Request[Body]](requestMatcher: RequestMatcher,
                                     groupName: Option[String],
                                     requestDeserializer: RequestDeserializer[REQ],
-                                    observer: Observer[REQ]): Future[Subscription]
+                                    observer: Observer[REQ]): Future[HyperbusSubscription]
 
   def onEventForGroup[REQ <: Request[Body]](groupName: String,
-                                            observer: Observer[REQ]): Future[Subscription] = macro HyperbusMacro.onEventForGroup[REQ]
+                                            observer: Observer[REQ]): Future[HyperbusSubscription] = macro HyperbusMacro.onEventForGroup[REQ]
 
-  def off(subscription: Subscription): Future[Unit]
+  def off(subscription: HyperbusSubscription): Future[Unit]
 
   def shutdown(duration: FiniteDuration): Future[Boolean]
 
