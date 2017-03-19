@@ -19,39 +19,39 @@ case class TestAnotherBody(resourceId: String) extends Body
 @body
 case class TestBodyNoContentType(resourceData: String) extends Body
 
-@request(Method.POST, "hb:/resources")
+@request(Method.POST, "hb://resources")
 case class TestPost1(body: TestBody1) extends Request[TestBody1]
   with DefinedResponse[Created[TestCreatedBody]]
 
-@request(Method.POST, "hb:/resources")
+@request(Method.POST, "hb://resources")
 case class TestPost2(body: TestBody2) extends Request[TestBody2]
   with DefinedResponse[Created[TestCreatedBody]]
 
-@request(Method.POST, "hb:/resources")
+@request(Method.POST, "hb://resources")
 case class TestPost3(body: TestBody2) extends Request[TestBody2]
   with DefinedResponse[(Ok[DynamicBody], Created[TestCreatedBody])]
 
-@request(Method.POST, "hb:/empty")
+@request(Method.POST, "hb://empty")
 case class TestPostWithNoContent(body: TestBody1) extends Request[TestBody1]
   with DefinedResponse[NoContent[EmptyBody]]
 
-@request(Method.POST, "hb:/empty")
+@request(Method.POST, "hb://empty")
 case class StaticPostWithDynamicBody(body: DynamicBody) extends Request[DynamicBody]
   with DefinedResponse[NoContent[EmptyBody]]
 
-@request(Method.POST, "hb:/empty")
+@request(Method.POST, "hb://empty")
 case class StaticPostWithEmptyBody(body: EmptyBody) extends Request[EmptyBody]
   with DefinedResponse[NoContent[EmptyBody]]
 
-@request(Method.GET, "hb:/empty")
+@request(Method.GET, "hb://empty")
 case class StaticGetWithQuery(body: EmptyBody) extends Request[EmptyBody]
   with DefinedResponse[Ok[DynamicBody]]
 
-@request(Method.POST, "hb:/content-body-not-specified")
+@request(Method.POST, "hb://content-body-not-specified")
 case class StaticPostBodyWithoutContentType(body: TestBodyNoContentType) extends Request[TestBodyNoContentType]
   with DefinedResponse[NoContent[EmptyBody]]
 
-@request(Method.PUT, "hb:/2resp")
+@request(Method.PUT, "hb://2resp")
 case class TestPostWith2Responses(body: TestBody1) extends Request[TestBody1]
   with DefinedResponse[(Created[TestCreatedBody], Ok[TestAnotherBody])]
 

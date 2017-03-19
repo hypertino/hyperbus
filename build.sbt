@@ -19,7 +19,6 @@ lazy val jsonBinders = "com.hypertino" %% "json-binders" % "1.0-SNAPSHOT"
 lazy val configBinders = "com.hypertino" %% "typesafe-config-binders" % "0.13-SNAPSHOT"
 lazy val scalaMock = "org.scalamock" %% "scalamock-scalatest-support" % "3.5.0" % "test"
 lazy val monix = "io.monix" %% "monix" % "2.2.2"
-lazy val rxscala = "io.reactivex" %% "rxscala" % "0.26.5"
 lazy val slf4j = "org.slf4j" % "slf4j-api" % "1.7.22"
 lazy val logback = "ch.qos.logback" % "logback-classic" % "1.1.8"
 lazy val quasiQuotes = "org.scalamacros" %% "quasiquotes" % "2.1.0" cross CrossVersion.binary
@@ -33,7 +32,6 @@ lazy val `hyperbus-transport` = project in file("hyperbus-transport") settings (
       jsonBinders,
       configBinders,
       monix,
-      rxscala,
       slf4j,
       scalaMock
     )
@@ -54,7 +52,6 @@ lazy val `hyperbus` = project in file("hyperbus") settings (
     name := "hyperbus",
     libraryDependencies ++= Seq(
       monix,
-      rxscala,
       binders,
       scalaMock
     )

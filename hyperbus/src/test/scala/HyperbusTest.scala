@@ -1,57 +1,69 @@
 import java.util.concurrent.atomic.AtomicLong
 
-import com.hypertino.binders.value._
+import com.hypertino.binders.value.{Obj, Text}
 import com.hypertino.hyperbus.Hyperbus
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
-import com.hypertino.hyperbus.transport.api.matchers.{RequestMatcher, Specific}
+import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
+import monix.eval.Task
+import monix.execution.Scheduler.Implicits.global
+import monix.reactive.Observable
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
-import rx.lang.scala.Observer
 import testclasses._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-//class ClientTransportTest(output: String) extends ClientTransport {
-//  private val messageBuf = new StringBuilder
-//
-//  def input = messageBuf.toString()
-//
-//  override def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Future[ResponseBase] = {
-//    messageBuf.append(message.serializeToString)
-//
-//    val out = MessageReader.from(output, responseDeserializer)
-//    Future.successful(out)
-//  }
-//
-//  override def publish(message: RequestBase): Future[PublishResult] = {
-//    ask(message, null) map { x =>
-//      new PublishResult {
-//        def sent = None
-//
-//        def offset = None
-//      }
-//    }
-//  }
-//
-//  override def shutdown(duration: FiniteDuration): Future[Boolean] = {
-//    Future.successful(true)
-//  }
-//}
-//
+class ClientTransportTest(output: String) extends ClientTransport {
+  private val messageBuf = new StringBuilder
+
+  def input = messageBuf.toString()
+
+  override def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase] = {
+    messageBuf.append(message.serializeToString)
+
+    val out = MessageReader.from(output, responseDeserializer)
+    Task.now(out)
+  }
+
+  override def publish(message: RequestBase): Task[PublishResult] = {
+    ask(message, null) map { x =>
+      new PublishResult {
+        def sent = None
+
+        def offset = None
+      }
+    }
+  }
+
+  override def shutdown(duration: FiniteDuration): Task[Boolean] = {
+    Task.now(true)
+  }
+}
+
 //case class ServerHyperbusSubscriptionTest(id: String) extends HyperbusSubscription
-//
-//class ServerTransportTest extends ServerTransport {
-//  //var sUriFilter: UriPattern = null
-//  var sInputDeserializer: RequestDeserializer[Request[Body]] = null
-//  var sHandler: (RequestBase) ⇒ Future[ResponseBase] = null
-//  var sSubscriptionId: String = null
-//  val idCounter = new AtomicLong(0)
-//
-//  override def onCommand[REQ <: Request[Body]](matcher: RequestMatcher,
+
+class ServerTransportTest extends ServerTransport {
+  //var sUriFilter: UriPattern = null
+  var sInputDeserializer: RequestDeserializer[Request[Body]] = null
+  var sHandler: (RequestBase) ⇒ Future[ResponseBase] = null
+  var sSubscriptionId: String = null
+  val idCounter = new AtomicLong(0)
+
+  override def commands[REQ <: Request[Body]](matcher: RequestMatcher,
+                                              inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = {
+    ???
+  }
+
+  override def events[REQ <: Request[Body]](matcher: RequestMatcher,
+                                            groupName: String,
+                                            inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = {
+    ???
+  }
+
+  //  override def onCommand[REQ <: Request[Body]](matcher: RequestMatcher,
 //                         inputDeserializer: RequestDeserializer[REQ])
 //                        (handler: (REQ) => Future[ResponseBase]): Future[HyperbusSubscription] = {
 //
@@ -71,168 +83,160 @@ import scala.concurrent.{ExecutionContext, Future}
 //      ServerHyperbusSubscriptionTest(idCounter.incrementAndGet().toHexString)
 //    }
 //  }
-//
-//  override def off(subscription: HyperbusSubscription): Future[Unit] = Future {
-//    subscription match {
-//      case ServerHyperbusSubscriptionTest(subscriptionId) ⇒
-//        sSubscriptionId = subscriptionId
-//        sInputDeserializer = null
-//        sHandler = null
-//    }
-//  }
-//
-//  override def shutdown(duration: FiniteDuration): Future[Boolean] = {
-//    Future.successful(true)
-//  }
-//}
-//
-//class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
-//  implicit val mcx = new MessagingContext {
-//    override def createMessageId() = "123"
-//    override def correlationId = None
-//  }
-//
-//  "<~ " should "send a request (client)" in {
-//    val ct = new ClientTransportTest(
-//      """{"s":201,"t":"created-body","i":"123","l":{"a":"hb://test"}}""" + "\r\n" + """{"resourceId":"100500"}"""
-//    )
-//
-//    val hyperbus = newHyperbus(ct, null)
-//    val f = hyperbus <~ testclasses.TestPost1(testclasses.TestBody1("ha ha"))
-//
-//    ct.input should equal(
-//      """{"r":{"a":"/resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
-//    )
-//
-//    f.futureValue.body should equal(testclasses.TestCreatedBody("100500"))
-//  }
-//
-//  "<~ " should "send a request, dynamic (client)" in {
-//
-//    val ct = new ClientTransportTest(
-//      """{"s":201,"t":"created-body","i":"123"}""" + "\r\n" + """{"resourceId":"100500"}"""
-//    )
-//
-//    val hyperbus = newHyperbus(ct, null)
-//    val f = hyperbus <~ DynamicRequest(HRI("/resources"),
-//      Method.POST,
-//      DynamicBody(
-//        Obj.from("resourceData" → "ha ha"),
-//        Some("test-1")
-//      )
-//    )
-//
-//    ct.input should equal(
-//      """{"r":{"a":"/resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
-//    )
-//
-//    val r = f.futureValue
-//    r shouldBe a[Created[_]]
-//    r.body shouldBe a[DynamicBody]
-//  }
-//
-//  "<~ " should " receive empty response (client)" in {
-//    val ct = new ClientTransportTest(
-//      """{"s":204,"i":"123"}"""
-//    )
-//
-//    val hyperbus = newHyperbus(ct, null)
-//    val f = hyperbus <~ TestPostWithNoContent(testclasses.TestBody1("empty"))
-//
-//    ct.input should equal(
-//      """{"r":{"a":"/empty"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"empty"}"""
-//    )
-//
-//    val r = f.futureValue
-//    r shouldBe a[NoContent[_]]
-//    r.body shouldBe a[EmptyBody]
-//  }
-//
-//  "<~ " should " send static request with dynamic body (client)" in {
-//    val ct = new ClientTransportTest(
-//      """{"s":204,"i":"123"}"""
-//    )
-//
-//    val hyperbus = newHyperbus(ct, null)
-//    val f = hyperbus <~ StaticPostWithDynamicBody(DynamicBody(Text("ha ha")))
-//
-//    ct.input should equal(
-//      """{"r":{"a":"/empty"},"m":"post","i":"123"}""" + "\r\n" + """"ha ha""""
-//    )
-//
-//    val r = f.futureValue
-//    r shouldBe a[NoContent[_]]
-//    r.body shouldBe a[EmptyBody]
-//  }
-//
-//  "<~ " should " send static request with empty body (client)" in {
-//    val ct = new ClientTransportTest(
-//      """{"s":204,"i":"123"}"""
-//    )
-//
-//    val hyperbus = newHyperbus(ct, null)
-//    val f = hyperbus <~ StaticPostWithEmptyBody()
-//
-//    ct.input should equal(
-//      """{"r":{"a":"/empty"},"m":"post","i":"123"}"""
-//    )
-//
-//    val r = f.futureValue
-//    r shouldBe a[NoContent[_]]
-//    r.body shouldBe a[EmptyBody]
-//  }
-//
-//  "<~" should "send static request with body without contentType specified" in {
-//    val ct = new ClientTransportTest(
-//      """{"s":204,"i":"123"}"""
-//    )
-//
-//    val hyperbus = newHyperbus(ct, null)
-//    val f = hyperbus <~ StaticPostBodyWithoutContentType(TestBodyNoContentType("yey"))
-//
-//    ct.input should equal(
-//      """{"r":{"a":"/content-body-not-specified"},"m":"post","i":"123"}""" + "\r\n" + """{"resourceData":"yey"}"""
-//    )
-//
-//    val r = f.futureValue
-//    r shouldBe a[NoContent[_]]
-//    r.body shouldBe a[EmptyBody]
-//  }
-//
-//  "<~" should "send static request with some query (client)" in {
-//    val ct = new ClientTransportTest(
-//      """{"s":200,"i":"123"}""" + "\r\n" + """{"data":"abc"}"""
-//    )
-//
-//    val hyperbus = newHyperbus(ct, null)
-//    val f = hyperbus <~ StaticGetWithQuery()
-//
-//    ct.input should equal(
-//      """{"r":{"a":"/empty"},"m":"get","i":"123"}"""
-//    )
-//
-//    val r = f.futureValue
-//    r shouldBe a[Ok[_]]
-//    r.body shouldBe a[DynamicBody]
-//  }
-//
-//  "<~" should "catch client exception" in {
-//    val ct = new ClientTransportTest(
-//      """{"s":409,"i":"abcde12345"}""" + "\r\n" + """{"code":"failed","errorId":"abcde12345"}"""
-//    )
-//
-//    val hyperbus = newHyperbus(ct, null)
-//    val f = hyperbus <~ testclasses.TestPost1(testclasses.TestBody1("ha ha"))
-//
-//    ct.input should equal(
-//      """{"r":{"a":"/resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
-//    )
-//
-//    val r = f.failed.futureValue
-//    r shouldBe a[Conflict[_]]
-//    r.asInstanceOf[Conflict[_]].body should equal(ErrorBody("failed", errorId = "abcde12345"))
-//  }
-//
+
+  override def shutdown(duration: FiniteDuration): Task[Boolean] = {
+    Task.now(true)
+  }
+
+}
+
+class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
+  implicit val mcx = new MessagingContext {
+    override def createMessageId() = "123"
+    override def correlationId = None
+  }
+
+  "<~ " should "send a request (client)" in {
+    val ct = new ClientTransportTest(
+      """{"s":201,"t":"created-body","i":"123","l":{"a":"hb://test"}}""" + "\r\n" + """{"resourceId":"100500"}"""
+    )
+
+    val hyperbus = newHyperbus(ct, null)
+    val f = hyperbus <~ testclasses.TestPost1(testclasses.TestBody1("ha ha")) runAsync
+
+    ct.input should equal(
+      """{"r":{"a":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
+    )
+
+    f.futureValue.body should equal(testclasses.TestCreatedBody("100500"))
+  }
+
+  "<~ " should "send a request, dynamic (client)" in {
+
+    val ct = new ClientTransportTest(
+      """{"s":201,"t":"created-body","i":"123"}""" + "\r\n" + """{"resourceId":"100500"}"""
+    )
+
+    val hyperbus = newHyperbus(ct, null)
+    val f = hyperbus <~ DynamicRequest(HRI("hb://resources"),
+      Method.POST,
+      DynamicBody(
+        Obj.from("resourceData" → "ha ha"),
+        Some("test-1")
+      )
+    ) runAsync
+
+    ct.input should equal(
+      """{"r":{"a":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
+    )
+
+    val r = f.futureValue
+    r shouldBe a[Created[_]]
+    r.body shouldBe a[DynamicBody]
+  }
+
+  "<~ " should " receive empty response (client)" in {
+    val ct = new ClientTransportTest(
+      """{"s":204,"i":"123"}"""
+    )
+
+    val hyperbus = newHyperbus(ct, null)
+    val f = hyperbus <~ TestPostWithNoContent(testclasses.TestBody1("empty")) runAsync
+
+    ct.input should equal(
+      """{"r":{"a":"hb://empty"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"empty"}"""
+    )
+
+    val r = f.futureValue
+    r shouldBe a[NoContent[_]]
+    r.body shouldBe a[EmptyBody]
+  }
+
+    "<~ " should " send static request with dynamic body (client)" in {
+    val ct = new ClientTransportTest(
+      """{"s":204,"i":"123"}"""
+    )
+
+    val hyperbus = newHyperbus(ct, null)
+    val f = hyperbus <~ StaticPostWithDynamicBody(DynamicBody(Text("ha ha"))) runAsync
+
+    ct.input should equal(
+      """{"r":{"a":"hb://empty"},"m":"post","i":"123"}""" + "\r\n" + """"ha ha""""
+    )
+
+    val r = f.futureValue
+    r shouldBe a[NoContent[_]]
+    r.body shouldBe a[EmptyBody]
+  }
+
+  "<~ " should " send static request with empty body (client)" in {
+    val ct = new ClientTransportTest(
+      """{"s":204,"i":"123"}"""
+    )
+
+    val hyperbus = newHyperbus(ct, null)
+    val f = hyperbus <~ StaticPostWithEmptyBody() runAsync
+
+    ct.input should equal(
+      """{"r":{"a":"hb://empty"},"m":"post","i":"123"}"""
+    )
+
+    val r = f.futureValue
+    r shouldBe a[NoContent[_]]
+    r.body shouldBe a[EmptyBody]
+  }
+
+  "<~" should "send static request with body without contentType specified" in {
+    val ct = new ClientTransportTest(
+      """{"s":204,"i":"123"}"""
+    )
+
+    val hyperbus = newHyperbus(ct, null)
+    val f = hyperbus <~ StaticPostBodyWithoutContentType(TestBodyNoContentType("yey")) runAsync
+
+    ct.input should equal(
+      """{"r":{"a":"hb://content-body-not-specified"},"m":"post","i":"123"}""" + "\r\n" + """{"resourceData":"yey"}"""
+    )
+
+    val r = f.futureValue
+    r shouldBe a[NoContent[_]]
+    r.body shouldBe a[EmptyBody]
+  }
+
+  "<~" should "send static request with some query (client)" in {
+    val ct = new ClientTransportTest(
+      """{"s":200,"i":"123"}""" + "\r\n" + """{"data":"abc"}"""
+    )
+
+    val hyperbus = newHyperbus(ct, null)
+    val f = hyperbus <~ StaticGetWithQuery() runAsync
+
+    ct.input should equal(
+      """{"r":{"a":"hb://empty"},"m":"get","i":"123"}"""
+    )
+
+    val r = f.futureValue
+    r shouldBe a[Ok[_]]
+    r.body shouldBe a[DynamicBody]
+  }
+
+  "<~" should "catch client exception" in {
+    val ct = new ClientTransportTest(
+      """{"s":409,"i":"abcde12345"}""" + "\r\n" + """{"code":"failed","errorId":"abcde12345"}"""
+    )
+
+    val hyperbus = newHyperbus(ct, null)
+    val f = hyperbus <~ testclasses.TestPost1(testclasses.TestBody1("ha ha")) runAsync
+
+    ct.input should equal(
+      """{"r":{"a":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
+    )
+
+    val r = f.failed.futureValue
+    r shouldBe a[Conflict[_]]
+    r.asInstanceOf[Conflict[_]].body should equal(ErrorBody("failed", errorId = "abcde12345"))
+  }
+
 //  "~>" should "call method for server request" in {
 //    val st = new ServerTransportTest()
 //    val hyperbus = newHyperbus(null, st)
@@ -467,10 +471,10 @@ import scala.concurrent.{ExecutionContext, Future}
 //    st.sSubscriptionId should equal("2")
 //  }
 //
-//  def newHyperbus(ct: ClientTransport, st: ServerTransport) = {
-//    val cr = List(TransportRoute(ct, RequestMatcher.any))
-//    val sr = List(TransportRoute(st, RequestMatcher.any))
-//    val transportManager = new TransportManager(cr, sr, ExecutionContext.global)
-//    new Hyperbus(transportManager, Some("group1"), logMessages = true)
-//  }
-//}
+  def newHyperbus(ct: ClientTransport, st: ServerTransport) = {
+    val cr = List(TransportRoute(ct, RequestMatcher.any))
+    val sr = List(TransportRoute(st, RequestMatcher.any))
+    val transportManager = new TransportManager(cr, sr, ExecutionContext.global)
+    new Hyperbus(transportManager, Some("group1"), logMessages = true)
+  }
+}
