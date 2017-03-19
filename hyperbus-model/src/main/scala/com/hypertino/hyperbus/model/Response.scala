@@ -12,7 +12,7 @@ trait ServerError extends ErrorResponse
 
 trait ClientError extends ErrorResponse
 
-trait ResponseApiWithLocation[PB <: Body, R <: Response[PB]] extends ResponseObjectApi[PB, R] {
+trait ResponseMetaWithLocation[PB <: Body, R <: Response[PB]] extends ResponseMeta[PB, R] {
   import com.hypertino.binders.value._
 
   def apply[B <: PB](body: B, location: HRI, headersObj: Obj)(implicit mcx: MessagingContext): R = {
@@ -28,35 +28,35 @@ trait ResponseApiWithLocation[PB <: Body, R <: Response[PB]] extends ResponseObj
 
 @response(Status.OK) case class Ok[+B <: Body](body: B) extends NormalResponse with Response[B]
 
-object Ok extends ResponseApiWithLocation[Body, Ok[Body]]
+object Ok extends ResponseMetaWithLocation[Body, Ok[Body]]
 
 @response(Status.CREATED) case class Created[+B <: Body](body: B) extends NormalResponse with Response[B]
 
-object Created extends ResponseApiWithLocation[Body, Created[Body]]
+object Created extends ResponseMetaWithLocation[Body, Created[Body]]
 
 @response(Status.ACCEPTED) case class Accepted[+B <: Body](body: B) extends NormalResponse with Response[B]
 
-object Accepted extends ResponseObjectApi[Body, Accepted[Body]]
+object Accepted extends ResponseMeta[Body, Accepted[Body]]
 
 @response(Status.NON_AUTHORITATIVE_INFORMATION) case class NonAuthoritativeInformation[+B <: Body](body: B) extends NormalResponse with Response[B]
 
-object NonAuthoritativeInformation extends ResponseObjectApi[Body, NonAuthoritativeInformation[Body]]
+object NonAuthoritativeInformation extends ResponseMeta[Body, NonAuthoritativeInformation[Body]]
 
 @response(Status.NO_CONTENT) case class NoContent[+B <: Body](body: B) extends NormalResponse with Response[B]
 
-object NoContent extends ResponseObjectApi[Body, NoContent[Body]]
+object NoContent extends ResponseMeta[Body, NoContent[Body]]
 
 @response(Status.RESET_CONTENT) case class ResetContent[+B <: Body](body: B) extends NormalResponse with Response[B]
 
-object ResetContent extends ResponseObjectApi[Body, ResetContent[Body]]
+object ResetContent extends ResponseMeta[Body, ResetContent[Body]]
 
 @response(Status.PARTIAL_CONTENT) case class PartialContent[+B <: Body](body: B) extends NormalResponse with Response[B]
 
-object PartialContent extends ResponseObjectApi[Body, PartialContent[Body]]
+object PartialContent extends ResponseMeta[Body, PartialContent[Body]]
 
 @response(Status.MULTI_STATUS) case class MultiStatus[+B <: Body](body: B) extends NormalResponse with Response[B]
 
-object MultiStatus extends ResponseObjectApi[Body, MultiStatus[Body]]
+object MultiStatus extends ResponseMeta[Body, MultiStatus[Body]]
 
 // ----------------- Redirect responses -----------------
 
@@ -64,31 +64,31 @@ object MultiStatus extends ResponseObjectApi[Body, MultiStatus[Body]]
 
 @response(Status.MULTIPLE_CHOICES) case class MultipleChoices[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object MultipleChoices extends ResponseApiWithLocation[Body, MultipleChoices[Body]]
+object MultipleChoices extends ResponseMetaWithLocation[Body, MultipleChoices[Body]]
 
 @response(Status.MOVED_PERMANENTLY) case class MovedPermanently[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object MovedPermanently extends ResponseApiWithLocation[Body, MovedPermanently[Body]]
+object MovedPermanently extends ResponseMetaWithLocation[Body, MovedPermanently[Body]]
 
 @response(Status.FOUND) case class Found[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object Found extends ResponseApiWithLocation[Body, Found[Body]]
+object Found extends ResponseMetaWithLocation[Body, Found[Body]]
 
 @response(Status.SEE_OTHER) case class SeeOther[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object SeeOther extends ResponseApiWithLocation[Body, SeeOther[Body]]
+object SeeOther extends ResponseMetaWithLocation[Body, SeeOther[Body]]
 
 @response(Status.NOT_MODIFIED) case class NotModified[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object NotModified extends ResponseApiWithLocation[Body, NotModified[Body]]
+object NotModified extends ResponseMetaWithLocation[Body, NotModified[Body]]
 
 @response(Status.USE_PROXY) case class UseProxy[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object UseProxy extends ResponseApiWithLocation[Body, UseProxy[Body]]
+object UseProxy extends ResponseMetaWithLocation[Body, UseProxy[Body]]
 
 @response(Status.TEMPORARY_REDIRECT) case class TemporaryRedirect[+B <: Body](body: B) extends RedirectResponse with Response[B]
 
-object TemporaryRedirect extends ResponseApiWithLocation[Body, TemporaryRedirect[Body]]
+object TemporaryRedirect extends ResponseMetaWithLocation[Body, TemporaryRedirect[Body]]
 
 // ----------------- Exception base classes -----------------
 
@@ -104,118 +104,118 @@ abstract class HyperbusClientException[+B <: ErrorBody](body: B) extends Hyperbu
 
 @response(Status.BAD_REQUEST) case class BadRequest[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object BadRequest extends ResponseObjectApi[ErrorBody, BadRequest[ErrorBody]]
+object BadRequest extends ResponseMeta[ErrorBody, BadRequest[ErrorBody]]
 
 @response(Status.UNAUTHORIZED) case class Unauthorized[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object Unauthorized extends ResponseObjectApi[ErrorBody, Unauthorized[ErrorBody]]
+object Unauthorized extends ResponseMeta[ErrorBody, Unauthorized[ErrorBody]]
 
 @response(Status.PAYMENT_REQUIRED) case class PaymentRequired[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object PaymentRequired extends ResponseObjectApi[ErrorBody, PaymentRequired[ErrorBody]]
+object PaymentRequired extends ResponseMeta[ErrorBody, PaymentRequired[ErrorBody]]
 
 @response(Status.FORBIDDEN) case class Forbidden[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object Forbidden extends ResponseObjectApi[ErrorBody, Forbidden[ErrorBody]]
+object Forbidden extends ResponseMeta[ErrorBody, Forbidden[ErrorBody]]
 
 @response(Status.NOT_FOUND) case class NotFound[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object NotFound extends ResponseObjectApi[ErrorBody, NotFound[ErrorBody]]
+object NotFound extends ResponseMeta[ErrorBody, NotFound[ErrorBody]]
 
 @response(Status.METHOD_NOT_ALLOWED) case class MethodNotAllowed[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object MethodNotAllowed extends ResponseObjectApi[ErrorBody, MethodNotAllowed[ErrorBody]]
+object MethodNotAllowed extends ResponseMeta[ErrorBody, MethodNotAllowed[ErrorBody]]
 
 @response(Status.NOT_ACCEPTABLE) case class NotAcceptable[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object NotAcceptable extends ResponseObjectApi[ErrorBody, NotAcceptable[ErrorBody]]
+object NotAcceptable extends ResponseMeta[ErrorBody, NotAcceptable[ErrorBody]]
 
 @response(Status.PROXY_AUTHENTICATION_REQUIRED) case class ProxyAuthenticationRequired[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object ProxyAuthenticationRequired extends ResponseObjectApi[ErrorBody, ProxyAuthenticationRequired[ErrorBody]]
+object ProxyAuthenticationRequired extends ResponseMeta[ErrorBody, ProxyAuthenticationRequired[ErrorBody]]
 
 @response(Status.REQUEST_TIMEOUT) case class RequestTimeout[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object RequestTimeout extends ResponseObjectApi[ErrorBody, RequestTimeout[ErrorBody]]
+object RequestTimeout extends ResponseMeta[ErrorBody, RequestTimeout[ErrorBody]]
 
 @response(Status.CONFLICT) case class Conflict[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object Conflict extends ResponseObjectApi[ErrorBody, Conflict[ErrorBody]]
+object Conflict extends ResponseMeta[ErrorBody, Conflict[ErrorBody]]
 
 @response(Status.GONE) case class Gone[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object Gone extends ResponseObjectApi[ErrorBody, Gone[ErrorBody]]
+object Gone extends ResponseMeta[ErrorBody, Gone[ErrorBody]]
 
 @response(Status.LENGTH_REQUIRED) case class LengthRequired[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object LengthRequired extends ResponseObjectApi[ErrorBody, LengthRequired[ErrorBody]]
+object LengthRequired extends ResponseMeta[ErrorBody, LengthRequired[ErrorBody]]
 
 @response(Status.PRECONDITION_FAILED) case class PreconditionFailed[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object PreconditionFailed extends ResponseObjectApi[ErrorBody, PreconditionFailed[ErrorBody]]
+object PreconditionFailed extends ResponseMeta[ErrorBody, PreconditionFailed[ErrorBody]]
 
 @response(Status.REQUEST_ENTITY_TOO_LARGE) case class RequestEntityTooLarge[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object RequestEntityTooLarge extends ResponseObjectApi[ErrorBody, RequestEntityTooLarge[ErrorBody]]
+object RequestEntityTooLarge extends ResponseMeta[ErrorBody, RequestEntityTooLarge[ErrorBody]]
 
 @response(Status.REQUEST_URI_TOO_LONG) case class RequestUriTooLong[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object RequestUriTooLong extends ResponseObjectApi[ErrorBody, RequestUriTooLong[ErrorBody]]
+object RequestUriTooLong extends ResponseMeta[ErrorBody, RequestUriTooLong[ErrorBody]]
 
 @response(Status.UNSUPPORTED_MEDIA_TYPE) case class UnsupportedMediaType[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object UnsupportedMediaType extends ResponseObjectApi[ErrorBody, UnsupportedMediaType[ErrorBody]]
+object UnsupportedMediaType extends ResponseMeta[ErrorBody, UnsupportedMediaType[ErrorBody]]
 
 @response(Status.REQUESTED_RANGE_NOT_SATISFIABLE) case class RequestedRangeNotSatisfiable[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object RequestedRangeNotSatisfiable extends ResponseObjectApi[ErrorBody, RequestedRangeNotSatisfiable[ErrorBody]]
+object RequestedRangeNotSatisfiable extends ResponseMeta[ErrorBody, RequestedRangeNotSatisfiable[ErrorBody]]
 
 @response(Status.EXPECTATION_FAILED) case class ExpectationFailed[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object ExpectationFailed extends ResponseObjectApi[ErrorBody, ExpectationFailed[ErrorBody]]
+object ExpectationFailed extends ResponseMeta[ErrorBody, ExpectationFailed[ErrorBody]]
 
 @response(Status.UNPROCESSABLE_ENTITY) case class UnprocessableEntity[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object UnprocessableEntity extends ResponseObjectApi[ErrorBody, UnprocessableEntity[ErrorBody]]
+object UnprocessableEntity extends ResponseMeta[ErrorBody, UnprocessableEntity[ErrorBody]]
 
 @response(Status.LOCKED) case class Locked[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object Locked extends ResponseObjectApi[ErrorBody, Locked[ErrorBody]]
+object Locked extends ResponseMeta[ErrorBody, Locked[ErrorBody]]
 
 @response(Status.FAILED_DEPENDENCY) case class FailedDependency[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object FailedDependency extends ResponseObjectApi[ErrorBody, FailedDependency[ErrorBody]]
+object FailedDependency extends ResponseMeta[ErrorBody, FailedDependency[ErrorBody]]
 
 @response(Status.TOO_MANY_REQUEST) case class TooManyRequest[+B <: ErrorBody](body: B) extends HyperbusClientException(body)
 
-object TooManyRequest extends ResponseObjectApi[ErrorBody, TooManyRequest[ErrorBody]]
+object TooManyRequest extends ResponseMeta[ErrorBody, TooManyRequest[ErrorBody]]
 
 // ----------------- Server Error responses -----------------
 
 @response(Status.INTERNAL_SERVER_ERROR) case class InternalServerError[+B <: ErrorBody](body: B) extends HyperbusServerException(body)
 
-object InternalServerError extends ResponseObjectApi[ErrorBody, InternalServerError[ErrorBody]]
+object InternalServerError extends ResponseMeta[ErrorBody, InternalServerError[ErrorBody]]
 
 @response(Status.NOT_IMPLEMENTED) case class NotImplemented[+B <: ErrorBody](body: B) extends HyperbusServerException(body)
 
-object NotImplemented extends ResponseObjectApi[ErrorBody, NotImplemented[ErrorBody]]
+object NotImplemented extends ResponseMeta[ErrorBody, NotImplemented[ErrorBody]]
 
 @response(Status.BAD_GATEWAY) case class BadGateway[+B <: ErrorBody](body: B) extends HyperbusServerException(body)
 
-object BadGateway extends ResponseObjectApi[ErrorBody, BadGateway[ErrorBody]]
+object BadGateway extends ResponseMeta[ErrorBody, BadGateway[ErrorBody]]
 
 @response(Status.SERVICE_UNAVAILABLE) case class ServiceUnavailable[+B <: ErrorBody](body: B) extends HyperbusServerException(body)
 
-object ServiceUnavailable extends ResponseObjectApi[ErrorBody, ServiceUnavailable[ErrorBody]]
+object ServiceUnavailable extends ResponseMeta[ErrorBody, ServiceUnavailable[ErrorBody]]
 
 @response(Status.GATEWAY_TIMEOUT) case class GatewayTimeout[+B <: ErrorBody](body: B) extends HyperbusServerException(body)
 
-object GatewayTimeout extends ResponseObjectApi[ErrorBody, GatewayTimeout[ErrorBody]]
+object GatewayTimeout extends ResponseMeta[ErrorBody, GatewayTimeout[ErrorBody]]
 
 @response(Status.HTTP_VERSION_NOT_SUPPORTED) case class HttpVersionNotSupported[+B <: ErrorBody](body: B) extends HyperbusServerException(body)
 
-object HttpVersionNotSupported extends ResponseObjectApi[ErrorBody, HttpVersionNotSupported[ErrorBody]]
+object HttpVersionNotSupported extends ResponseMeta[ErrorBody, HttpVersionNotSupported[ErrorBody]]
 
 @response(Status.INSUFFICIENT_STORAGE) case class InsufficientStorage[+B <: ErrorBody](body: B) extends HyperbusServerException(body)
 
-object InsufficientStorage extends ResponseObjectApi[ErrorBody, InsufficientStorage[ErrorBody]]
+object InsufficientStorage extends ResponseMeta[ErrorBody, InsufficientStorage[ErrorBody]]

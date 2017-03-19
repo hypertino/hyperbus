@@ -6,6 +6,12 @@ import org.scalatest.{FlatSpec, Matchers}
 @body("test-body-1")
 case class TestBody1(data: String) extends Body
 
+@body("test-body-2")
+case class TestBody2(x: String, y: Int) extends Body
+
+@body("test-body-3")
+case class TestBody3(x: String, y: Int, z: Long) extends Body
+
 class TestBodyAnnotation extends FlatSpec with Matchers {
   "Body" should "serialize" in {
     import com.hypertino.binders.json.JsonBinders._

@@ -3,11 +3,11 @@ package com.hypertino.hyperbus.model
 import java.io.{Reader, StringWriter, Writer}
 
 import com.hypertino.binders.value.Obj
-import com.hypertino.hyperbus.serialization.MessageReader
+import com.hypertino.hyperbus.serialization.{MessageReader, RequestDeserializer, ResponseDeserializer}
 
 trait Body {
+  def isEmpty: Boolean = false
   def contentType: Option[String]
-
   def serialize(writer: Writer)
 }
 
@@ -20,6 +20,8 @@ trait NoContentType {
   def contentType: Option[String] = None
 }
 
+trait DynamicBodyTrait
+
 trait Message[+B <: Body, +H <: Headers] {
   def headers: H
 
@@ -27,7 +29,7 @@ trait Message[+B <: Body, +H <: Headers] {
 
   def serialize(writer: Writer): Unit = {
     headers.serialize(writer)
-    if (!body.isInstanceOf[EmptyBody]) {
+    if (!body.isEmpty) {
       writer.write("\r\n")
       body.serialize(writer)
     }
@@ -51,12 +53,27 @@ trait Message[+B <: Body, +H <: Headers] {
 
 trait Request[+B <: Body] extends Message[B, RequestHeaders] with MessagingContext {
   override def correlationId: Option[String] = headers.correlationId
-//  protected def assertHeaderValue(name: String, value: String): Unit = {
-//    val v = headers.stringHeader(name)
-//    if (v != value) {
-//      throw new IllegalArgumentException(s"Incorrect $name value: $v != $value (headers?)")
-//    }
-//  }
+}
+
+trait RequestObservableMeta[R <: RequestBase] {
+  def serviceAddress: String
+  def method: String
+  def contentType: Option[String]
+}
+
+trait RequestMeta[R <: RequestBase] {
+  type ResponseType <: ResponseBase
+  def responseDeserializer: ResponseDeserializer[ResponseType]
+
+  def apply(reader: Reader, headersObj: Obj): R
+  def apply(reader: Reader): R = MessageReader.read(reader, apply)
+  def from(s: String): R = MessageReader.from(s, apply)
+}
+
+trait RequestMetaCompanion[R <: RequestBase]
+  extends RequestMeta[R] with RequestObservableMeta[R] {
+  implicit val requestMeta: RequestMeta[R] = this
+  implicit val observableMeta: RequestObservableMeta[R] = this
 }
 
 trait Response[+B <: Body] extends Message[B, ResponseHeaders]
@@ -64,23 +81,9 @@ trait Response[+B <: Body] extends Message[B, ResponseHeaders]
 // defines responses:
 // * single:                DefinedResponse[Created[TestCreatedBody]]
 // * multiple:              DefinedResponse[(Ok[DynamicBody], Created[TestCreatedBody])]
-// * alternative multiple:  DefinedResponse[|[Ok[DynamicBody], |[Created[TestCreatedBody], !]]]
 trait DefinedResponse[R]
 
-trait |[L <: Response[Body], R <: Response[Body]] extends Response[Body]
-
-trait ! extends Response[Body]
-
-trait RequestObjectApi[R <: Request[Body]] {
-  def serviceAddress: String
-  def method: String
-
-  def apply(reader: Reader, headersObj: Obj): R
-  def apply(reader: Reader): R = MessageReader.read(reader, apply(_ : Reader, _))
-  def from(s: String): R = MessageReader.from(s, apply(_ : Reader, _))
-}
-
-trait ResponseObjectApi[PB <: Body, R <: Response[PB]] {
+trait ResponseMeta[PB <: Body, R <: Response[PB]] {
   def statusCode: Int
 
   def apply[B <: PB](body: B, headersObj: Obj)(implicit messagingContext: MessagingContext): R

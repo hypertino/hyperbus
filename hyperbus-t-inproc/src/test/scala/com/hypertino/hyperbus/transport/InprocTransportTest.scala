@@ -25,7 +25,7 @@ case class MockRequest(body: MockBody) extends Request[MockBody]
 @response(Status.OK)
 case class MockResponse[+B <: MockBody](body: B) extends Response[B]
 
-object MockResponse extends ResponseObjectApi[MockBody, MockResponse[MockBody]]
+object MockResponse extends ResponseMeta[MockBody, MockResponse[MockBody]]
 
 
 class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers with Eventually {

@@ -38,13 +38,11 @@ class FuzzyIndexSpec extends FlatSpec with Matchers with PrivateMethodTester wit
     val s = ConcurrentSubject.publishToOne[String]
 
     s.onNext("1").futureValue should equal(Continue)
-    //println(s.isCanceled) // false
 
     val a = new AtomicInteger(0)
     val c = s.subscribe(new Subscriber[String] {
       override implicit def scheduler: Scheduler = monix.execution.Scheduler.Implicits.global
       override def onNext(elem: String): Future[Ack] = {
-        println(s"next: $elem")
         if (a.incrementAndGet() < 2)
           Continue
         else

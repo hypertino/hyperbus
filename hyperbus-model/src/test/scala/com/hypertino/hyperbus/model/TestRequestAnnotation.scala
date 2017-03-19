@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus.model
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, Reader}
 
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value.{Obj, _}
@@ -15,12 +15,22 @@ trait TestPost1ObjectApi {
   def apply(id: String, x: TestBody1, headers: Obj)(implicit mcx: MessagingContext): TestPost1
 }
 
-object TestPost1 extends RequestObjectApi[TestPost1] with TestPost1ObjectApi {
+object TestPost1 extends RequestMetaCompanion[TestPost1] with TestPost1ObjectApi {
   def apply(id: String, x: String, headers: Obj)(implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headers)(mcx)
 }
 
 @request(Method.GET, "hb://test")
 case class TestGet1(id: String, body: EmptyBody) extends Request[EmptyBody]
+
+@request(Method.POST, "hb://test")
+case class TestPost1DefinedResponse(id: String, body: TestBody1)
+  extends Request[TestBody1]
+    with DefinedResponse[Ok[TestBody2]]
+
+@request(Method.POST, "hb://test")
+case class TestPost1MultipleDefinedResponse(id: String, body: TestBody1)
+  extends Request[TestBody1]
+    with DefinedResponse[(Ok[TestBody2], Ok[TestBody3])]
 
 
 //
@@ -64,6 +74,52 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     post1.serializeToString should equal(
       s"""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
         """{"data":"abcde"}""")
+  }
+
+  "TestPost1DefinedResponse" should "serialize" in {
+    val post1 = TestPost1DefinedResponse("155", TestBody1("abcde"))
+    post1.serializeToString should equal(
+      s"""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
+        """{"data":"abcde"}""")
+  }
+
+  "TestPost1DefinedResponse" should " have meta" in {
+    val requestMeta = implicitly[RequestMeta[TestPost1DefinedResponse]]
+    val observableMeta = implicitly[RequestObservableMeta[TestPost1DefinedResponse]]
+
+    observableMeta.serviceAddress should equal("hb://test")
+    observableMeta.method should equal("post")
+    observableMeta.contentType should equal(Some("test-body-1"))
+
+    val s = """{"s":200,"t":"test-body-2","i":"123","l":{"a":"hb://test"}}""" + rn +
+      """{"x":"100500","y":555}"""
+
+    val response: requestMeta.ResponseType = MessageReader.from(s, requestMeta.responseDeserializer)
+    response.body should equal (TestBody2("100500",555))
+    response shouldBe a[Ok[_]]
+  }
+
+  "TestPost1MultipleDefinedResponse" should " have meta" in {
+    val requestMeta = implicitly[RequestMeta[TestPost1MultipleDefinedResponse]]
+    val observableMeta = implicitly[RequestObservableMeta[TestPost1MultipleDefinedResponse]]
+
+    observableMeta.serviceAddress should equal("hb://test")
+    observableMeta.method should equal("post")
+    observableMeta.contentType should equal(Some("test-body-1"))
+
+    val s1 = """{"s":200,"t":"test-body-2","i":"123","l":{"a":"hb://test"}}""" + rn +
+      """{"x":"100500","y":555}"""
+
+    val response1: requestMeta.ResponseType = MessageReader.from(s1, requestMeta.responseDeserializer)
+    response1.body should equal (TestBody2("100500",555))
+    response1 shouldBe a[Ok[_]]
+
+    val s2 = """{"s":200,"t":"test-body-3","i":"123","l":{"a":"hb://test"}}""" + rn +
+      """{"x":"100500","y":555, "z": 888}"""
+
+    val response2: requestMeta.ResponseType = MessageReader.from(s2, requestMeta.responseDeserializer)
+    response2.body should equal (TestBody3("100500",555, 888l))
+    response2 shouldBe a[Ok[_]]
   }
 
   "TestGet1 (with EmptyBody)" should "serialize" in {

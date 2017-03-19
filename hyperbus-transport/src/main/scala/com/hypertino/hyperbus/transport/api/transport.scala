@@ -24,7 +24,9 @@ trait ClientTransport {
   def shutdown(duration: FiniteDuration): Task[Boolean]
 }
 
-case class CommandEvent[REQ <: Request[Body]](request: REQ, responsePromise: Promise[ResponseBase])
+case class CommandEvent[REQ <: Request[Body]](request: REQ, responsePromise: Promise[ResponseBase]) extends MessagingContext {
+  override def correlationId: Option[String] = request.correlationId
+}
 
 trait ServerTransport {
   def commands[REQ <: Request[Body]](matcher: RequestMatcher,

@@ -63,6 +63,7 @@ private[model] case class ErrorBodyContainer(code: String,
                                              errorId: String,
                                              extra: Value,
                                              contentType: Option[String]) extends ErrorBody {
+
   def message = code + description.map(": " + _).getOrElse("") + ". #" + errorId
 
   override def serialize(writer: Writer): Unit = {

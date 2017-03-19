@@ -68,7 +68,7 @@ lazy val `hyperbus-t-inproc` = project in file("hyperbus-t-inproc") settings (
       scalaMock,
       logback % "test"
     )
-  ) dependsOn `hyperbus-transport`
+  ) dependsOn (`hyperbus-transport`, `hyperbus-model`)
 
 lazy val `hyperbus-root` = project.in(file(".")) aggregate (
     `hyperbus-transport`,

@@ -20,9 +20,13 @@ object StandardResponse {
     apply(body, responseHeaders)
   }
 
-//  def apply(reader: Reader, responseHeaders: ResponseHeaders): Response[Body] = {
-//    apply(responseHeader, responseBodyJson, PartialFunction.empty)
-//  }
+  def apply(reader: Reader,
+            headersObj: Obj): Response[DynamicBody] = {
+    apply(reader, headersObj, PartialFunction.empty).asInstanceOf[Response[DynamicBody]]
+  }
+
+  def dynamicDeserializer: ResponseDeserializer[Response[DynamicBody]] = apply
+
 
   def apply(body: Body, headers: ResponseHeaders): Response[Body] = {
     headers.statusCode match {

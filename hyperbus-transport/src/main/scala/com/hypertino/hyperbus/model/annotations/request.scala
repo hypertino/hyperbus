@@ -1,11 +1,12 @@
 package com.hypertino.hyperbus.model.annotations
 
-import com.hypertino.hyperbus.model.Body
+import com.hypertino.hyperbus.model.{Body, DefinedResponse, DynamicBodyTrait}
 
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.language.experimental.macros
 import scala.reflect.api.Trees
 import scala.reflect.macros.blackbox.Context
+import scala.util.matching.Regex
 
 @compileTimeOnly("enable macro paradise to expand macro annotations")
 class request(method: String, uri: String) extends StaticAnnotation {
@@ -41,8 +42,8 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       fields :+ q"val headers: com.hypertino.hyperbus.model.RequestHeaders"
     }
 
-    val (bodyFieldName, bodyType) = getBodyField(fields)
-    //println(s"rhs = $defaultValue, ${defaultValue.isEmpty}")
+    val (bodyFieldName, bodyTypeName, bodyType) = getBodyField(fields)
+    val contentType = getContentTypeAnnotation(bodyType)
 
     val equalExpr = classFields.map(_.name).foldLeft[Tree](q"true") { (cap, name) ⇒
       q"(o.$name == this.$name) && $cap"
@@ -128,6 +129,52 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       """
     }
 
+    val responses = getDefinedResponses(bases)
+    val responseType =
+      if (responses.size == 1)
+        tq"${responses.head}"
+      else
+        tq"com.hypertino.hyperbus.model.ResponseBase"
+
+    val responseDeserializerMethodBody = if (responses.nonEmpty) {
+      val responseBodyTypes = getUniqueResponseBodies(responses)
+
+      responseBodyTypes.groupBy(getContentTypeAnnotation(_) getOrElse "") foreach { kv =>
+        if (kv._2.size > 1) {
+          c.abort(c.enclosingPosition, s"Ambiguous responses for contentType: '${kv._1}': ${kv._2.mkString(",")}")
+        }
+      }
+
+      val dynamicBodyTypeSig = typeOf[DynamicBodyTrait].typeSymbol.typeSignature
+      val bodyCases: Seq[c.Tree] = responseBodyTypes.filterNot { t ⇒
+        t.typeSymbol.typeSignature <:< dynamicBodyTypeSig
+      } map { body =>
+        val ta = getContentTypeAnnotation(body)
+        val deserializer = body.companion.decl(TermName("apply"))
+        //if (ta.isEmpty)
+        //  c.abort(c.enclosingPosition, s"@contentType is not defined for $body")
+        cq"""h: com.hypertino.hyperbus.model.ResponseHeaders if h.contentType == $ta => $deserializer(_: java.io.Reader, _: Option[String])"""
+      }
+
+      val r = q"""
+        {
+          val pf: PartialFunction[com.hypertino.hyperbus.model.ResponseHeaders, com.hypertino.hyperbus.serialization.ResponseBodyDeserializer] =
+            (_: com.hypertino.hyperbus.model.ResponseHeaders) match { case ..$bodyCases }
+          com.hypertino.hyperbus.model.StandardResponse.apply(_: java.io.Reader, _: com.hypertino.binders.value.Obj, pf)
+        }
+      """
+
+      if (responses.size == 1) {
+        q"$r.asInstanceOf[com.hypertino.hyperbus.serialization.ResponseDeserializer[${responses.head}]]"
+      }
+      else {
+        r
+      }
+    }
+    else {
+      q"com.hypertino.hyperbus.model.StandardResponse.dynamicDeserializer"
+    }
+
     val ctxVal = fresh("ctx")
     val bodyVal = fresh("body")
     val headersVal = fresh("headers")
@@ -135,6 +182,8 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val hriVal = fresh("hri")
     val companionExtra =
       q"""
+        type ResponseType = $responseType
+
         def apply(..${fieldsExceptHeaders.map(stripDefaultValue)}, headersObj: com.hypertino.binders.value.Obj)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
 
@@ -156,7 +205,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
 
         def apply(reader: java.io.Reader, headersObj: com.hypertino.binders.value.Obj): $className = {
           val $headersVal = com.hypertino.hyperbus.model.RequestHeaders(headersObj)
-          val $bodyVal = ${bodyType.toTermName}(reader, $headersVal.contentType)
+          val $bodyVal = ${bodyTypeName.toTermName}(reader, $headersVal.contentType)
 
           //todo: typed uri parts? int/long, etc
           //todo: uri part naming (fieldName?)
@@ -180,6 +229,8 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
 
         def serviceAddress: String = $serviceAddress
         def method: String = $method
+        def contentType: Option[String] = $contentType
+        def responseDeserializer: com.hypertino.hyperbus.serialization.ResponseDeserializer[$responseType] = $responseDeserializerMethodBody
     """
 
     val newCompanion = clzCompanion map { existingCompanion =>
@@ -194,7 +245,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         """
     } getOrElse {
       q"""
-        object ${className.toTermName} extends com.hypertino.hyperbus.model.RequestObjectApi[${className.toTypeName}] {
+        object ${className.toTermName} extends com.hypertino.hyperbus.model.RequestMetaCompanion[${className.toTypeName}] {
           import com.hypertino.binders.value._
           ..$companionExtra
         }
@@ -207,20 +258,20 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         $newCompanion
       """
     )
-    //println(block)
+    // println(block)
     block
   }
 
   def stripDefaultValue(field: ValDef): ValDef = ValDef(field.mods, field.name, field.tpt, EmptyTree)
 
-  def getBodyField(fields: Seq[Trees#ValDef]): (TermName, TypeName) = {
+  def getBodyField(fields: Seq[Trees#ValDef]): (TermName, TypeName, Type) = {
     fields.flatMap { field ⇒
       field.tpt match {
         case i: Ident ⇒
           val typeName = i.name.toTypeName
           val fieldType = c.typecheck(q"(??? : $typeName)").tpe
           if (fieldType <:< typeOf[Body]) {
-            Some((field.name.asInstanceOf[TermName], typeName))
+            Some((field.name.asInstanceOf[TermName], typeName, fieldType))
           }
           else
             None
@@ -236,5 +287,58 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     case i: Ident ⇒
       val typeName = i.name.toTypeName
       c.typecheck(q"(??? : $typeName)").tpe
+  }
+
+  // todo: test this
+  private def getDefinedResponses(baseClasses: Seq[Tree]): Seq[Type] = {
+    val tDefined = typeOf[DefinedResponse[_]]
+    //.typeSymbol.typeSignature
+    val tupleRegex = new Regex("^Tuple(\\d+)$")
+
+    baseClasses
+      .map(t ⇒ {
+        c.typecheck(q"(??? : $t)").tpe
+      })
+      .find(_ <:< tDefined)
+      .map { definedType: Type ⇒
+        // DefinedResponse[(Ok[DynamicBody], Created[TestCreatedBody])] expected
+        if (definedType.typeArgs.headOption.exists(h ⇒ tupleRegex.findFirstIn(h.typeSymbol.name.toString).isDefined)) {
+          definedType.typeArgs.head.typeArgs
+        }
+        else {
+          // DefinedResponse[Ok[DynamicBody]] expected
+          definedType.typeArgs
+        }
+      }
+      .getOrElse(Seq.empty)
+  }
+
+  private def getContentTypeAnnotation(t: c.Type): Option[String] = {
+    getStringAnnotation(t, c.typeOf[contentType])
+  }
+
+  private def getStringAnnotation(t: c.Type, atype: c.Type): Option[String] = {
+    val typeChecked = c.typecheck(q"(??? : ${t.typeSymbol})").tpe
+    val symbol = typeChecked.typeSymbol
+
+    symbol.annotations.find { a =>
+      a.tree.tpe <:< atype
+    } flatMap {
+      annotation => annotation.tree.children.tail.head match {
+        case Literal(Constant(s: String)) => Some(s)
+        case _ => None
+      }
+    }
+  }
+
+  private def getUniqueResponseBodies(definedResponses: Seq[Type]): Seq[c.Type] = {
+    definedResponses.foldLeft(Seq[c.Type]())((seq, el) => {
+      val bodyType = el.typeArgs.head
+      if (!seq.exists(_ =:= bodyType)) {
+        seq ++ Seq(el.typeArgs.head)
+      }
+      else
+        seq
+    })
   }
 }

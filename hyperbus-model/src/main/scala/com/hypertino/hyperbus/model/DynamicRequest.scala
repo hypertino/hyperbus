@@ -4,8 +4,9 @@ import java.io.{Reader, Writer}
 
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value.{Obj, Value}
+import com.hypertino.hyperbus.serialization.ResponseDeserializer
 
-trait DynamicBody extends Body {
+trait DynamicBody extends Body with DynamicBodyTrait {
   def content: Value
 
   def serialize(writer: Writer): Unit = {
@@ -43,15 +44,12 @@ private[model] case class DynamicBodyContainer(contentType: Option[String], cont
 case class DynamicRequest(body: DynamicBody,
                           headers: RequestHeaders) extends Request[DynamicBody]
 
-object DynamicRequest extends RequestObjectApi[DynamicRequest] {
-  override def serviceAddress: String = invalidOperation("serviceAddress")
-  override def method: String = invalidOperation("serviceAddress")
+case class DynamicRequestObservableMeta(serviceAddress: String, method: String, contentType: Option[String])
+  extends RequestObservableMeta[DynamicRequest]
 
-  def apply(reader: Reader, headersObj: Obj): DynamicRequest = {
-    val headers = RequestHeaders(headersObj)
-    val body = DynamicBody(reader, headers.contentType)
-    new DynamicRequest(body, headers)
-  }
+object DynamicRequest extends RequestMeta[DynamicRequest] {
+  type ResponseType = Response[DynamicBody]
+  implicit val requestMeta: RequestMeta[DynamicRequest] = this
 
   def apply(hri: HRI, method: String, body: DynamicBody, headersObj: Obj)
            (implicit mcx: MessagingContext): DynamicRequest = {
@@ -76,5 +74,11 @@ object DynamicRequest extends RequestObjectApi[DynamicRequest] {
     )
   }
 
-  protected def invalidOperation(name: String): String = throw new UnsupportedOperationException(s"$getClass.$name")
+  def apply(reader: Reader, headersObj: Obj): DynamicRequest = {
+    val headers = RequestHeaders(headersObj)
+    val body = DynamicBody(reader, headers.contentType)
+    new DynamicRequest(body, headers)
+  }
+
+  override def responseDeserializer: ResponseDeserializer[Response[DynamicBody]] = StandardResponse.dynamicDeserializer
 }
