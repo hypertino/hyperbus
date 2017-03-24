@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 /**
   * Manages transport layer based on provided route configuration.
@@ -28,19 +29,25 @@ class TransportManager(protected[this] val clientRoutes: Seq[TransportRoute[Clie
     configuration.serverRoutes, ExecutionContext.global)
 
   def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase] = {
-    this.lookupClientTransport(message).ask(message, responseDeserializer)
+    this
+      .lookupClientTransport(message)
+      .ask(message, responseDeserializer)
+      .map {
+        case e: Throwable ⇒ throw e
+        case other ⇒ other
+      }
   }
 
   def publish(message: RequestBase): Task[PublishResult] = {
     this.lookupClientTransport(message).publish(message)
   }
 
-  def commands[REQ <: Request[Body]](matcher: RequestMatcher,
+  def commands[REQ <: RequestBase](matcher: RequestMatcher,
                                      inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = {
     lookupServerTransport(matcher).commands(matcher, inputDeserializer)
   }
 
-  def events[REQ <: Request[Body]](matcher: RequestMatcher,
+  def events[REQ <: RequestBase](matcher: RequestMatcher,
                                    groupName: String,
                                    inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = {
 

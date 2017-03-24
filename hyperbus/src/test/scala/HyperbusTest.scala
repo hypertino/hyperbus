@@ -7,14 +7,18 @@ import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import monix.eval.Task
+import monix.execution.Ack.Continue
+import monix.execution.Cancelable
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
+import monix.reactive.observers.Subscriber
+import monix.reactive.subjects.ConcurrentSubject
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers}
-import testclasses._
+import testclasses.{TestPost1, _}
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class ClientTransportTest(output: String) extends ClientTransport {
   private val messageBuf = new StringBuilder
@@ -46,48 +50,54 @@ class ClientTransportTest(output: String) extends ClientTransport {
 //case class ServerHyperbusSubscriptionTest(id: String) extends HyperbusSubscription
 
 class ServerTransportTest extends ServerTransport {
-  //var sUriFilter: UriPattern = null
-  var sInputDeserializer: RequestDeserializer[Request[Body]] = null
-  var sHandler: (RequestBase) ⇒ Future[ResponseBase] = null
-  var sSubscriptionId: String = null
+  var sMatcher: RequestMatcher = _
+  var sInputDeserializer: RequestBaseDeserializer = _
+  var sGroupName: String = _
+  var sCommandsSubject: ConcurrentSubject[CommandEvent[RequestBase],CommandEvent[RequestBase]] = _
+  var sEventsSubject: ConcurrentSubject[RequestBase,RequestBase] = _
+
   val idCounter = new AtomicLong(0)
 
-  override def commands[REQ <: Request[Body]](matcher: RequestMatcher,
+  override def commands[REQ <: RequestBase](matcher: RequestMatcher,
                                               inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = {
-    ???
+    this.sMatcher = matcher
+    this.sInputDeserializer = inputDeserializer
+    sCommandsSubject = ConcurrentSubject.publishToOne[CommandEvent[RequestBase]]
+    val observable: Observable[CommandEvent[RequestBase]] = (subscriber: Subscriber[CommandEvent[RequestBase]]) => {
+      val original: Cancelable = sCommandsSubject.unsafeSubscribeFn(subscriber)
+      () => {
+        original.cancel()
+      }
+    }
+    observable.asInstanceOf[Observable[CommandEvent[REQ]]]
   }
 
-  override def events[REQ <: Request[Body]](matcher: RequestMatcher,
+  override def events[REQ <: RequestBase](matcher: RequestMatcher,
                                             groupName: String,
                                             inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = {
-    ???
-  }
+    this.sMatcher = matcher
+    this.sInputDeserializer = inputDeserializer
+    this.sGroupName = groupName
 
-  //  override def onCommand[REQ <: Request[Body]](matcher: RequestMatcher,
-//                         inputDeserializer: RequestDeserializer[REQ])
-//                        (handler: (REQ) => Future[ResponseBase]): Future[HyperbusSubscription] = {
-//
-//    sInputDeserializer = inputDeserializer
-//    sHandler = handler.asInstanceOf[(RequestBase) ⇒ Future[ResponseBase]]
-//    Future {
-//      ServerHyperbusSubscriptionTest(idCounter.incrementAndGet().toHexString)
-//    }
-//  }
-//
-//  override def onEvent[REQ <: Request[Body]](matcher: RequestMatcher,
-//                       groupName: String,
-//                       inputDeserializer: RequestDeserializer[REQ],
-//                       subscriber: Observer[REQ]): Future[HyperbusSubscription] = {
-//    sInputDeserializer = inputDeserializer
-//    Future {
-//      ServerHyperbusSubscriptionTest(idCounter.incrementAndGet().toHexString)
-//    }
-//  }
+    sEventsSubject = ConcurrentSubject.publishToOne[RequestBase]
+    val observable: Observable[RequestBase] = (subscriber: Subscriber[RequestBase]) => {
+      val original: Cancelable = sEventsSubject.unsafeSubscribeFn(subscriber)
+      () => {
+        original.cancel()
+      }
+    }
+    observable.asInstanceOf[Observable[REQ]]
+  }
 
   override def shutdown(duration: FiniteDuration): Task[Boolean] = {
     Task.now(true)
   }
 
+  def testCommand(msg: RequestBase): Task[ResponseBase] = {
+    val c = CommandEvent(msg, Promise())
+    sCommandsSubject.onNext(c)
+    Task.fromFuture(c.responsePromise.future)
+  }
 }
 
 class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
@@ -237,92 +247,101 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
     r.asInstanceOf[Conflict[_]].body should equal(ErrorBody("failed", errorId = "abcde12345"))
   }
 
-//  "~>" should "call method for server request" in {
-//    val st = new ServerTransportTest()
-//    val hyperbus = newHyperbus(null, st)
-//    hyperbus ~> { post: testclasses.TestPost1 =>
-//      Future {
-//        Created(testclasses.TestCreatedBody("100500"))
-//      }
-//    }
-//
-//    val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"))
-//
-//    val futureResult = st.sHandler(msg)
-//    futureResult.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
-//  }
-//
-//  "~>" should "call method for server request when missed a contentType" in {
-//    val st = new ServerTransportTest()
-//    val hyperbus = newHyperbus(null, st)
-//    hyperbus ~> { post: testclasses.TestPost1 =>
-//      Future {
-//        Created(testclasses.TestCreatedBody("100500"))
-//      }
-//    }
-//
-//    val orig = testclasses.TestPost1(testclasses.TestBody1("ha ha"))
-//    val msg = orig.copy(
-//      headers = RequestHeaders(orig.headers.all - Header.CONTENT_TYPE)
-//    )
-//    msg.headers.contentType shouldBe empty
-//
-//    val r = st.sHandler(msg).futureValue
-//    r should equal(Created(testclasses.TestCreatedBody("100500")))
-//  }
-//
-//  "~>" should "call method for static request with empty body (server)" in {
-//    val st = new ServerTransportTest()
-//    val hyperbus = newHyperbus(null, st)
-//    hyperbus ~> { post: StaticPostWithEmptyBody =>
-//      Future {
-//        NoContent(EmptyBody)
-//      }
-//    }
-//
-//    val msg = StaticPostWithEmptyBody(EmptyBody)
-//    val r = st.sHandler(msg).futureValue
-//    r should equal(NoContent(EmptyBody))
-//  }
-//
-//  "~>" should "call method for static request with dynamic body (server)" in {
-//    val st = new ServerTransportTest()
-//    val hyperbus = newHyperbus(null, st)
-//    hyperbus ~> { post: StaticPostWithDynamicBody =>
-//      Future {
-//        NoContent(EmptyBody)
-//      }
-//    }
-//
-//    val msg = StaticPostWithDynamicBody(DynamicBody("haha", Some("some-content")))
-//    val r =  st.sHandler(msg).futureValue
-//    r should equal(NoContent(EmptyBody))
-//  }
-//
-//  "~>" should "call method for dynamic request (server)" in {
-//    val st = new ServerTransportTest()
-//    val hyperbus = newHyperbus(null, st)
-//    hyperbus.onCommand(RequestMatcher("/test", Method.GET, None)) { request =>
-//      Future {
-//        NoContent(EmptyBody)
-//      }
-//    }
-//
-//    val msg = DynamicRequest(
-//      HRI("/test"),
-//      Method.GET,
-//      DynamicBody("haha", Some("some-content")),
-//      Obj.from(
-//        Header.CONTENT_TYPE → "some-content",
-//        Header.MESSAGE_ID → "123"
-//      )
-//    )
-//
-//    val r = st.sHandler(msg).futureValue
-//    r shouldBe a[NoContent[_]]
-//    r.asInstanceOf[NoContent[_]].body shouldBe a[EmptyBody]
-//  }
-//
+  "~>" should "handle server request" in {
+    val st = new ServerTransportTest()
+    val hyperbus = newHyperbus(null, st)
+    hyperbus.~>[TestPost1].subscribe{ c ⇒
+      c.responsePromise.success {
+        Created(testclasses.TestCreatedBody("100500"))
+      }
+      Continue
+    }
+
+    val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"))
+    val task = st.testCommand(msg)
+    task.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
+  }
+
+  "~>" should "handle server request when missed a contentType" in {
+    val st = new ServerTransportTest()
+    val hyperbus = newHyperbus(null, st)
+    hyperbus.~>[TestPost1].subscribe{ c ⇒
+      if (c.request.headers.contentType.isEmpty) {
+        c.responsePromise.success {
+          Created(testclasses.TestCreatedBody("100500"))
+        }
+      }
+      else {
+        c.responsePromise.failure(
+          Conflict(ErrorBody("failed"))
+        )
+      }
+      Continue
+    }
+
+    val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"))
+    val msgWithoutContentType = msg.copy(
+      headers = RequestHeaders(Obj(msg.headers.all.v.filterNot(_._1 == Header.CONTENT_TYPE)))
+    )
+    val task = st.testCommand(msgWithoutContentType)
+    task.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
+  }
+
+  "~>" should "handle server static request with empty body (server)" in {
+    val st = new ServerTransportTest()
+    val hyperbus = newHyperbus(null, st)
+    hyperbus.~>[StaticPostWithEmptyBody].subscribe{ c ⇒
+      c.responsePromise.success {
+        NoContent(EmptyBody)
+      }
+      Continue
+    }
+
+    val msg = StaticPostWithEmptyBody(EmptyBody)
+    val task = st.testCommand(msg)
+    task.runAsync.futureValue should equal(NoContent(EmptyBody))
+  }
+
+  "~>" should "call method for static request with dynamic body (server)" in {
+    val st = new ServerTransportTest()
+    val hyperbus = newHyperbus(null, st)
+    hyperbus.~>[StaticPostWithDynamicBody].subscribe{ post =>
+      post.responsePromise.success {
+        NoContent(EmptyBody)
+      }
+      Continue
+    }
+
+    val msg = StaticPostWithDynamicBody(DynamicBody("haha", Some("some-content")))
+    val task = st.testCommand(msg)
+    task.runAsync.futureValue should equal(NoContent(EmptyBody))
+  }
+
+    "~>" should "call method for dynamic request (server)" in {
+      val st = new ServerTransportTest()
+      val hyperbus = newHyperbus(null, st)
+      hyperbus.~>[DynamicRequest](DynamicRequest.requestMeta, RequestMatcher("/test", Method.GET, None)).subscribe{ post =>
+        post.responsePromise.success {
+          NoContent(EmptyBody)
+        }
+        Continue
+      }
+
+    val msg = DynamicRequest(
+      HRI("/test"),
+      Method.GET,
+      DynamicBody("haha", Some("some-content")),
+      Obj.from(
+        Header.CONTENT_TYPE → "some-content",
+        Header.MESSAGE_ID → "123"
+      )
+    )
+
+    val r = st.sHandler(msg).futureValue
+    r shouldBe a[NoContent[_]]
+    r.asInstanceOf[NoContent[_]].body shouldBe a[EmptyBody]
+  }
+
 //  "<|" should "publish static request (client)" in {
 //    val rsp = """{"status":409,"headers":{"messageId":"123"},"body":{"code":"failed","errorId":"abcde12345"}}"""
 //    var sentEvents = List[RequestBase]()
@@ -372,7 +391,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 //  "|>" should "call method for static request subscription (server)" in {
 //    var receivedEvents = 0
 //    val serverTransport = new ServerTransportTest() {
-//      override def onEvent[REQ <: Request[Body]](requestMatcher: RequestMatcher,
+//      override def onEvent[REQ <: RequestBase](requestMatcher: RequestMatcher,
 //                                                 groupName: String,
 //                                                 inputDeserializer: RequestDeserializer[REQ],
 //                                                 subscriber: Observer[REQ]): Future[HyperbusSubscription] = {
@@ -390,7 +409,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers {
 //  "|>" should "call method for dynamic request subscription (server)" in {
 //    var receivedEvents = 0
 //    val serverTransport = new ServerTransportTest() {
-//      override def onEvent[REQ <: Request[Body]](requestMatcher: RequestMatcher,
+//      override def onEvent[REQ <: RequestBase](requestMatcher: RequestMatcher,
 //                                                 groupName: String,
 //                                                 inputDeserializer: RequestDeserializer[REQ],
 //                                                 subscriber: Observer[REQ]): Future[HyperbusSubscription] = {

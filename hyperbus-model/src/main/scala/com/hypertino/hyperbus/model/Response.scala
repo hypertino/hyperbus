@@ -2,9 +2,9 @@ package com.hypertino.hyperbus.model
 
 import com.hypertino.hyperbus.model.annotations.response
 
-trait NormalResponse extends Response[Body]
+trait NormalResponse extends ResponseBase
 
-trait RedirectResponse extends Response[Body]
+trait RedirectResponse extends ResponseBase
 
 trait ErrorResponse extends Response[ErrorBody]
 

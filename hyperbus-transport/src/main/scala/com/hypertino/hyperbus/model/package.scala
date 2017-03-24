@@ -12,6 +12,7 @@ import scala.collection.mutable
 package object model {
   type RequestBase = Request[Body]
   type ResponseBase = Response[Body]
+  type DynamicResponse = Response[DynamicBody]
 
   implicit def requestToMessageContext(requestBase: RequestBase): MessagingContext = {
     MessagingContext(requestBase.headers.correlationId)

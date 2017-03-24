@@ -24,15 +24,15 @@ trait ClientTransport {
   def shutdown(duration: FiniteDuration): Task[Boolean]
 }
 
-case class CommandEvent[REQ <: Request[Body]](request: REQ, responsePromise: Promise[ResponseBase]) extends MessagingContext {
+case class CommandEvent[REQ <: RequestBase](request: REQ, responsePromise: Promise[ResponseBase]) extends MessagingContext {
   override def correlationId: Option[String] = request.correlationId
 }
 
 trait ServerTransport {
-  def commands[REQ <: Request[Body]](matcher: RequestMatcher,
+  def commands[REQ <: RequestBase](matcher: RequestMatcher,
                                      inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]]
 
-  def events[REQ <: Request[Body]](matcher: RequestMatcher,
+  def events[REQ <: RequestBase](matcher: RequestMatcher,
                                    groupName: String,
                                    inputDeserializer: RequestDeserializer[REQ]): Observable[REQ]
 

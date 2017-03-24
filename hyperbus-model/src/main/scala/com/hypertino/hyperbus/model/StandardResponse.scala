@@ -9,7 +9,7 @@ object StandardResponse {
 
   def apply(reader: Reader,
             headersObj: Obj,
-            bodyDeserializer: PartialFunction[ResponseHeaders, ResponseBodyDeserializer]): Response[Body] = {
+            bodyDeserializer: PartialFunction[ResponseHeaders, ResponseBodyDeserializer]): ResponseBase = {
     val responseHeaders = ResponseHeaders(headersObj)
     val body =
       if (bodyDeserializer.isDefinedAt(responseHeaders))
@@ -21,14 +21,14 @@ object StandardResponse {
   }
 
   def apply(reader: Reader,
-            headersObj: Obj): Response[DynamicBody] = {
-    apply(reader, headersObj, PartialFunction.empty).asInstanceOf[Response[DynamicBody]]
+            headersObj: Obj): DynamicResponse = {
+    apply(reader, headersObj, PartialFunction.empty).asInstanceOf[DynamicResponse]
   }
 
-  def dynamicDeserializer: ResponseDeserializer[Response[DynamicBody]] = apply
+  def dynamicDeserializer: ResponseDeserializer[DynamicResponse] = apply
 
 
-  def apply(body: Body, headers: ResponseHeaders): Response[Body] = {
+  def apply(body: Body, headers: ResponseHeaders): ResponseBase = {
     headers.statusCode match {
       case Status.OK => Ok(body, headers)
       case Status.CREATED => Created(body, headers)

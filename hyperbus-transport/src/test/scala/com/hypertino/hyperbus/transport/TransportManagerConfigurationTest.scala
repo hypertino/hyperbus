@@ -22,10 +22,10 @@ class MockClientTransport(config: Config) extends ClientTransport {
 }
 
 class MockServerTransport(config: Config) extends ServerTransport {
-  def commands[REQ <: Request[Body]](matcher: RequestMatcher,
+  def commands[REQ <: RequestBase](matcher: RequestMatcher,
                                      inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = ???
 
-  def events[REQ <: Request[Body]](matcher: RequestMatcher,
+  def events[REQ <: RequestBase](matcher: RequestMatcher,
                                    groupName: String,
                                    inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = ???
 

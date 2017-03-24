@@ -1,8 +1,7 @@
 package testclasses
 
-import com.hypertino.binders.annotations.fieldName
+import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.model.annotations.{body, request}
-import com.hypertino.hyperbus.model.{EmptyBody, _}
 
 @body("test-1")
 case class TestBody1(resourceData: String) extends Body

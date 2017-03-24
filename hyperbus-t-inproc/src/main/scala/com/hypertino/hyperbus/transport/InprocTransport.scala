@@ -111,7 +111,7 @@ class InprocTransport(serialize: Boolean = false)
     _ask(message, null, isPublish = true).asInstanceOf[Task[PublishResult]]
   }
 
-  def commands[REQ <: Request[Body]](matcher: RequestMatcher,
+  def commands[REQ <: RequestBase](matcher: RequestMatcher,
                                      inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = {
 
     new InprocCommandHyperbusObservable(matcher, inputDeserializer)
@@ -119,7 +119,7 @@ class InprocTransport(serialize: Boolean = false)
       .asInstanceOf[Observable[CommandEvent[REQ]]]
   }
 
-  def events[REQ <: Request[Body]](matcher: RequestMatcher,
+  def events[REQ <: RequestBase](matcher: RequestMatcher,
                                    groupName: String,
                                    inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = {
 
