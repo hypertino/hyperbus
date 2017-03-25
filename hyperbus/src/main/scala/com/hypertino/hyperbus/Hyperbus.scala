@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus
 
-import com.hypertino.hyperbus.model.{RequestBase, RequestMeta}
+import com.hypertino.hyperbus.model.{RequestBase, RequestMeta, RequestObservableMeta}
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import monix.eval.Task
@@ -22,24 +22,24 @@ class Hyperbus(val transportManager: TransportManager,
     transportManager.shutdown(duration)
   }
 
-  override def <~[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[requestMeta.ResponseType] = {
+  override def ask[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[requestMeta.ResponseType] = {
     transportManager.ask(request, requestMeta.responseDeserializer).asInstanceOf[Task[requestMeta.ResponseType]]
   }
 
-  override def <|[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[PublishResult] = {
+  override def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[PublishResult] = {
     transportManager.publish(request)
   }
 
-  override def commands[REQ <: RequestBase](requestMatcher: RequestMatcher)(implicit requestMeta: RequestMeta[REQ]): Observable[CommandEvent[REQ]] = {
-    transportManager.commands(requestMatcher, requestMeta.apply)
+  override def commands[REQ <: RequestBase](implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[CommandEvent[REQ]] = {
+    transportManager.commands(observableMeta.requestMatcher, requestMeta.apply)
   }
 
-  override def events[REQ <: RequestBase](requestMatcher: RequestMatcher, groupName: Option[String])(implicit requestMeta: RequestMeta[REQ]): Observable[REQ] = {
+  override def events[REQ <: RequestBase](groupName: Option[String])(implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[REQ] = {
     val finalGroupName = groupName.getOrElse {
       defaultGroupName.getOrElse {
         throw new UnsupportedOperationException(s"Can't subscribe: group name is not defined")
       }
     }
-    transportManager.events(requestMatcher, finalGroupName, requestMeta.apply)
+    transportManager.events(observableMeta.requestMatcher, finalGroupName, requestMeta.apply)
   }
 }

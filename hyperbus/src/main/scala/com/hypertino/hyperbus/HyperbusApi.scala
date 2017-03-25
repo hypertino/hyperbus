@@ -11,25 +11,21 @@ import scala.language.experimental.macros
 
 // todo: document API
 trait HyperbusApi {
-  def <~[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[requestMeta.ResponseType]
+  def ask[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[requestMeta.ResponseType]
 
-  def <|[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[PublishResult]
+  def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[PublishResult]
 
-  def ~>[REQ <: RequestBase](implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[CommandEvent[REQ]] = {
-    commands(observableMeta.requestMatcher)
+  def commands[REQ <: RequestBase](implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[CommandEvent[REQ]]
+
+  def commands(observableMeta: RequestObservableMeta[DynamicRequest]): Observable[CommandEvent[DynamicRequest]] = {
+    commands(DynamicRequest.requestMeta, observableMeta)
   }
 
-  def |>[REQ <: RequestBase](groupName: Option[String])(implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[REQ] = {
-    events(observableMeta.requestMatcher,groupName)
+  def events[REQ <: RequestBase](groupName: Option[String])(implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[REQ]
+
+  def events(groupName: Option[String], observableMeta: RequestObservableMeta[DynamicRequest]): Observable[DynamicRequest] = {
+    events(groupName)(DynamicRequest.requestMeta, observableMeta)
   }
-
-  def |>[REQ <: DynamicRequest](groupName: Option[String], observableMeta: RequestObservableMeta[REQ]): Observable[DynamicRequest] = {
-    events(observableMeta.requestMatcher, groupName)(DynamicRequest.requestMeta)
-  }
-
-  def commands[REQ <: RequestBase](requestMatcher: RequestMatcher)(implicit requestMeta: RequestMeta[REQ]): Observable[CommandEvent[REQ]]
-
-  def events[REQ <: RequestBase](requestMatcher: RequestMatcher, groupName: Option[String])(implicit requestMeta: RequestMeta[REQ]): Observable[REQ]
 
   def shutdown(duration: FiniteDuration): Task[Boolean]
 }

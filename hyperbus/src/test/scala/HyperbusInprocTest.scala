@@ -23,40 +23,40 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
 
       val hyperbus = newHyperbus()
 
-      hyperbus.~>[TestPost1].subscribe{ implicit c ⇒
+      hyperbus.commands[TestPost1].subscribe{ implicit c ⇒
         c.responsePromise.success {
           Created(testclasses.TestCreatedBody("100500"))
         }
         Continue
       }
 
-      hyperbus.~>[TestPost2].subscribe{ implicit c ⇒
+      hyperbus.commands[TestPost2].subscribe{ implicit c ⇒
         c.responsePromise.success {
           Created(TestCreatedBody(c.request.body.resourceData.toString))
         }
         Continue
       }
 
-      hyperbus.~>[TestPostWith2Responses].subscribe{ implicit c ⇒
+      hyperbus.commands[TestPostWith2Responses].subscribe{ implicit c ⇒
         c.responsePromise.success {
           Ok(TestAnotherBody(c.request.body.resourceData.reverse))
         }
         Continue
       }
 
-      val f1 = hyperbus <~ TestPost1(testclasses.TestBody1("ha ha")) runAsync
+      val f1 = hyperbus ask TestPost1(testclasses.TestBody1("ha ha")) runAsync
 
       f1.futureValue.body should equal(testclasses.TestCreatedBody("100500"))
 
-      val f2 = hyperbus <~ TestPost2(TestBody2(7890)) runAsync
+      val f2 = hyperbus ask TestPost2(TestBody2(7890)) runAsync
 
       f2.futureValue.body should equal(testclasses.TestCreatedBody("7890"))
 
-      val f3 = hyperbus <~ TestPostWith2Responses(testclasses.TestBody1("Yey")) runAsync
+      val f3 = hyperbus ask TestPostWith2Responses(testclasses.TestBody1("Yey")) runAsync
 
       f3.futureValue.body should equal(TestAnotherBody("yeY"))
 
-      val f4 = hyperbus <~ SomeContentPut("/test", DynamicBody(Null)) runAsync // this should compile, don't remove
+      val f4 = hyperbus ask SomeContentPut("/test", DynamicBody(Null)) runAsync // this should compile, don't remove
 
       f4.failed.futureValue shouldBe a [NoTransportRouteException]
     }
@@ -64,7 +64,7 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
     "Send and Receive multiple responses" in {
       val hyperbus = newHyperbus()
 
-      hyperbus.~>[TestPost3].subscribe{ implicit c ⇒
+      hyperbus.commands[TestPost3].subscribe{ implicit c ⇒
         c.responsePromise.complete(Try{
           val post = c.request
           if (post.body.resourceData == 1)
@@ -79,22 +79,22 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
         Continue
       }
 
-      val f = hyperbus <~ TestPost3(TestBody2(1)) runAsync
+      val f = hyperbus ask TestPost3(TestBody2(1)) runAsync
 
       val r = f.futureValue
       r shouldBe a[Created[_]]
       r.body should equal(testclasses.TestCreatedBody("100500"))
 
-      val f2 = hyperbus <~ TestPost3(TestBody2(2)) runAsync
+      val f2 = hyperbus ask TestPost3(TestBody2(2)) runAsync
       val r2 = f2.futureValue
       r2 shouldBe a[Ok[_]]
       r2.body should equal(DynamicBody(Text("another result")))
 
-      val f3 = hyperbus <~ TestPost3(TestBody2(-1)) runAsync
+      val f3 = hyperbus ask TestPost3(TestBody2(-1)) runAsync
 
       f3.failed.futureValue shouldBe a[Conflict[_]]
 
-      val f4 = hyperbus <~ TestPost3(TestBody2(-2)) runAsync
+      val f4 = hyperbus ask TestPost3(TestBody2(-2)) runAsync
 
       f4.failed.futureValue shouldBe a[Conflict[_]]
     }
