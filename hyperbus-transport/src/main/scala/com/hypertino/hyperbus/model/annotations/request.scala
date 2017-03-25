@@ -230,6 +230,11 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         def serviceAddress: String = $serviceAddress
         def method: String = $method
         def contentType: Option[String] = $contentType
+        def requestMatcher: com.hypertino.hyperbus.transport.api.matchers.RequestMatcher = com.hypertino.hyperbus.transport.api.matchers.RequestMatcher(
+          serviceAddress,
+          method,
+          contentType
+        )
         def responseDeserializer: com.hypertino.hyperbus.serialization.ResponseDeserializer[$responseType] = $responseDeserializerMethodBody
     """
 

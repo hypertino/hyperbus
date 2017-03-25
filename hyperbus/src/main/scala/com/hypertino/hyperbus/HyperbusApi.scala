@@ -16,11 +16,15 @@ trait HyperbusApi {
   def <|[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[PublishResult]
 
   def ~>[REQ <: RequestBase](implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[CommandEvent[REQ]] = {
-    commands(RequestMatcher(observableMeta.serviceAddress, observableMeta.method, observableMeta.contentType))
+    commands(observableMeta.requestMatcher)
   }
 
   def |>[REQ <: RequestBase](groupName: Option[String])(implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[REQ] = {
-    events(RequestMatcher(observableMeta.serviceAddress, observableMeta.method, observableMeta.contentType),groupName)
+    events(observableMeta.requestMatcher,groupName)
+  }
+
+  def |>[REQ <: DynamicRequest](groupName: Option[String], observableMeta: RequestObservableMeta[REQ]): Observable[DynamicRequest] = {
+    events(observableMeta.requestMatcher, groupName)(DynamicRequest.requestMeta)
   }
 
   def commands[REQ <: RequestBase](requestMatcher: RequestMatcher)(implicit requestMeta: RequestMeta[REQ]): Observable[CommandEvent[REQ]]

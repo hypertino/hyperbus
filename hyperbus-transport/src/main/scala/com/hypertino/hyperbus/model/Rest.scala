@@ -4,6 +4,7 @@ import java.io.{Reader, StringWriter, Writer}
 
 import com.hypertino.binders.value.Obj
 import com.hypertino.hyperbus.serialization.{MessageReader, RequestDeserializer, ResponseDeserializer}
+import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 
 trait Body {
   def isEmpty: Boolean = false
@@ -56,9 +57,7 @@ trait Request[+B <: Body] extends Message[B, RequestHeaders] with MessagingConte
 }
 
 trait RequestObservableMeta[R <: RequestBase] {
-  def serviceAddress: String
-  def method: String
-  def contentType: Option[String]
+  def requestMatcher: RequestMatcher
 }
 
 trait RequestMeta[R <: RequestBase] {

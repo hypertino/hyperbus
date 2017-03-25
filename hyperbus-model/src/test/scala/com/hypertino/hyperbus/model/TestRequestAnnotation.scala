@@ -6,6 +6,7 @@ import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value.{Obj, _}
 import com.hypertino.hyperbus.model.annotations.{body, request}
 import com.hypertino.hyperbus.serialization.MessageReader
+import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import org.scalatest.{FlatSpec, Matchers}
 
 @request(Method.POST, "hb://test")
@@ -87,9 +88,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     val requestMeta = implicitly[RequestMeta[TestPost1DefinedResponse]]
     val observableMeta = implicitly[RequestObservableMeta[TestPost1DefinedResponse]]
 
-    observableMeta.serviceAddress should equal("hb://test")
-    observableMeta.method should equal("post")
-    observableMeta.contentType should equal(Some("test-body-1"))
+    observableMeta.requestMatcher should equal(RequestMatcher("hb://test", "post", Some("test-body-1")))
 
     val s = """{"s":200,"t":"test-body-2","i":"123","l":{"a":"hb://test"}}""" + rn +
       """{"x":"100500","y":555}"""
@@ -103,9 +102,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     val requestMeta = implicitly[RequestMeta[TestPost1MultipleDefinedResponse]]
     val observableMeta = implicitly[RequestObservableMeta[TestPost1MultipleDefinedResponse]]
 
-    observableMeta.serviceAddress should equal("hb://test")
-    observableMeta.method should equal("post")
-    observableMeta.contentType should equal(Some("test-body-1"))
+    observableMeta.requestMatcher should equal(RequestMatcher("hb://test", "post", Some("test-body-1")))
 
     val s1 = """{"s":200,"t":"test-body-2","i":"123","l":{"a":"hb://test"}}""" + rn +
       """{"x":"100500","y":555}"""

@@ -30,35 +30,4 @@ class FuzzyIndexSpec extends FlatSpec with Matchers with PrivateMethodTester wit
 
     bloomFilter.get("m") shouldBe defined
   }
-
-  "a" should "b" in {
-
-    import monix.execution.Scheduler.Implicits.global
-
-    val s = ConcurrentSubject.publishToOne[String]
-
-    s.onNext("1").futureValue should equal(Continue)
-
-    val a = new AtomicInteger(0)
-    val c = s.subscribe(new Subscriber[String] {
-      override implicit def scheduler: Scheduler = monix.execution.Scheduler.Implicits.global
-      override def onNext(elem: String): Future[Ack] = {
-        if (a.incrementAndGet() < 2)
-          Continue
-        else
-          Stop
-      }
-      override def onError(ex: Throwable): Unit = println(s"failed: $ex")
-      override def onComplete(): Unit = println(s"complete")
-    })
-
-    s.onNext("2").futureValue should equal(Continue)
-    s.onNext("3").futureValue should equal(Continue)
-    //s.onComplete()
-    //c.cancel()
-    //println(s.isCanceled)
-    Thread.sleep(1000)
-    s.onNext("4").futureValue should equal(Stop)
-    s.onNext("5").futureValue should equal(Stop)
-  }
 }

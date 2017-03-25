@@ -5,11 +5,12 @@ import java.io.{Reader, Writer}
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value.{Obj, Value}
 import com.hypertino.hyperbus.serialization.ResponseDeserializer
+import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 
 case class DynamicRequest(body: DynamicBody,
                           headers: RequestHeaders) extends Request[DynamicBody]
 
-case class DynamicRequestObservableMeta(serviceAddress: String, method: String, contentType: Option[String])
+case class DynamicRequestObservableMeta(requestMatcher: RequestMatcher)
   extends RequestObservableMeta[DynamicRequest]
 
 object DynamicRequest extends RequestMeta[DynamicRequest] {
