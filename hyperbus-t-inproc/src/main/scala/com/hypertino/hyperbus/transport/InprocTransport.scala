@@ -2,25 +2,22 @@ package com.hypertino.hyperbus.transport
 
 import java.io.StringReader
 
-import com.hypertino.hyperbus.model.{Body, Message, Request, RequestBase, ResponseBase}
+import com.hypertino.hyperbus.model.{Message, RequestBase, ResponseBase}
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.ConfigUtils._
-import com.hypertino.hyperbus.util.{FuzzyIndex, FuzzyIndexItemMetaInfo, FuzzyMatcher}
+import com.hypertino.hyperbus.util.{FuzzyIndex, HyperbusSubscription}
 import com.typesafe.config.Config
 import monix.eval.Task
-import monix.execution.Ack.Stop
-import monix.execution.{Ack, Cancelable, Scheduler}
+import monix.execution.Scheduler
 import monix.reactive.Observable
-import monix.reactive.observers.Subscriber
-import monix.reactive.subjects.ConcurrentSubject
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{Future, Promise}
-import scala.util.{Random, Success}
+import scala.util.Random
 
 // todo: log messages?
 class InprocTransport(serialize: Boolean = false)
@@ -32,9 +29,9 @@ class InprocTransport(serialize: Boolean = false)
     monix.execution.Scheduler.Implicits.global // todo: configurable ExecutionContext like in akka?
   )
 
-  protected val commandSubscriptions = new FuzzyIndex[InprocCommandHyperbusObservable]
-  protected val eventSubscriptions = new FuzzyIndex[InprocEventHyperbusObservable]
-  protected val subscriptions = TrieMap[InprocObservable[_], Boolean]()
+  protected val commandSubscriptions = new FuzzyIndex[CommandHyperbusSubscription]
+  protected val eventSubscriptions = new FuzzyIndex[EventHyperbusSubscription]
+  protected val subscriptions = TrieMap[HyperbusSubscription[_], Boolean]()
   protected val log: Logger = LoggerFactory.getLogger(this.getClass)
 
   // todo: refactor this method, it's awful
@@ -114,7 +111,7 @@ class InprocTransport(serialize: Boolean = false)
   def commands[REQ <: RequestBase](matcher: RequestMatcher,
                                      inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = {
 
-    new InprocCommandHyperbusObservable(matcher, inputDeserializer)
+    new CommandHyperbusSubscription(matcher, inputDeserializer)
       .observable
       .asInstanceOf[Observable[CommandEvent[REQ]]]
   }
@@ -123,28 +120,9 @@ class InprocTransport(serialize: Boolean = false)
                                    groupName: String,
                                    inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = {
 
-    new InprocEventHyperbusObservable(matcher, groupName, inputDeserializer)
+    new EventHyperbusSubscription(matcher, groupName, inputDeserializer)
       .observable
       .asInstanceOf[Observable[REQ]]
-  }
-
-  private [transport] def off(subscription: InprocObservable[_]): Future[Unit] = {
-    subscription match {
-      case i: InprocCommandHyperbusObservable ⇒
-        Future {
-          commandSubscriptions.remove(i)
-        }
-
-      case i: InprocEventHyperbusObservable ⇒
-        Future {
-          eventSubscriptions.remove(i)
-        }
-
-      case other ⇒
-        Future.failed {
-          new ClassCastException(s"InprocHyperbusSubscription expected instead of ${other.getClass}")
-        }
-    }
   }
 
   override def shutdown(duration: FiniteDuration): Task[Boolean] = {
@@ -172,55 +150,25 @@ class InprocTransport(serialize: Boolean = false)
       seq.headOption
   }
 
-  protected abstract class InprocObservable[T] extends FuzzyMatcher {
-    // FyzzyIndex properties
-    def requestMatcher: RequestMatcher
-    override def indexProperties: Seq[FuzzyIndexItemMetaInfo] = requestMatcher.indexProperties
-    override def matches(other: Any): Boolean = requestMatcher.matches(other)
 
-    // Subject properties
-    protected val subject: ConcurrentSubject[T,T] = ConcurrentSubject.publishToOne[T]
-    def off(): Unit = {
-      remove()
-      subject.onComplete()
-    }
 
-    def publish(t: T): Task[Ack] = {
-      Task.fromFuture(subject.onNext(t).andThen {
-        case Success(Stop) ⇒ remove()
-      })
-    }
-
-    val observable: Observable[T] = (subscriber: Subscriber[T]) => {
-      val original: Cancelable = subject.unsafeSubscribeFn(subscriber)
-      add()
-      () => {
-        off()
-        original.cancel()
-      }
-    }
-
-    protected def remove(): Unit
-    protected def add(): Unit
-  }
-
-  protected class InprocCommandHyperbusObservable(val requestMatcher: RequestMatcher,
-                                                  val inputDeserializer: RequestDeserializer[RequestBase])
-    extends InprocObservable[CommandEvent[RequestBase]] {
+  protected class CommandHyperbusSubscription(val requestMatcher: RequestMatcher,
+                                              val inputDeserializer: RequestDeserializer[RequestBase])
+    extends HyperbusSubscription[CommandEvent[RequestBase]] {
     override def remove(): Unit = {
       commandSubscriptions.remove(this)
       subscriptions -= this
     }
     override def add(): Unit = {
       commandSubscriptions.add(this)
-      subscriptions -= this
+      subscriptions += this → false
     }
   }
 
-  protected class InprocEventHyperbusObservable(val requestMatcher: RequestMatcher,
-                                                val group: String,
-                                                val inputDeserializer: RequestDeserializer[RequestBase])
-    extends InprocObservable[RequestBase] {
+  protected class EventHyperbusSubscription(val requestMatcher: RequestMatcher,
+                                            val group: String,
+                                            val inputDeserializer: RequestDeserializer[RequestBase])
+    extends HyperbusSubscription[RequestBase] {
     override def remove(): Unit = {
       eventSubscriptions.remove(this)
       subscriptions += this → false
@@ -231,3 +179,4 @@ class InprocTransport(serialize: Boolean = false)
     }
   }
 }
+

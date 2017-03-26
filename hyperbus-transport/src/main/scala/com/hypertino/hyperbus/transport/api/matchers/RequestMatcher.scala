@@ -16,6 +16,10 @@ case class RequestMatcher(headers: Map[String, TextMatcher]) extends FuzzyMatche
     k.split('.').toSeq -> v
   }
 
+  def serviceAddressMatcher: Option[TextMatcher] = headers.get(HeaderHRI.FULL_SERVICE_ADDRESS)
+  def methodMatcher: Option[TextMatcher] = headers.get(Header.METHOD)
+  def contentTypeMatcher: Option[TextMatcher] = headers.get(Header.CONTENT_TYPE)
+
   def matches(other: Any): Boolean = {
     other match {
       case request: RequestBase ⇒ matchMessage(request)
