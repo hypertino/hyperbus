@@ -7,9 +7,11 @@ import com.hypertino.hyperbus.transport._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import monix.execution.Ack.Continue
+import monix.execution.Scheduler
 import monix.execution.Scheduler.Implicits.global
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FreeSpec, Matchers}
+import scaldi.Module
 
 import scala.util.Try
 
@@ -101,10 +103,13 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
   }
 
   def newHyperbus() = {
+    implicit val injector = new Module {
+      bind [Scheduler] to global
+    }
     val tr = new InprocTransport
     val cr = List(TransportRoute[ClientTransport](tr, RequestMatcher.any))
     val sr = List(TransportRoute[ServerTransport](tr, RequestMatcher.any))
-    val transportManager = new TransportManager(cr, sr, global)
+    val transportManager = new TransportManager(cr, sr, global, injector)
     new Hyperbus(transportManager, logMessages = true)
   }
 }

@@ -8,13 +8,14 @@ import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import monix.eval.Task
 import monix.execution.Ack.Continue
-import monix.execution.Cancelable
+import monix.execution.{Cancelable, Scheduler}
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import monix.reactive.subjects.ConcurrentSubject
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FlatSpec, Matchers}
+import scaldi.Module
 import testclasses.{TestPost1, _}
 
 import scala.concurrent.duration.FiniteDuration
@@ -527,9 +528,12 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
   }
 
   def newHyperbus(ct: ClientTransport, st: ServerTransport) = {
+    implicit val injector = new Module {
+      bind [Scheduler] to global
+    }
     val cr = List(TransportRoute(ct, RequestMatcher.any))
     val sr = List(TransportRoute(st, RequestMatcher.any))
-    val transportManager = new TransportManager(cr, sr, ExecutionContext.global)
+    val transportManager = new TransportManager(cr, sr, global, injector)
     new Hyperbus(transportManager, Some("group1"), logMessages = true)
   }
 }

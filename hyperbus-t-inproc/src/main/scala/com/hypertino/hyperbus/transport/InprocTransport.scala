@@ -7,12 +7,13 @@ import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.ConfigUtils._
-import com.hypertino.hyperbus.util.{FuzzyIndex, HyperbusSubscription}
+import com.hypertino.hyperbus.util.{FuzzyIndex, HyperbusSubscription, SchedulerInjector}
 import com.typesafe.config.Config
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
 import org.slf4j.{Logger, LoggerFactory}
+import scaldi.Injector
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Promise
@@ -21,12 +22,14 @@ import scala.util.Random
 
 // todo: log messages?
 class InprocTransport(serialize: Boolean = false)
-                     (implicit val scheduler: Scheduler) extends ClientTransport with ServerTransport {
+                     (implicit val scheduler: Scheduler,
+                      inj: Injector) extends ClientTransport with ServerTransport {
 
-  def this(config: Config) = this(
+  def this(config: Config)(implicit inj: Injector) = this(
     serialize = config.getOptionBoolean("serialize").getOrElse(false)
   )(
-    monix.execution.Scheduler.Implicits.global // todo: configurable ExecutionContext like in akka?
+    SchedulerInjector(config.getOptionString("scheduler")),
+    inj
   )
 
   protected val commandSubscriptions = new FuzzyIndex[CommandHyperbusSubscription]

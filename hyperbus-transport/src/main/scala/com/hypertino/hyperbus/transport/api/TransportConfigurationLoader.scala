@@ -34,7 +34,8 @@ object TransportConfigurationLoader {
       sc.getConfigList("server-routes").map { li ⇒
         val transportName = li.read[String]("transport")
         getTransportRoute[ServerTransport](transportName, transportMap, li)
-      }
+      },
+      config.getOptionString("scheduler")
     )
   }
 

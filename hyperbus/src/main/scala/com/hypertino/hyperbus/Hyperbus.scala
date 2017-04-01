@@ -13,7 +13,7 @@ import scala.language.experimental.macros
 
 class Hyperbus(val transportManager: TransportManager,
                val defaultGroupName: Option[String] = None,
-               val logMessages: Boolean = true)(implicit val scheduler: Scheduler)
+               val logMessages: Boolean = true)
   extends HyperbusApi {
 
   protected val log = LoggerFactory.getLogger(this.getClass)

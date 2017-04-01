@@ -12,6 +12,7 @@ import monix.execution.{Ack, Scheduler}
 import monix.reactive.observers.Subscriber
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.{FreeSpec, Matchers}
+import scaldi.Module
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -30,6 +31,9 @@ object MockResponse extends ResponseMeta[MockBody, MockResponse[MockBody]]
 
 class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers with Eventually {
   import monix.execution.Scheduler.Implicits.global
+  implicit val injector = new Module {
+    bind [Scheduler] to global
+  }
   implicit val mcx = MessagingContext("123")
 
   //todo: add test for: + handler exception, decoder exception

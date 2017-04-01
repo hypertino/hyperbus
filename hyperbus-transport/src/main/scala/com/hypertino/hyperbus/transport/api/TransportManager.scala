@@ -3,30 +3,29 @@ package com.hypertino.hyperbus.transport.api
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
+import com.hypertino.hyperbus.util.SchedulerInjector
 import monix.eval.Task
+import monix.execution.Scheduler
 import monix.reactive.Observable
-import monix.reactive.observers.Subscriber
 import org.slf4j.LoggerFactory
+import scaldi.{Injectable, Injector}
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
-/**
-  * Manages transport layer based on provided route configuration.
-  *
-  * @param clientRoutes     - routes clients/consumer calls to specific transport
-  * @param serverRoutes     - routes messages from specific transport to server/producer subscribed on topic
-  * @param executionContext - execution context used by transport layer
-  */
 class TransportManager(protected[this] val clientRoutes: Seq[TransportRoute[ClientTransport]],
                        protected[this] val serverRoutes: Seq[TransportRoute[ServerTransport]],
-                       implicit protected[this] val executionContext: ExecutionContext) extends ClientTransport with ServerTransport {
+                       implicit val scheduler: Scheduler,
+                       protected [this] val inj: Injector
+                      ) extends ClientTransport with ServerTransport with Injectable {
 
   protected[this] val log = LoggerFactory.getLogger(this.getClass)
 
-  def this(configuration: TransportConfiguration) = this(configuration.clientRoutes,
-    configuration.serverRoutes, ExecutionContext.global)
+  def this(configuration: TransportConfiguration)(implicit inj: Injector) = this(
+    configuration.clientRoutes,
+    configuration.serverRoutes,
+    SchedulerInjector(configuration.schedulerName),
+    inj
+  )
 
   def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase] = {
     this
