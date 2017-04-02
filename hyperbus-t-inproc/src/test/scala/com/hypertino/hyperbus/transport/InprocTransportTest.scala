@@ -16,6 +16,7 @@ import scaldi.Module
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Success
 
 @body("mock")
 case class MockBody(test: String) extends Body
@@ -41,10 +42,12 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers with 
   "InprocTransport " - {
     "Simple Test" in {
       val t = new InprocTransport
-      t.commands(RequestMatcher(Specific("hb://mock")), null).subscribe(requestProcessor())
+      val counter = new AtomicInteger(0)
+      t.commands(RequestMatcher(Specific("hb://mock")), null).subscribe(requestProcessor(counter))
 
       val f = t.ask(MockRequest(MockBody("hey")), null).asInstanceOf[Task[MockResponse[MockBody]]]
       f.runAsync.futureValue.body.test should equal("yeh")
+      counter.get should equal(1)
     }
 
     "NoTransportRouteException Test" in {
@@ -212,9 +215,9 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers with 
       val s = new Subscriber[CommandEvent[MockRequest]] {
         override implicit def scheduler: Scheduler = monix.execution.Scheduler.Implicits.global
         override def onNext(elem: CommandEvent[MockRequest]): Future[Ack] = {
-          elem.responsePromise.success(
+          elem.reply(Success(
             MockResponse(MockBody(elem.request.body.test.reverse))
-          )
+          ))
           counter.incrementAndGet()
           Continue
         }

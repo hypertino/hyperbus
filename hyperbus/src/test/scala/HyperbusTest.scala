@@ -20,6 +20,7 @@ import testclasses.{TestPost1, _}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success, Try}
 
 class ClientTransportTest(output: String) extends ClientTransport {
   private val messageBuf = new StringBuilder
@@ -97,9 +98,11 @@ class ServerTransportTest extends ServerTransport {
   }
 
   def testCommand(msg: RequestBase): Task[ResponseBase] = {
-    val c = CommandEvent(msg, Promise())
-    sCommandsSubject.onNext(c)
-    Task.fromFuture(c.responsePromise.future)
+    Task.create[ResponseBase]{ (_, callback) ⇒
+      val command = CommandEvent(msg, callback)
+      sCommandsSubject.onNext(command)
+      Cancelable.empty
+    }
   }
 
   def testEvent(msg: RequestBase): Task[PublishResult] = {
@@ -264,9 +267,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     hyperbus.commands[TestPost1].subscribe{ c ⇒
-      c.responsePromise.success {
+      c.reply(Success(
         Created(testclasses.TestCreatedBody("100500"))
-      }
+      ))
       Continue
     }
 
@@ -279,16 +282,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     hyperbus.commands[TestPost1].subscribe{ c ⇒
-      if (c.request.headers.contentType.isEmpty) {
-        c.responsePromise.success {
+      c.reply(Try{
+        if (c.request.headers.contentType.isEmpty) {
           Created(testclasses.TestCreatedBody("100500"))
         }
-      }
-      else {
-        c.responsePromise.failure(
-          Conflict(ErrorBody("failed"))
-        )
-      }
+        else {
+          throw Conflict(ErrorBody("failed"))
+        }
+      })
       Continue
     }
 
@@ -304,9 +305,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     hyperbus.commands[StaticPostWithEmptyBody].subscribe{ c ⇒
-      c.responsePromise.success {
+      c.reply(Success {
         NoContent(EmptyBody)
-      }
+      })
       Continue
     }
 
@@ -319,9 +320,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     hyperbus.commands[StaticPostWithDynamicBody].subscribe{ post =>
-      post.responsePromise.success {
+      post.reply(Success {
         NoContent(EmptyBody)
-      }
+      })
       Continue
     }
 
@@ -337,9 +338,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       DynamicRequest.requestMeta,
       DynamicRequestObservableMeta(RequestMatcher("/test", Method.GET, None))
     ).subscribe { post =>
-      post.responsePromise.success {
+      post.reply(Success {
         NoContent(EmptyBody)
-      }
+      })
       Continue
     }
 
@@ -449,9 +450,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     hyperbus.commands[TestPost1].subscribe{ c ⇒
-      c.responsePromise.failure {
+      c.reply(Failure {
         Conflict(ErrorBody("failed", errorId = "abcde12345"))
-      }
+      })
       Continue
     }
 
@@ -484,9 +485,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val id1f = hyperbus
       .commands[TestPost1]
       .subscribe { c ⇒
-      c.responsePromise.failure {
-        Conflict(ErrorBody("failed", errorId = "abcde12345"))
-      }
+        c.reply(Failure {
+          Conflict(ErrorBody("failed", errorId = "abcde12345"))
+        })
       Continue
     }
 
@@ -495,9 +496,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     st.sCommandsSubject should equal(null)
 
     val id2f = hyperbus.commands[TestPost1].subscribe{ c ⇒
-      c.responsePromise.failure {
+      c.reply(Failure {
         Conflict(ErrorBody("failed", errorId = "abcde12345"))
-      }
+      })
       Continue
     }
 

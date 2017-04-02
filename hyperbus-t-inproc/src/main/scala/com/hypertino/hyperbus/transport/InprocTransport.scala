@@ -9,27 +9,24 @@ import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.ConfigUtils._
 import com.hypertino.hyperbus.util.{FuzzyIndex, HyperbusSubscription, SchedulerInjector}
 import com.typesafe.config.Config
-import monix.eval.Task
-import monix.execution.Scheduler
+import monix.eval.{Callback, Task}
+import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.Observable
 import org.slf4j.{Logger, LoggerFactory}
 import scaldi.Injector
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 
 // todo: log messages?
 class InprocTransport(serialize: Boolean = false)
-                     (implicit val scheduler: Scheduler,
-                      inj: Injector) extends ClientTransport with ServerTransport {
+                     (implicit val scheduler: Scheduler) extends ClientTransport with ServerTransport {
 
   def this(config: Config)(implicit inj: Injector) = this(
     serialize = config.getOptionBoolean("serialize").getOrElse(false)
   )(
-    SchedulerInjector(config.getOptionString("scheduler")),
-    inj
+    SchedulerInjector(config.getOptionString("scheduler"))
   )
 
   protected val commandSubscriptions = new FuzzyIndex[CommandHyperbusSubscription]
@@ -51,10 +48,11 @@ class InprocTransport(serialize: Boolean = false)
         message
       }
 
-      val p = Promise[ResponseBase]
-      val tResult = Task.fromFuture(p.future)
-      val tPublish = subscription.publish(CommandEvent(request, p))
-      val t = Task.zip2(tResult, tPublish).map(_._1)
+      val t = Task.create[ResponseBase]{ (_, callback) ⇒
+        val command = CommandEvent(request, callback)
+        subscription.publish(command).runAsync
+      }
+
       if (serialize) {
         t.map { result ⇒
           MessageReader.read(new StringReader(result.serializeToString), responseDeserializer)
@@ -87,7 +85,7 @@ class InprocTransport(serialize: Boolean = false)
           }
 
           subscription.publish(request)
-        }.toSeq
+        }.toSeq ++ resultTask
 
       if (isPublish) {
         Task.zipList(publishTasks: _*).map { _ ⇒

@@ -3,12 +3,13 @@ package com.hypertino.hyperbus.transport.api
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization.{RequestDeserializer, ResponseBaseDeserializer}
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
-import monix.eval.Task
+import monix.eval.{Callback, Task}
 import monix.execution.Cancelable
 import monix.reactive.Observable
 
 import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
+import scala.util.Try
 
 trait PublishResult {
   def sent: Option[Boolean]
@@ -24,7 +25,7 @@ trait ClientTransport {
   def shutdown(duration: FiniteDuration): Task[Boolean]
 }
 
-case class CommandEvent[REQ <: RequestBase](request: REQ, responsePromise: Promise[ResponseBase]) extends MessagingContext {
+case class CommandEvent[REQ <: RequestBase](request: REQ, reply: Callback[ResponseBase]) extends MessagingContext {
   override def correlationId: Option[String] = request.correlationId
 }
 

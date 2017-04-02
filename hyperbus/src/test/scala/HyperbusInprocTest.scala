@@ -13,7 +13,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FreeSpec, Matchers}
 import scaldi.Module
 
-import scala.util.Try
+import scala.util.{Success, Try}
 
 
 class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
@@ -26,23 +26,23 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
       val hyperbus = newHyperbus()
 
       hyperbus.commands[TestPost1].subscribe{ implicit c ⇒
-        c.responsePromise.success {
+        c.reply(Success {
           Created(testclasses.TestCreatedBody("100500"))
-        }
+        })
         Continue
       }
 
       hyperbus.commands[TestPost2].subscribe{ implicit c ⇒
-        c.responsePromise.success {
+        c.reply(Success {
           Created(TestCreatedBody(c.request.body.resourceData.toString))
-        }
+        })
         Continue
       }
 
       hyperbus.commands[TestPostWith2Responses].subscribe{ implicit c ⇒
-        c.responsePromise.success {
+        c.reply(Success {
           Ok(TestAnotherBody(c.request.body.resourceData.reverse))
-        }
+        })
         Continue
       }
 
@@ -67,7 +67,7 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
       val hyperbus = newHyperbus()
 
       hyperbus.commands[TestPost3].subscribe{ implicit c ⇒
-        c.responsePromise.complete(Try{
+        c.reply(Try{
           val post = c.request
           if (post.body.resourceData == 1)
             Created(testclasses.TestCreatedBody("100500"))
