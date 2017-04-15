@@ -4,6 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.hypertino.hyperbus.model.{Body, Request}
 import com.hypertino.hyperbus.transport.api.matchers.{Any, RequestMatcher}
 import com.hypertino.hyperbus.util.ConfigUtils
+import scaldi.Injector
 
 class TransportConfigurationError(message: String) extends RuntimeException(message)
 
@@ -13,14 +14,14 @@ object TransportConfigurationLoader {
 
   import scala.collection.JavaConversions._
 
-  def fromConfig(config: Config): TransportConfiguration = {
+  def fromConfig(config: Config, inj: Injector): TransportConfiguration = {
     val sc = config.getConfig("hyperbus")
 
     val st = sc.getObject("transports")
     val transportMap = st.entrySet().map { entry ⇒
       val transportTag = entry.getKey
       val transportConfig = sc.getConfig("transports." + transportTag)
-      val transport = createTransport(transportConfig)
+      val transport = createTransport(transportConfig, inj)
       transportTag → transport
     }.toMap
 
@@ -51,7 +52,7 @@ object TransportConfigurationLoader {
     TransportRoute[T](transport, matcher)
   }
 
-  private def createTransport(config: Config): Any = {
+  private def createTransport(config: Config, inj: Injector): Any = {
     val className = {
       val s = config.getString("class-name")
       if (s.contains("."))
@@ -63,6 +64,6 @@ object TransportConfigurationLoader {
     val transportConfig = config.getOptionConfig("configuration").getOrElse(
       ConfigFactory.parseString("")
     )
-    clazz.getConstructor(classOf[Config]).newInstance(transportConfig)
+    clazz.getConstructor(classOf[Config], classOf[Injector]).newInstance(transportConfig, inj)
   }
 }

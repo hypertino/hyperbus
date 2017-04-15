@@ -6,14 +6,16 @@ import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers._
 import com.typesafe.config.{Config, ConfigFactory}
 import monix.eval.Task
+import monix.execution.Scheduler
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FreeSpec, Matchers}
+import scaldi.{Injector, Module}
 
 import scala.concurrent.duration.FiniteDuration
 
-class MockClientTransport(config: Config) extends ClientTransport {
+class MockClientTransport(config: Config, inj: Injector) extends ClientTransport {
   override def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase] = ???
 
   override def shutdown(duration: FiniteDuration): Task[Boolean] = ???
@@ -21,7 +23,7 @@ class MockClientTransport(config: Config) extends ClientTransport {
   override def publish(message: RequestBase): Task[PublishResult] = ???
 }
 
-class MockServerTransport(config: Config) extends ServerTransport {
+class MockServerTransport(config: Config, inj: Injector) extends ServerTransport {
   def commands[REQ <: RequestBase](matcher: RequestMatcher,
                                      inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = ???
 
@@ -68,7 +70,10 @@ class TransportManagerConfigurationTest extends FreeSpec with ScalaFutures with 
         }
         """)
 
-      val sbc = TransportConfigurationLoader.fromConfig(config)
+      implicit val injector = new Module {
+        bind [Scheduler] to monix.execution.Scheduler.Implicits.global
+      }
+      val sbc = TransportConfigurationLoader.fromConfig(config, injector)
 
       sbc.clientRoutes should not be empty
       sbc.clientRoutes.head.matcher.headers should contain theSameElementsAs Map("u" → Specific("/topic"), "m" → Specific("post"))

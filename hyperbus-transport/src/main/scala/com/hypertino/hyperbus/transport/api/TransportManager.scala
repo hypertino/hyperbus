@@ -4,6 +4,7 @@ import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.SchedulerInjector
+import com.typesafe.config.Config
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
@@ -26,6 +27,8 @@ class TransportManager(protected[this] val clientRoutes: Seq[TransportRoute[Clie
     SchedulerInjector(configuration.schedulerName),
     inj
   )
+
+  def this(config: Config)(implicit inj: Injector) = this(TransportConfigurationLoader.fromConfig(config, inj))(inj)
 
   def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase] = {
     this

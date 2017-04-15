@@ -23,10 +23,10 @@ import scala.util.Random
 class InprocTransport(serialize: Boolean = false)
                      (implicit val scheduler: Scheduler) extends ClientTransport with ServerTransport {
 
-  def this(config: Config)(implicit inj: Injector) = this(
+  def this(config: Config, inj: Injector) = this(
     serialize = config.getOptionBoolean("serialize").getOrElse(false)
   )(
-    SchedulerInjector(config.getOptionString("scheduler"))
+    SchedulerInjector(config.getOptionString("scheduler"))(inj)
   )
 
   protected val commandSubscriptions = new FuzzyIndex[CommandHyperbusSubscription]

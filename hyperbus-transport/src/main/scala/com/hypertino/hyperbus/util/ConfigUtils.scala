@@ -30,6 +30,9 @@ object ConfigUtils {
     def getOptionLong(key: String): Option[Long] =
       if (config.hasPath(key)) Some(config.getLong(key)) else None
 
+    def getOptionInt(key: String): Option[Int] =
+      if (config.hasPath(key)) Some(config.getInt(key)) else None
+
     def getOptionDuration(key: String): Option[scala.concurrent.duration.FiniteDuration] =
       if (config.hasPath(key)) Some(
         scala.concurrent.duration.Duration(config.getDuration(key, TimeUnit.MILLISECONDS), TimeUnit.MILLISECONDS)
