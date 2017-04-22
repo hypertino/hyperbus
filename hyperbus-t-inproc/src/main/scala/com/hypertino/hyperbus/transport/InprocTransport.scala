@@ -9,8 +9,8 @@ import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.ConfigUtils._
 import com.hypertino.hyperbus.util.{FuzzyIndex, HyperbusSubscription, SchedulerInjector}
 import com.typesafe.config.Config
-import monix.eval.{Callback, Task}
-import monix.execution.{Cancelable, Scheduler}
+import monix.eval.Task
+import monix.execution.Scheduler
 import monix.reactive.Observable
 import org.slf4j.{Logger, LoggerFactory}
 import scaldi.Injector

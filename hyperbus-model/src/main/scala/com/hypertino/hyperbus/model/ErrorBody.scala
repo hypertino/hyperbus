@@ -4,7 +4,7 @@ import java.io.{Reader, Writer}
 
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value._
-import com.hypertino.hyperbus.IdGenerator
+import com.hypertino.hyperbus.util.SeqGenerator
 
 trait ErrorBody extends DynamicBody {
   def code: String
@@ -41,7 +41,7 @@ trait ErrorBody extends DynamicBody {
 object ErrorBody {
   def apply(code: String,
             description: Option[String] = None,
-            errorId: String = IdGenerator.create(),
+            errorId: String = SeqGenerator.create(),
             extra: Value = Null,
             contentType: Option[String] = None): ErrorBody =
     ErrorBodyContainer(code, description, errorId, extra, contentType)

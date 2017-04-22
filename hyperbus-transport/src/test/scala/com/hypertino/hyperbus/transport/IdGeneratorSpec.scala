@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.transport
 
-import com.hypertino.hyperbus.IdGenerator
-import org.scalatest.{Matchers, FreeSpec}
+import com.hypertino.hyperbus.util.IdGenerator
+import org.scalatest.{FreeSpec, Matchers}
 
 class IdGeneratorSpec extends FreeSpec with Matchers {
   "IdGenerator " - {

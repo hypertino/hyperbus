@@ -1,11 +1,12 @@
-package com.hypertino.hyperbus
+package com.hypertino.hyperbus.util
 
 import java.security.SecureRandom
 import java.util.concurrent.atomic.AtomicInteger
 
-object IdGenerator {
+// more unique than UUID & CPU hungry because of SecureRandom
+// guarantees to grow monotonically until process is restarted
+object IdGenerator extends IdGeneratorBase {
   private val random = new SecureRandom()
-  private val base64t = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz" // sorted by char code
   private val counter = new AtomicInteger(random.nextInt(65536))
 
   def create(): String = {
@@ -17,13 +18,5 @@ object IdGenerator {
     appendInt(sb, random.nextInt())
     appendInt(sb, random.nextInt())
     sb.toString()
-  }
-
-  private def appendInt(sb: StringBuilder, i: Int): Unit = {
-    sb.append(base64t.charAt(i >> 24 & 63))
-    sb.append(base64t.charAt(i >> 18 & 63))
-    sb.append(base64t.charAt(i >> 12 & 63))
-    sb.append(base64t.charAt(i >> 6 & 63))
-    sb.append(base64t.charAt(i & 63))
   }
 }

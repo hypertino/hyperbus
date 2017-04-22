@@ -1,9 +1,9 @@
 package com.hypertino.hyperbus.model
 
-import com.hypertino.hyperbus.IdGenerator
+import com.hypertino.hyperbus.util.SeqGenerator
 
 trait MessagingContext {
-  def createMessageId(): String = IdGenerator.create()
+  def createMessageId(): String = SeqGenerator.create()
   def correlationId: Option[String]
 }
 
