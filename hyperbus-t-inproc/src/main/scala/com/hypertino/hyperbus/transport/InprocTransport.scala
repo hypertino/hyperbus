@@ -7,17 +7,18 @@ import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.ConfigUtils._
-import com.hypertino.hyperbus.util.{FuzzyIndex, HyperbusSubscription, SchedulerInjector}
+import com.hypertino.hyperbus.util._
 import com.typesafe.config.Config
-import monix.eval.Task
+import monix.eval.{Callback, Task}
 import monix.execution.Scheduler
 import monix.reactive.Observable
 import org.slf4j.{Logger, LoggerFactory}
 import scaldi.Injector
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
-import scala.util.Random
+import scala.util.{Random, Try}
 
 // todo: log messages?
 class InprocTransport(serialize: Boolean = false)
@@ -48,10 +49,10 @@ class InprocTransport(serialize: Boolean = false)
         message
       }
 
-      val t = Task.create[ResponseBase]{ (_, callback) ⇒
-        val command = CommandEvent(request, callback)
-        subscription.publish(command).runAsync
-      }
+      val callbackTask = CallbackTask[ResponseBase]
+      val command = CommandEvent(request, callbackTask)
+      val tPublish = subscription.publish(command)
+      val t = Task.zip2(tPublish, callbackTask.task).map(_._2)
 
       if (serialize) {
         t.map { result ⇒

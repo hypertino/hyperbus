@@ -23,11 +23,11 @@ class Hyperbus(val transportManager: TransportManager,
   }
 
   override def ask[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[requestMeta.ResponseType] = {
-    transportManager.ask(request, requestMeta.responseDeserializer).asInstanceOf[Task[requestMeta.ResponseType]]
+    Task.eval(transportManager.ask(request, requestMeta.responseDeserializer).asInstanceOf[Task[requestMeta.ResponseType]]).flatten
   }
 
   override def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[PublishResult] = {
-    transportManager.publish(request)
+    Task.eval(transportManager.publish(request)).flatten
   }
 
   override def commands[REQ <: RequestBase](implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[CommandEvent[REQ]] = {
