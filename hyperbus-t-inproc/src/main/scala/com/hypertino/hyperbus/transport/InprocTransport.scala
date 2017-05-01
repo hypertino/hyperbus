@@ -12,6 +12,7 @@ import com.typesafe.config.Config
 import monix.eval.{Callback, Task}
 import monix.execution.Scheduler
 import monix.reactive.Observable
+import monix.reactive.subjects.{ConcurrentSubject, Subject}
 import org.slf4j.{Logger, LoggerFactory}
 import scaldi.Injector
 
@@ -30,9 +31,9 @@ class InprocTransport(serialize: Boolean = false)
     SchedulerInjector(config.getOptionString("scheduler"))(inj)
   )
 
-  protected val commandSubscriptions = new FuzzyIndex[CommandHyperbusSubscription]
-  protected val eventSubscriptions = new FuzzyIndex[EventHyperbusSubscription]
-  protected val subscriptions = TrieMap[HyperbusSubscription[_], Boolean]()
+  protected val commandSubscriptions = new FuzzyIndex[CommandSubjectSubscription]
+  protected val eventSubscriptions = new FuzzyIndex[EventSubjectSubscription]
+  protected val subscriptions = TrieMap[SubjectSubscription[_], Boolean]()
   protected val log: Logger = LoggerFactory.getLogger(this.getClass)
 
   // todo: refactor this method, it's awful
@@ -113,7 +114,7 @@ class InprocTransport(serialize: Boolean = false)
   def commands[REQ <: RequestBase](matcher: RequestMatcher,
                                      inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = {
 
-    new CommandHyperbusSubscription(matcher, inputDeserializer)
+    new CommandSubjectSubscription(matcher, inputDeserializer)
       .observable
       .asInstanceOf[Observable[CommandEvent[REQ]]]
   }
@@ -122,7 +123,7 @@ class InprocTransport(serialize: Boolean = false)
                                    groupName: String,
                                    inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = {
 
-    new EventHyperbusSubscription(matcher, groupName, inputDeserializer)
+    new EventSubjectSubscription(matcher, groupName, inputDeserializer)
       .observable
       .asInstanceOf[Observable[REQ]]
   }
@@ -154,9 +155,12 @@ class InprocTransport(serialize: Boolean = false)
 
 
 
-  protected class CommandHyperbusSubscription(val requestMatcher: RequestMatcher,
-                                              val inputDeserializer: RequestDeserializer[RequestBase])
-    extends HyperbusSubscription[CommandEvent[RequestBase]] {
+  protected class CommandSubjectSubscription(val requestMatcher: RequestMatcher,
+                                             val inputDeserializer: RequestDeserializer[RequestBase])
+    extends SubjectSubscription[CommandEvent[RequestBase]] {
+
+    override protected val subject = ConcurrentSubject.publishToOne[CommandEvent[RequestBase]]
+
     override def remove(): Unit = {
       commandSubscriptions.remove(this)
       subscriptions -= this
@@ -167,10 +171,13 @@ class InprocTransport(serialize: Boolean = false)
     }
   }
 
-  protected class EventHyperbusSubscription(val requestMatcher: RequestMatcher,
-                                            val group: String,
-                                            val inputDeserializer: RequestDeserializer[RequestBase])
-    extends HyperbusSubscription[RequestBase] {
+  protected class EventSubjectSubscription(val requestMatcher: RequestMatcher,
+                                           val group: String,
+                                           val inputDeserializer: RequestDeserializer[RequestBase])
+    extends SubjectSubscription[RequestBase] {
+
+    override protected val subject = ConcurrentSubject.publishToOne[RequestBase]
+
     override def remove(): Unit = {
       eventSubscriptions.remove(this)
       subscriptions += this → false
