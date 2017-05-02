@@ -33,7 +33,6 @@ class InprocTransport(serialize: Boolean = false)
 
   protected val commandSubscriptions = new FuzzyIndex[CommandSubjectSubscription]
   protected val eventSubscriptions = new FuzzyIndex[EventSubjectSubscription]
-  protected val subscriptions = TrieMap[SubjectSubscription[_], Boolean]()
   protected val log: Logger = LoggerFactory.getLogger(this.getClass)
 
   // todo: refactor this method, it's awful
@@ -129,9 +128,10 @@ class InprocTransport(serialize: Boolean = false)
   }
 
   override def shutdown(duration: FiniteDuration): Task[Boolean] = {
+    eventSubscriptions.toSeq.foreach(_.off())
+    commandSubscriptions.toSeq.foreach(_.off())
     eventSubscriptions.clear()
     commandSubscriptions.clear()
-    subscriptions.foreach(_._1.off())
     Task.now(true)
   }
 
@@ -163,11 +163,9 @@ class InprocTransport(serialize: Boolean = false)
 
     override def remove(): Unit = {
       commandSubscriptions.remove(this)
-      subscriptions -= this
     }
     override def add(): Unit = {
       commandSubscriptions.add(this)
-      subscriptions += this → false
     }
   }
 
@@ -180,11 +178,9 @@ class InprocTransport(serialize: Boolean = false)
 
     override def remove(): Unit = {
       eventSubscriptions.remove(this)
-      subscriptions += this → false
     }
     override def add(): Unit = {
       eventSubscriptions.add(this)
-      subscriptions += this → false
     }
   }
 }

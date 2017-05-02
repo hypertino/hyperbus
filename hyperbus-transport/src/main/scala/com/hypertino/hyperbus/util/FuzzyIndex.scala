@@ -80,4 +80,6 @@ class FuzzyIndex[A <: FuzzyMatcher] {
   }
 
   private object All
+
+  def toSeq: Seq[A] = index.map(_._2).flatten.toSeq.distinct
 }
