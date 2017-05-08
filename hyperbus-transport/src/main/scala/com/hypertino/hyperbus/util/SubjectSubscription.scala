@@ -12,6 +12,7 @@ import scala.util.Success
 
 abstract class SubjectSubscription[T](implicit val scheduler: Scheduler) extends FuzzyMatcher {
   type eventType = T
+
   // FyzzyIndex properties
   def requestMatcher: RequestMatcher
   override def indexProperties: Seq[FuzzyIndexItemMetaInfo] = requestMatcher.indexProperties
@@ -19,7 +20,7 @@ abstract class SubjectSubscription[T](implicit val scheduler: Scheduler) extends
 
   // Subject properties
   protected val subject: Subject[eventType, eventType]
-  def off(): Unit = {
+  def cancel(): Unit = {
     remove()
     subject.onComplete()
   }
@@ -34,7 +35,7 @@ abstract class SubjectSubscription[T](implicit val scheduler: Scheduler) extends
     val original: Cancelable = subject.unsafeSubscribeFn(subscriber)
     add()
     () => {
-      off()
+      cancel()
       original.cancel()
     }
   }

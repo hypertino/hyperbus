@@ -31,8 +31,8 @@ class InprocTransport(serialize: Boolean = false)
     SchedulerInjector(config.getOptionString("scheduler"))(inj)
   )
 
-  protected val commandSubscriptions = new FuzzyIndex[CommandSubjectSubscription]
-  protected val eventSubscriptions = new FuzzyIndex[EventSubjectSubscription]
+  protected val commandSubscriptions = new FuzzyIndex[CommandSubscription]
+  protected val eventSubscriptions = new FuzzyIndex[EventSubscription]
   protected val log: Logger = LoggerFactory.getLogger(this.getClass)
 
   // todo: refactor this method, it's awful
@@ -113,7 +113,7 @@ class InprocTransport(serialize: Boolean = false)
   def commands[REQ <: RequestBase](matcher: RequestMatcher,
                                      inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]] = {
 
-    new CommandSubjectSubscription(matcher, inputDeserializer)
+    new CommandSubscription(matcher, inputDeserializer)
       .observable
       .asInstanceOf[Observable[CommandEvent[REQ]]]
   }
@@ -122,14 +122,14 @@ class InprocTransport(serialize: Boolean = false)
                                    groupName: String,
                                    inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = {
 
-    new EventSubjectSubscription(matcher, groupName, inputDeserializer)
+    new EventSubscription(matcher, groupName, inputDeserializer)
       .observable
       .asInstanceOf[Observable[REQ]]
   }
 
   override def shutdown(duration: FiniteDuration): Task[Boolean] = {
-    eventSubscriptions.toSeq.foreach(_.off())
-    commandSubscriptions.toSeq.foreach(_.off())
+    eventSubscriptions.toSeq.foreach(_.cancel())
+    commandSubscriptions.toSeq.foreach(_.cancel())
     eventSubscriptions.clear()
     commandSubscriptions.clear()
     Task.now(true)
@@ -155,8 +155,8 @@ class InprocTransport(serialize: Boolean = false)
 
 
 
-  protected class CommandSubjectSubscription(val requestMatcher: RequestMatcher,
-                                             val inputDeserializer: RequestDeserializer[RequestBase])
+  protected class CommandSubscription(val requestMatcher: RequestMatcher,
+                                      val inputDeserializer: RequestDeserializer[RequestBase])
     extends SubjectSubscription[CommandEvent[RequestBase]] {
 
     override protected val subject = ConcurrentSubject.publishToOne[CommandEvent[RequestBase]]
@@ -169,9 +169,9 @@ class InprocTransport(serialize: Boolean = false)
     }
   }
 
-  protected class EventSubjectSubscription(val requestMatcher: RequestMatcher,
-                                           val group: String,
-                                           val inputDeserializer: RequestDeserializer[RequestBase])
+  protected class EventSubscription(val requestMatcher: RequestMatcher,
+                                    val group: String,
+                                    val inputDeserializer: RequestDeserializer[RequestBase])
     extends SubjectSubscription[RequestBase] {
 
     override protected val subject = ConcurrentSubject.publishToOne[RequestBase]
