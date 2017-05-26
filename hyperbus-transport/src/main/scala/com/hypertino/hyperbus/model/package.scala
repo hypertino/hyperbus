@@ -3,7 +3,7 @@ package com.hypertino.hyperbus
 import java.util.concurrent.atomic.AtomicLong
 
 import com.hypertino.binders.value._
-import com.hypertino.hyperbus.transport.api.matchers.HeaderIndexKey
+import com.hypertino.hyperbus.transport.api.matchers.{HeaderIndexKey, RequestMatcher}
 import com.hypertino.hyperbus.util.CanFuzzyMatchable
 
 import scala.collection.concurrent.TrieMap

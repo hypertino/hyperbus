@@ -9,17 +9,15 @@ import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.ConfigUtils._
 import com.hypertino.hyperbus.util._
 import com.typesafe.config.Config
-import monix.eval.{Callback, Task}
+import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
-import monix.reactive.subjects.{ConcurrentSubject, Subject}
+import monix.reactive.subjects.ConcurrentSubject
 import org.slf4j.{Logger, LoggerFactory}
 import scaldi.Injector
 
-import scala.collection.concurrent.TrieMap
-import scala.concurrent.Promise
 import scala.concurrent.duration.FiniteDuration
-import scala.util.{Random, Try}
+import scala.util.Random
 
 // todo: log messages?
 class InprocTransport(serialize: Boolean = false)

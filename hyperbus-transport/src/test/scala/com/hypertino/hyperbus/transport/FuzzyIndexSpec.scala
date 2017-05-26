@@ -30,4 +30,12 @@ class FuzzyIndexSpec extends FlatSpec with Matchers with PrivateMethodTester wit
 
     bloomFilter.get("m") shouldBe defined
   }
+
+  "FuzzyIndex" should "lookup by RequestMatcher properties" in {
+    val fuzzyIndex = new FuzzyIndex[RequestMatcher]
+    val requestMatcher = RequestMatcher(Map("m" → Specific("get")))
+    fuzzyIndex.add(requestMatcher)
+
+    fuzzyIndex.lookupAll(requestMatcher) should equal(Seq(requestMatcher))
+  }
 }

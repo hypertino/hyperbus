@@ -1,9 +1,13 @@
 package com.hypertino.hyperbus.transport.api.matchers
 
+import java.util.concurrent.atomic.AtomicLong
+
 import com.hypertino.binders.value.Lst
 import com.hypertino.hyperbus.model.{Header, HeaderHRI, RequestBase}
-import com.hypertino.hyperbus.util.{FuzzyIndexItemMetaInfo, FuzzyMatcher}
+import com.hypertino.hyperbus.util.{CanFuzzyMatchable, FuzzyIndexItemMetaInfo, FuzzyMatcher}
 import com.typesafe.config.ConfigValue
+
+import scala.collection.concurrent.TrieMap
 
 case class HeaderIndexKey(path: String, value: String)
 
@@ -73,6 +77,10 @@ object RequestMatcher {
     apply(headersPojo.map { case (k, v) ⇒
       k → TextMatcher(v)
     })
+  }
+
+  implicit object RequestMatcherCanFuzzyMatchable extends CanFuzzyMatchable[RequestMatcher] {
+    override def indexProperties(bloomFilter: TrieMap[Any, AtomicLong], a: RequestMatcher): Seq[Any] = a.indexProperties
   }
 }
 

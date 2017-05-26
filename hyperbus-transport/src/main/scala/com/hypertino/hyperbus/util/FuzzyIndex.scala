@@ -21,10 +21,12 @@ class CanFuzzyIndex[A] extends CanComplexElement[Vector[A]] {
   def isEmpty(existing: Vector[A]): Boolean = existing.isEmpty
 }
 
-class FuzzyIndex[A <: FuzzyMatcher] {
+class FuzzyIndex[A <: FuzzyMatcher](seq: A*) {
   private implicit val evidence = new CanFuzzyIndex[A]
   private val index = new ComplexTrieMap[Any, Vector[A]]()
   private val bloomFilter = TrieMap[Any, AtomicLong]()
+
+  seq.foreach(add)
 
   def add(a: A): Unit = {
     val v = Vector(a)
