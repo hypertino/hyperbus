@@ -65,11 +65,15 @@ class ServerTransportTest extends ServerTransport {
     this.sMatcher = matcher
     this.sInputDeserializer = inputDeserializer
     sCommandsSubject = ConcurrentSubject.publishToOne[CommandEvent[RequestBase]]
-    val observable: Observable[CommandEvent[RequestBase]] = (subscriber: Subscriber[CommandEvent[RequestBase]]) => {
-      val original: Cancelable = sCommandsSubject.unsafeSubscribeFn(subscriber)
-      () => {
-        sCommandsSubject = null
-        original.cancel()
+    val observable = new Observable[CommandEvent[RequestBase]] {
+      override def unsafeSubscribeFn(subscriber: Subscriber[CommandEvent[RequestBase]]): Cancelable = {
+        val original: Cancelable = sCommandsSubject.unsafeSubscribeFn(subscriber)
+        new Cancelable {
+          override def cancel(): Unit = {
+            sCommandsSubject = null
+            original.cancel()
+          }
+        }
       }
     }
     observable.asInstanceOf[Observable[CommandEvent[REQ]]]
@@ -83,13 +87,18 @@ class ServerTransportTest extends ServerTransport {
     this.sGroupName = groupName
 
     sEventsSubject = ConcurrentSubject.publishToOne[RequestBase]
-    val observable: Observable[RequestBase] = (subscriber: Subscriber[RequestBase]) => {
-      val original: Cancelable = sEventsSubject.unsafeSubscribeFn(subscriber)
-      () => {
-        sEventsSubject = null
-        original.cancel()
+    val observable: Observable[RequestBase] = new Observable[RequestBase] {
+      override def unsafeSubscribeFn(subscriber: Subscriber[RequestBase]): Cancelable = {
+        val original: Cancelable = sEventsSubject.unsafeSubscribeFn(subscriber)
+        new Cancelable {
+          override def cancel(): Unit = {
+            sEventsSubject = null
+            original.cancel()
+          }
+        }
       }
     }
+
     observable.asInstanceOf[Observable[REQ]]
   }
 

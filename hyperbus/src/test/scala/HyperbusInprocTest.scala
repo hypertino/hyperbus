@@ -67,7 +67,7 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
       val hyperbus = newHyperbus()
 
       hyperbus.commands[TestPost3].subscribe{ implicit c ⇒
-        c.reply(Try{
+        c.reply(Try.apply[ResponseBase]{
           val post = c.request
           if (post.body.resourceData == 1)
             Created(testclasses.TestCreatedBody("100500"))

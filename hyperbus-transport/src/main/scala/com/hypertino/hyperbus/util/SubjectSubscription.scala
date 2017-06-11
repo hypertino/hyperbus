@@ -31,12 +31,18 @@ abstract class SubjectSubscription[T](implicit val scheduler: Scheduler) extends
     })
   }
 
-  val observable: Observable[eventType] = (subscriber: Subscriber[eventType]) => {
-    val original: Cancelable = subject.unsafeSubscribeFn(subscriber)
-    add()
-    () => {
-      cancel()
-      original.cancel()
+  private def cancel_1() = cancel()
+
+  val observable: Observable[eventType] = new Observable[eventType] {
+    override def unsafeSubscribeFn(subscriber: Subscriber[eventType]): Cancelable = {
+      val original: Cancelable = subject.unsafeSubscribeFn(subscriber)
+      add()
+      new Cancelable {
+        override def cancel(): Unit = {
+          cancel_1()
+          original.cancel()
+        }
+      }
     }
   }
 
