@@ -73,14 +73,14 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "TestPost1" should "serialize" in {
     val post1 = TestPost1("155", TestBody1("abcde"))
     post1.serializeToString should equal(
-      s"""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
+      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
         """{"data":"abcde"}""")
   }
 
   "TestPost1DefinedResponse" should "serialize" in {
     val post1 = TestPost1DefinedResponse("155", TestBody1("abcde"))
     post1.serializeToString should equal(
-      s"""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
+      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
         """{"data":"abcde"}""")
   }
 
@@ -90,7 +90,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
 
     observableMeta.requestMatcher should equal(RequestMatcher("hb://test", "post", Some("test-body-1")))
 
-    val s = """{"s":200,"t":"test-body-2","i":"123","l":{"a":"hb://test"}}""" + rn +
+    val s = """{"s":200,"t":"test-body-2","i":"123","r":{"l":"hb://test"}}""" + rn +
       """{"x":"100500","y":555}"""
 
     val response: requestMeta.ResponseType = MessageReader.from(s, requestMeta.responseDeserializer)
@@ -104,14 +104,14 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
 
     observableMeta.requestMatcher should equal(RequestMatcher("hb://test", "post", Some("test-body-1")))
 
-    val s1 = """{"s":200,"t":"test-body-2","i":"123","l":{"a":"hb://test"}}""" + rn +
+    val s1 = """{"s":200,"t":"test-body-2","i":"123","r":{"l":"hb://test"}}""" + rn +
       """{"x":"100500","y":555}"""
 
     val response1: requestMeta.ResponseType = MessageReader.from(s1, requestMeta.responseDeserializer)
     response1.body should equal (TestBody2("100500",555))
     response1 shouldBe a[Ok[_]]
 
-    val s2 = """{"s":200,"t":"test-body-3","i":"123","l":{"a":"hb://test"}}""" + rn +
+    val s2 = """{"s":200,"t":"test-body-3","i":"123","r":{"l":"hb://test"}}""" + rn +
       """{"x":"100500","y":555, "z": 888}"""
 
     val response2: requestMeta.ResponseType = MessageReader.from(s2, requestMeta.responseDeserializer)
@@ -122,26 +122,26 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "TestGet1 (with EmptyBody)" should "serialize" in {
     val r = TestGet1("155", EmptyBody)
     r.serializeToString should equal(
-      s"""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"get","i":"123"}""")
+      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"get","i":"123"}""")
   }
 
   "TestGet1 (with EmptyBody)" should "deserialize" in {
-    val str = s"""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"get","i":"123"}"""
+    val str = s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"get","i":"123"}"""
     TestGet1.from(str) should equal (TestGet1("155", EmptyBody))
   }
 
   "TestPost1" should "serialize with headers" in {
     val post1 = TestPost1("155", TestBody1("abcde"), Obj.from("test" → Lst.from("a")))
     post1.serializeToString should equal(
-      s"""{"r":{"q":{"id":"155"},"a":"hb://test"},"m":"post","t":"test-body-1","i":"123","test":["a"]}""" + rn +
+      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"test-body-1","i":"123","test":["a"]}""" + rn +
          """{"data":"abcde"}""")
   }
 
   "TestPost1" should "deserialize" in {
-    val str = """{"r":{"q":{"id":"155"},"a":"hb://test-post-1"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
+    val str = """{"r":{"q":{"id":"155"},"l":"hb://test-post-1"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
       """{"data":"abcde"}"""
     val post = TestPost1.from(str)
-    post.headers.hri should equal(HRI("hb://test-post-1", Obj.from("id" -> "155")))
+    post.headers.hrl should equal(HRL("hb://test-post-1", Obj.from("id" -> "155")))
     post.headers.contentType should equal(Some("test-body-1"))
     post.headers.method should equal("post")
     post.headers.messageId should equal("123")
@@ -163,13 +163,13 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
       TestOuterBodyEmbedded(inner1, List(inner2, inner3))
     ))
     val str = postO.serializeToString
-    str should equal("""{"r":{"a":"hb://test-outer-resource"},"m":"get","t":"test-outer-body","i":"123"}""" + rn +
-      """{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}},"collection":[{"innerData":"xyz","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}},{"innerData":"yey","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}}]}}""")
+    str should equal("""{"r":{"l":"hb://test-outer-resource"},"m":"get","t":"test-outer-body","i":"123"}""" + rn +
+      """{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"r":{"l":"hb://test-inner-resource"}}}},"collection":[{"innerData":"xyz","_links":{"self":{"r":{"l":"hb://test-inner-resource"}}}},{"innerData":"yey","_links":{"self":{"r":{"l":"hb://test-inner-resource"}}}}]}}""")
   }
 
   "TestOuterPost" should "deserialize" in {
-    val str = """{"r":{"a":"hb://test-outer-resource"},"m":"get","t":"test-outer-body","i":"123"}""" + rn +
-      """{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}},"collection":[{"innerData":"xyz","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}},{"innerData":"yey","_links":{"self":{"r":{"a":"hb://test-inner-resource"}}}}]}}"""
+    val str = """{"r":{"l":"hb://test-outer-resource"},"m":"get","t":"test-outer-body","i":"123"}""" + rn +
+      """{"outerData":"abcde","_embedded":{"simple":{"innerData":"eklmn","_links":{"self":{"r":{"l":"hb://test-inner-resource"}}}},"collection":[{"innerData":"xyz","_links":{"self":{"r":{"l":"hb://test-inner-resource"}}}},{"innerData":"yey","_links":{"self":{"r":{"l":"hb://test-inner-resource"}}}}]}}"""
 
     val outer = TestOuterResource(str)
 
@@ -186,12 +186,12 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   */
 
   "DynamicRequest" should "decode" in {
-    val str = """{"r":{"a":"hb://test-outer-resource"},"m":"custom-method","t":"test-body-1","i":"123"}""" + rn +
+    val str = """{"r":{"l":"hb://test-outer-resource"},"m":"custom-method","t":"test-body-1","i":"123"}""" + rn +
       """{"resourceId":"100500"}"""
     val request = DynamicRequest.from(str)
     request shouldBe a[Request[_]]
     request.headers.method should equal("custom-method")
-    request.headers.hri should equal(HRI("hb://test-outer-resource"))
+    request.headers.hrl should equal(HRL("hb://test-outer-resource"))
     request.headers.messageId should equal("123")
     request.correlationId should equal(Some("123"))
     request.body should equal(DynamicBody(Obj.from("resourceId" -> "100500"), Some("test-body-1")))

@@ -67,7 +67,7 @@ class InprocTransport(serialize: Boolean = false)
 
     if (!isPublish && resultTask.isEmpty) {
       Task.raiseError {
-        new NoTransportRouteException(s"${message.headers.hri.serviceAddress} is not found. Headers: ${message.headers}")
+        new NoTransportRouteException(s"${message.headers.hrl.resourceLocator} is not found. Headers: ${message.headers}")
       }
     }
     else {

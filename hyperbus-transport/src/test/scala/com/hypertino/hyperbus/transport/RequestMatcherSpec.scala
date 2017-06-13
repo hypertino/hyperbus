@@ -37,10 +37,10 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
   }
 
   "RequestMatcher" should "match a Request with inner header matcher" in {
-    val requestMatcher = RequestMatcher(Map("r.a" → Specific("hb://test")))
+    val requestMatcher = RequestMatcher(Map("r.l" → Specific("hb://test")))
 
     requestMatcher.matches(
-      request(Obj.from("r" → Obj.from("a" → "hb://test")))
+      request(Obj.from("r" → Obj.from("l" → "hb://test")))
     ) shouldBe true
 
     requestMatcher.matches(

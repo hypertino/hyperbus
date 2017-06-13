@@ -19,28 +19,28 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
   }
 
   "Response" should "serialize" in {
-    val msg = Created(TestCreatedBody("100500"), HRI("hb://test"))
-    msg.serializeToString should equal("""{"s":201,"t":"test-created-body","i":"123","c":"abc","l":{"a":"hb://test"}}""" + rn +
+    val msg = Created(TestCreatedBody("100500"), HRL("hb://test"))
+    msg.serializeToString should equal("""{"s":201,"t":"test-created-body","i":"123","c":"abc","l":{"l":"hb://test"}}""" + rn +
       """{"resourceId":"100500"}""")
   }
 
   "Response" should "deserialize" in {
-    val s = """{"s":201,"t":"test-created-body","i":"123","c":"abc","l":{"a":"hb://test"}}""" + rn +
+    val s = """{"s":201,"t":"test-created-body","i":"123","c":"abc","r":{"l":"hb://test"}}""" + rn +
       """{"resourceId":"100500"}"""
 
     val deserializer = StandardResponse.apply(_: Reader, _: Obj, {
       case h: ResponseHeaders if h.contentType.contains("test-created-body") ⇒ TestCreatedBody.apply
     })
 
-    val o = Created(TestCreatedBody("100500"), HRI("hb://test"))
+    val o = Created(TestCreatedBody("100500"), HRL("hb://test"))
     val response = MessageReader.from(s, deserializer)
     response.body should equal (o.body)
     response.headers.all.toSet should equal(o.headers.all.toSet)
   }
 
   "Response with headers" should "serialize" in {
-    val msg = Created(TestCreatedBody("100500"), HRI("hb://test"), Obj.from("test" → "a"))
-    msg.serializeToString should equal("""{"s":201,"t":"test-created-body","i":"123","c":"abc","test":"a","l":{"a":"hb://test"}}""" + rn +
+    val msg = Created(TestCreatedBody("100500"), HRL("hb://test"), Obj.from("test" → "a"))
+    msg.serializeToString should equal("""{"s":201,"t":"test-created-body","i":"123","c":"abc","test":"a","l":{"l":"hb://test"}}""" + rn +
       """{"resourceId":"100500"}""")
   }
 

@@ -45,8 +45,8 @@ class HeadersBuilder(private[this] val mapBuilder: scala.collection.mutable.Link
     this
   }
 
-  def withHRI(hri: HRI): HeadersBuilder = {
-    mapBuilder += Header.HRI → hri.toValue
+  def withHRL(hrl: HRL): HeadersBuilder = {
+    mapBuilder += Header.HRL → hrl.toValue
     this
   }
 

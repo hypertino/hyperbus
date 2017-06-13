@@ -21,7 +21,7 @@ trait Headers {
 }
 
 case class RequestHeaders(all: Obj) extends Headers {
-  def hri: HRI = all.safe(Header.HRI).to[HRI]
+  def hrl: HRL = all.safe(Header.HRL).to[HRL]
 
   def method: String = all.safe(Header.METHOD).toString
 }
@@ -33,7 +33,7 @@ object RequestHeaders {
 case class ResponseHeaders(all: Obj) extends Headers {
   lazy val statusCode: Int = all.v(Header.STATUS_CODE).toInt
 
-  def location: HRI = all.v(Header.LOCATION).to[HRI]
+  def location: HRL = all.v(Header.LOCATION).to[HRL]
 }
 
 object ResponseHeaders {

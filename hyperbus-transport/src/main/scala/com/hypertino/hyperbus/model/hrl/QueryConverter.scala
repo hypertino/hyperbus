@@ -1,8 +1,8 @@
-package com.hypertino.hyperbus.model.hri
+package com.hypertino.hyperbus.model.hrl
 
 import com.hypertino.binders.value.Value
 
-trait HRIQueryConverter {
+trait QueryConverter {
   def parseQueryString(queryString: String): Value
   def toQueryString(value: Value): String
 }

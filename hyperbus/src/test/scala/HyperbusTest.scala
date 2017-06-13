@@ -133,14 +133,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
   "ask " should "send a request (client)" in {
     val ct = new ClientTransportTest(
-      """{"s":201,"t":"created-body","i":"123","l":{"a":"hb://test"}}""" + "\r\n" + """{"resourceId":"100500"}"""
+      """{"s":201,"t":"created-body","i":"123","r":{"l":"hb://test"}}""" + "\r\n" + """{"resourceId":"100500"}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
     val f = hyperbus ask testclasses.TestPost1(testclasses.TestBody1("ha ha")) runAsync
 
     ct.input should equal(
-      """{"r":{"a":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
+      """{"r":{"l":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
     )
 
     f.futureValue.body should equal(testclasses.TestCreatedBody("100500"))
@@ -153,7 +153,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     )
 
     val hyperbus = newHyperbus(ct, null)
-    val f = hyperbus ask DynamicRequest(HRI("hb://resources"),
+    val f = hyperbus ask DynamicRequest(HRL("hb://resources"),
       Method.POST,
       DynamicBody(
         Obj.from("resourceData" → "ha ha"),
@@ -162,7 +162,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     ) runAsync
 
     ct.input should equal(
-      """{"r":{"a":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
+      """{"r":{"l":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
     )
 
     val r = f.futureValue
@@ -179,7 +179,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val f = hyperbus ask TestPostWithNoContent(testclasses.TestBody1("empty")) runAsync
 
     ct.input should equal(
-      """{"r":{"a":"hb://empty"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"empty"}"""
+      """{"r":{"l":"hb://empty"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"empty"}"""
     )
 
     val r = f.futureValue
@@ -196,7 +196,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val f = hyperbus ask StaticPostWithDynamicBody(DynamicBody(Text("ha ha"))) runAsync
 
     ct.input should equal(
-      """{"r":{"a":"hb://empty"},"m":"post","i":"123"}""" + "\r\n" + """"ha ha""""
+      """{"r":{"l":"hb://empty"},"m":"post","i":"123"}""" + "\r\n" + """"ha ha""""
     )
 
     val r = f.futureValue
@@ -213,7 +213,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val f = hyperbus ask StaticPostWithEmptyBody() runAsync
 
     ct.input should equal(
-      """{"r":{"a":"hb://empty"},"m":"post","i":"123"}"""
+      """{"r":{"l":"hb://empty"},"m":"post","i":"123"}"""
     )
 
     val r = f.futureValue
@@ -230,7 +230,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val f = hyperbus ask StaticPostBodyWithoutContentType(TestBodyNoContentType("yey")) runAsync
 
     ct.input should equal(
-      """{"r":{"a":"hb://content-body-not-specified"},"m":"post","i":"123"}""" + "\r\n" + """{"resourceData":"yey"}"""
+      """{"r":{"l":"hb://content-body-not-specified"},"m":"post","i":"123"}""" + "\r\n" + """{"resourceData":"yey"}"""
     )
 
     val r = f.futureValue
@@ -247,7 +247,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val f = hyperbus ask StaticGetWithQuery() runAsync
 
     ct.input should equal(
-      """{"r":{"a":"hb://empty"},"m":"get","i":"123"}"""
+      """{"r":{"l":"hb://empty"},"m":"get","i":"123"}"""
     )
 
     val r = f.futureValue
@@ -264,7 +264,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val f = hyperbus ask testclasses.TestPost1(testclasses.TestBody1("ha ha")) runAsync
 
     ct.input should equal(
-      """{"r":{"a":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
+      """{"r":{"l":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
     )
 
     val r = f.failed.futureValue
@@ -354,7 +354,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     }
 
     val msg = DynamicRequest(
-      HRI("/test"),
+      HRL("/test"),
       Method.GET,
       DynamicBody("haha", Some("some-content")),
       Obj.from(
@@ -410,7 +410,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
     val hyperbus = newHyperbus(clientTransport, null)
     val futureResult = hyperbus
-      .publish(DynamicRequest(HRI("/resources"), Method.POST, DynamicBody(Obj.from("resourceData" → "ha ha"), Some("test-1"))))
+      .publish(DynamicRequest(HRL("/resources"), Method.POST, DynamicBody(Obj.from("resourceData" → "ha ha"), Some("test-1"))))
       .runAsync
 
     futureResult.futureValue
@@ -447,7 +447,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
         Continue
       }
 
-    val msg = DynamicRequest(HRI("hb://test"), Method.POST, EmptyBody)
+    val msg = DynamicRequest(HRL("hb://test"), Method.POST, EmptyBody)
     val task = st.testEvent(msg)
     task.runAsync.futureValue shouldBe a[PublishResult]
     eventually {

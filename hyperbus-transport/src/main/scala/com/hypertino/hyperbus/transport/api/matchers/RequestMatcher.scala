@@ -3,7 +3,7 @@ package com.hypertino.hyperbus.transport.api.matchers
 import java.util.concurrent.atomic.AtomicLong
 
 import com.hypertino.binders.value.Lst
-import com.hypertino.hyperbus.model.{Header, HeaderHRI, RequestBase}
+import com.hypertino.hyperbus.model.{Header, HeaderHRL, RequestBase}
 import com.hypertino.hyperbus.util.{CanFuzzyMatchable, FuzzyIndexItemMetaInfo, FuzzyMatcher}
 import com.typesafe.config.ConfigValue
 
@@ -20,7 +20,7 @@ case class RequestMatcher(headers: Map[String, TextMatcher]) extends FuzzyMatche
     k.split('.').toSeq -> v
   }
 
-  def serviceAddressMatcher: Option[TextMatcher] = headers.get(HeaderHRI.FULL_SERVICE_ADDRESS)
+  def urlMatcher: Option[TextMatcher] = headers.get(HeaderHRL.FULL_HRL)
   def methodMatcher: Option[TextMatcher] = headers.get(Header.METHOD)
   def contentTypeMatcher: Option[TextMatcher] = headers.get(Header.CONTENT_TYPE)
 
@@ -57,19 +57,19 @@ case class RequestMatcher(headers: Map[String, TextMatcher]) extends FuzzyMatche
 object RequestMatcher {
   val any = RequestMatcher(Any)
 
-  def apply(serviceAddressMatcher: TextMatcher): RequestMatcher = new RequestMatcher(
-    Map(HeaderHRI.FULL_SERVICE_ADDRESS → serviceAddressMatcher)
+  def apply(urlMatcher: TextMatcher): RequestMatcher = new RequestMatcher(
+    Map(HeaderHRL.FULL_HRL → urlMatcher)
   )
 
-  def apply(serviceAddress: String, method: String, contentType: Option[String]): RequestMatcher = {
+  def apply(url: String, method: String, contentType: Option[String]): RequestMatcher = {
     RequestMatcher(Map(
-      HeaderHRI.FULL_SERVICE_ADDRESS → Specific(serviceAddress),
+      HeaderHRL.FULL_HRL → Specific(url),
       Header.METHOD → Specific(method)) ++
       contentType.map(c ⇒ Header.CONTENT_TYPE → Specific(c))
     )
   }
 
-  def apply(serviceAddress: String, method: String): RequestMatcher = apply(serviceAddress, method, None)
+  def apply(url: String, method: String): RequestMatcher = apply(url, method, None)
 
   private[transport] def apply(config: ConfigValue): RequestMatcher = {
     import com.hypertino.binders.config.ConfigBinders._

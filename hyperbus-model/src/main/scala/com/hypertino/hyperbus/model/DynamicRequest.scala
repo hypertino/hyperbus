@@ -17,10 +17,10 @@ object DynamicRequest extends RequestMeta[DynamicRequest] {
   type ResponseType = DynamicResponse
   implicit val requestMeta: RequestMeta[DynamicRequest] = this
 
-  def apply(hri: HRI, method: String, body: DynamicBody, headersObj: Obj)
+  def apply(hrl: HRL, method: String, body: DynamicBody, headersObj: Obj)
            (implicit mcx: MessagingContext): DynamicRequest = {
     DynamicRequest(body, RequestHeaders(new HeadersBuilder()
-      .withHRI(hri)
+      .withHRL(hrl)
       .withMethod(method)
       .withContentType(body.contentType)
       .withContext(mcx)
@@ -29,10 +29,10 @@ object DynamicRequest extends RequestMeta[DynamicRequest] {
     )
   }
 
-  def apply(hri: HRI, method: String, body: DynamicBody)
+  def apply(hrl: HRL, method: String, body: DynamicBody)
            (implicit mcx: MessagingContext): DynamicRequest = {
     DynamicRequest(body, RequestHeaders(new HeadersBuilder()
-      .withHRI(hri)
+      .withHRL(hrl)
       .withMethod(method)
       .withContentType(body.contentType)
       .withContext(mcx)

@@ -1,8 +1,8 @@
-package com.hypertino.hyperbus.model.hri
+package com.hypertino.hyperbus.model.hrl
 
 import com.hypertino.binders.value.{Null, Obj, Text, Value}
 
-object PlainHRIQueryConverter extends HRIQueryConverter {
+object PlainQueryConverter extends QueryConverter {
   override def parseQueryString(queryString: String): Value = {
     if (queryString == null || queryString.isEmpty) {
       Null

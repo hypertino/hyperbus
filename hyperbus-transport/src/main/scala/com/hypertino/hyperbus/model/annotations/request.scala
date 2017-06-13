@@ -29,9 +29,9 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
   import c.universe._
 
   def updateClass(existingClass: ClassDef, clzCompanion: Option[ModuleDef] = None): c.Expr[Any] = {
-    val (method, serviceAddress) = c.prefix.tree match {
-      case q"new request($method, $serviceAddress)" => {
-        (c.Expr(method), c.eval[String](c.Expr(serviceAddress)))
+    val (method, resourceLocator) = c.prefix.tree match {
+      case q"new request($method, $resourceLocator)" => {
+        (c.Expr(method), c.eval[String](c.Expr(resourceLocator)))
       }
       case _ ⇒ c.abort(c.enclosingPosition, "Please provide arguments for @request annotation")
     }
@@ -68,7 +68,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
 
     val newClass =
       q"""
-        @com.hypertino.hyperbus.model.annotations.serviceAddress($serviceAddress)
+        @com.hypertino.hyperbus.model.annotations.resourceLocator($resourceLocator)
         @com.hypertino.hyperbus.model.annotations.method($method)
         class $className(..${classFields.map(stripDefaultValue)}, plain__init: Boolean)
           extends ..$bases with scala.Product {
@@ -179,7 +179,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val bodyVal = fresh("body")
     val headersVal = fresh("headers")
     val argsVal = fresh("args")
-    val hriVal = fresh("hri")
+    val hrlVal = fresh("hrl")
     val companionExtra =
       q"""
         type ResponseType = $responseType
@@ -187,11 +187,11 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         def apply(..${fieldsExceptHeaders.map(stripDefaultValue)}, headersObj: com.hypertino.binders.value.Obj)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
 
-          val $hriVal = com.hypertino.hyperbus.model.HRI(${className.toTermName}.serviceAddress, $query)
+          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.resourceLocator, $query)
 
           new $className(..${fieldsExceptHeaders.map(_.name)},
             headers = com.hypertino.hyperbus.model.RequestHeaders(new com.hypertino.hyperbus.model.HeadersBuilder()
-              .withHRI($hriVal)
+              .withHRL($hrlVal)
               .withMethod(${className.toTermName}.method)
               .withContentType(body.contentType)
               .withContext(mcx)
@@ -214,7 +214,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
           new $className(
             ..${
                 queryFields.map { field ⇒
-                q"${field.name} = $headersVal.hri.query.${field.name}.to[${field.tpt}]"
+                q"${field.name} = $headersVal.hrl.query.${field.name}.to[${field.tpt}]"
               }
             },
             $bodyFieldName = $bodyVal,
@@ -227,11 +227,11 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
           ..${classFields.map(f ⇒ q"request.${f.name}")}
         ))
 
-        def serviceAddress: String = $serviceAddress
+        def resourceLocator: String = $resourceLocator
         def method: String = $method
         def contentType: Option[String] = $contentType
         def requestMatcher: com.hypertino.hyperbus.transport.api.matchers.RequestMatcher = com.hypertino.hyperbus.transport.api.matchers.RequestMatcher(
-          serviceAddress,
+          resourceLocator,
           method,
           contentType
         )

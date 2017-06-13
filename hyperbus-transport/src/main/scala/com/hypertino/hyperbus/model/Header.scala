@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.model
 
 object Header {
-  val HRI = "r"
+  val HRL = "r"
   val METHOD = "m"
   val CONTENT_TYPE = "t"
   val MESSAGE_ID = "i"
@@ -11,10 +11,10 @@ object Header {
   val LOCATION = "l"
 }
 
-object HeaderHRI {
-  val SERVICE_ADDRESS = "a"
+object HeaderHRL {
+  val HRL = "l"
   val QUERY = "q"
 
-  val FULL_SERVICE_ADDRESS: String = Header.HRI + "." + HeaderHRI.SERVICE_ADDRESS
-  val FULL_QUERY: String = Header.HRI + "." + HeaderHRI.QUERY
+  val FULL_HRL: String = Header.HRL + "." + HeaderHRL.HRL
+  val FULL_QUERY: String = Header.HRL + "." + HeaderHRL.QUERY
 }
