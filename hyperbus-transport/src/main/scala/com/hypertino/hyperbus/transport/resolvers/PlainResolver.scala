@@ -12,7 +12,7 @@ class PlainResolver(endpointsMap: Map[String, Seq[PlainEndpoint]]) extends Servi
   def this(serviceName: String, hostname: String, port: Option[Int]) = this(Map(serviceName → Seq(PlainEndpoint(hostname, port))))
 
   override def serviceObservable(hrl: HRL): Observable[Seq[ServiceEndpoint]] = {
-    val uri = new URI(hrl.resourceLocator)
+    val uri = new URI(hrl.location)
     val service = uri.getScheme + "://" + uri.getAuthority
     endpointsMap.get(service) match {
       case Some(endpoints) ⇒ Observable.now(endpoints)

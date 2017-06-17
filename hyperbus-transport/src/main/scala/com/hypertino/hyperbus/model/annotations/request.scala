@@ -29,9 +29,9 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
   import c.universe._
 
   def updateClass(existingClass: ClassDef, clzCompanion: Option[ModuleDef] = None): c.Expr[Any] = {
-    val (method, resourceLocator) = c.prefix.tree match {
-      case q"new request($method, $resourceLocator)" => {
-        (c.Expr(method), c.eval[String](c.Expr(resourceLocator)))
+    val (method, location) = c.prefix.tree match {
+      case q"new request($method, $location)" => {
+        (c.Expr(method), c.eval[String](c.Expr(location)))
       }
       case _ ⇒ c.abort(c.enclosingPosition, "Please provide arguments for @request annotation")
     }
@@ -68,7 +68,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
 
     val newClass =
       q"""
-        @com.hypertino.hyperbus.model.annotations.resourceLocator($resourceLocator)
+        @com.hypertino.hyperbus.model.annotations.location($location)
         @com.hypertino.hyperbus.model.annotations.method($method)
         class $className(..${classFields.map(stripDefaultValue)}, plain__init: Boolean)
           extends ..$bases with scala.Product {
@@ -187,7 +187,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         def apply(..${fieldsExceptHeaders.map(stripDefaultValue)}, headersMap: com.hypertino.hyperbus.model.HeadersMap)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
 
-          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.resourceLocator, $query)
+          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, $query)
 
           new $className(..${fieldsExceptHeaders.map(_.name)},
             headers = com.hypertino.hyperbus.model.RequestHeaders(new com.hypertino.hyperbus.model.HeadersBuilder()
@@ -227,11 +227,11 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
           ..${classFields.map(f ⇒ q"request.${f.name}")}
         ))
 
-        def resourceLocator: String = $resourceLocator
+        def location: String = $location
         def method: String = $method
         def contentType: Option[String] = $contentType
         def requestMatcher: com.hypertino.hyperbus.transport.api.matchers.RequestMatcher = com.hypertino.hyperbus.transport.api.matchers.RequestMatcher(
-          resourceLocator,
+          location,
           method,
           contentType
         )

@@ -4,15 +4,15 @@ import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value.{Null, Value}
 import com.hypertino.hyperbus.model.hrl.{QueryConverter, PlainQueryConverter}
 
-case class HRL(@fieldName("l") resourceLocator: String,
+case class HRL(@fieldName("l") location: String,
                @fieldName("q") query: Value = Null) {
 
   def toURL(queryConverter: QueryConverter = PlainQueryConverter): String = {
     if (query.isNull) {
-      resourceLocator
+      location
     }
     else {
-      resourceLocator + "?" + queryConverter.toQueryString(query)
+      location + "?" + queryConverter.toQueryString(query)
     }
   }
 }
