@@ -1,11 +1,11 @@
 package com.hypertino.hyperbus.model.headers
 
-import com.hypertino.binders.value.{Lst, Obj, Text}
-import com.hypertino.hyperbus.model.HeadersMap
+import com.hypertino.binders.value.{Lst, Text}
+import com.hypertino.hyperbus.model.{Headers, HeadersMap}
 
 object PlainHeadersConverter extends HeadersConverter {
   override def fromHttp(headers: Seq[(String, String)]): HeadersMap = {
-    HeadersMap.builder.++=(
+    Headers.builder.++=(
       headers.groupBy(_._1).map { case (k, v) ⇒
         if (v.tail.isEmpty) { // just one element
           k → Text(v.head._2)

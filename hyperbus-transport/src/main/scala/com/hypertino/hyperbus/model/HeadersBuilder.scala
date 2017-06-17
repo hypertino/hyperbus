@@ -63,4 +63,8 @@ class HeadersBuilder() {
       .result()
       .filterNot(_._2.isEmpty) // todo: move this to the stage of building?
   }
+
+  def requestHeaders(): RequestHeaders = RequestHeaders(result())
+
+  def responseHeaders(): ResponseHeaders = ResponseHeaders(result())
 }

@@ -9,7 +9,6 @@ import scala.collection.immutable.{ListMap, MapLike}
 
 object HeadersMap {
   val empty: ListMap[String, Value] = ListMap.empty[String,Value]
-  def builder = new HeadersBuilder
 
   def apply(elements: (String, Value)*) = ListMap(elements: _*)
 }
@@ -40,6 +39,10 @@ trait Headers extends Map[String, Value] {
   override def get(key: String): Option[Value] = underlying.get(key)
 
   override def iterator: Iterator[(String, Value)] = underlying.iterator
+}
+
+object Headers {
+  def builder = new HeadersBuilder
 }
 
 case class RequestHeaders(underlying: HeadersMap) extends Headers with MapLike[String, Value, RequestHeaders] {
