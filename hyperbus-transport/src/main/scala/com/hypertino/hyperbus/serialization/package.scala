@@ -7,9 +7,9 @@ import com.hypertino.binders.value.Obj
 import com.hypertino.hyperbus.model._
 
 package object serialization {
-  type MessageDeserializer[+T <: Message[Body, Headers]] = (Reader, Obj) ⇒ T
-  type RequestDeserializer[+T <: RequestBase] = (Reader, Obj) ⇒ T
-  type ResponseDeserializer[+T <: ResponseBase] = (Reader, Obj) ⇒ T
+  type MessageDeserializer[+T <: Message[Body, Headers]] = (Reader, HeadersMap) ⇒ T
+  type RequestDeserializer[+T <: RequestBase] = (Reader, HeadersMap) ⇒ T
+  type ResponseDeserializer[+T <: ResponseBase] = (Reader, HeadersMap) ⇒ T
   type ResponseBodyDeserializer = (Reader, Option[String]) ⇒ Body
   type RequestBaseDeserializer = RequestDeserializer[RequestBase]
   type ResponseBaseDeserializer = ResponseDeserializer[ResponseBase]

@@ -17,14 +17,14 @@ object DynamicRequest extends RequestMeta[DynamicRequest] {
   type ResponseType = DynamicResponse
   implicit val requestMeta: RequestMeta[DynamicRequest] = this
 
-  def apply(hrl: HRL, method: String, body: DynamicBody, headersObj: Obj)
+  def apply(hrl: HRL, method: String, body: DynamicBody, headersMap: HeadersMap)
            (implicit mcx: MessagingContext): DynamicRequest = {
     DynamicRequest(body, RequestHeaders(new HeadersBuilder()
       .withHRL(hrl)
       .withMethod(method)
       .withContentType(body.contentType)
       .withContext(mcx)
-      .++=(headersObj)
+      .++=(headersMap)
       .result())
     )
   }
@@ -40,8 +40,8 @@ object DynamicRequest extends RequestMeta[DynamicRequest] {
     )
   }
 
-  def apply(reader: Reader, headersObj: Obj): DynamicRequest = {
-    val headers = RequestHeaders(headersObj)
+  def apply(reader: Reader, headersMap: HeadersMap): DynamicRequest = {
+    val headers = RequestHeaders(headersMap)
     val body = DynamicBody(reader, headers.contentType)
     new DynamicRequest(body, headers)
   }

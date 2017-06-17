@@ -10,17 +10,20 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 
 package object model {
+  type HeadersMap = scala.collection.Map[String, Value]
+  type MessageBase = Message[Body, Headers]
   type RequestBase = Request[Body]
   type ResponseBase = Response[Body]
   type DynamicResponse = Response[DynamicBody]
+
 
   implicit def requestToMessageContext(requestBase: RequestBase): MessagingContext = {
     MessagingContext(requestBase.headers.correlationId)
   }
 
-  implicit class HeadersMapWrapper(val h: Obj) {
-    def safe(name: String): Value = h.v.getOrElse(name, throw new NoSuchHeaderException(name))
-    def byPath(path: Seq[String]): Value = h.v.getOrElse(path.head, Null)(path.tail)
+  implicit class HeadersMapWrapper(val h: HeadersMap) {
+    def safe(name: String): Value = h.getOrElse(name, throw new NoSuchHeaderException(name))
+    def byPath(path: Seq[String]): Value = h.getOrElse(path.head, Null)(path.tail)
   }
 
   implicit class ValueWrapper(val v: Value) extends AnyVal {
@@ -36,7 +39,7 @@ package object model {
   implicit object RequestBaseCanFuzzyMatchable extends CanFuzzyMatchable[RequestBase] {
     override def indexProperties(bloomFilter: TrieMap[Any, AtomicLong], a: RequestBase): Seq[Any] = {
       val r = mutable.MutableList[Any]()
-      a.headers.all.v.foreach { case (k, v) ⇒
+      a.headers.all.foreach { case (k, v) ⇒
         appendIndexProperties(bloomFilter, k, v, r)
       }
       r

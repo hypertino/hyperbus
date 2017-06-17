@@ -303,8 +303,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     }
 
     val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"))
+    val headersMap = msg.headers.all.filterNot(_._1 == Header.CONTENT_TYPE)
     val msgWithoutContentType = msg.copy(
-      headers = RequestHeaders(Obj(msg.headers.all.v.filterNot(_._1 == Header.CONTENT_TYPE)))
+      headers = new RequestHeaders(headersMap)
     )
     val task = st.testCommand(msgWithoutContentType)
     task.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
@@ -357,7 +358,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       HRL("/test"),
       Method.GET,
       DynamicBody("haha", Some("some-content")),
-      Obj.from(
+      Map(
         Header.CONTENT_TYPE → "some-content",
         Header.MESSAGE_ID → "123"
       )

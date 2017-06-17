@@ -2,16 +2,20 @@ package com.hypertino.hyperbus.model
 
 import java.io.Writer
 
-import com.hypertino.binders.value.{Obj, Value}
+import com.hypertino.binders.value.Value
+
+object HeadersMap {
+  val empty: scala.collection.Map[String,Value] = Map.empty[String,Value]
+}
 
 trait Headers {
-  def all : Obj
+  def all: HeadersMap
 
   def messageId: String = all.safe(Header.MESSAGE_ID).toString
 
-  def correlationId: Option[String] = all.v.get(Header.CORRELATION_ID).map(_.toString).orElse(Some(messageId))
+  def correlationId: Option[String] = all.get(Header.CORRELATION_ID).map(_.toString).orElse(Some(messageId))
 
-  def contentType: Option[String] = all.v.get(Header.CONTENT_TYPE).map(_.toString)
+  def contentType: Option[String] = all.get(Header.CONTENT_TYPE).map(_.toString)
 
   def serialize(writer: Writer) : Unit = {
     import com.hypertino.binders.json.JsonBinders._
@@ -20,23 +24,23 @@ trait Headers {
   }
 }
 
-case class RequestHeaders(all: Obj) extends Headers {
+case class RequestHeaders(all: HeadersMap) extends Headers {
   def hrl: HRL = all.safe(Header.HRL).to[HRL]
 
   def method: String = all.safe(Header.METHOD).toString
 }
 
 object RequestHeaders {
-  val empty = RequestHeaders(Obj.empty)
+  val empty = RequestHeaders(HeadersMap.empty)
 }
 
-case class ResponseHeaders(all: Obj) extends Headers {
-  lazy val statusCode: Int = all.v(Header.STATUS_CODE).toInt
+case class ResponseHeaders(all: HeadersMap) extends Headers {
+  lazy val statusCode: Int = all(Header.STATUS_CODE).toInt
 
-  def location: HRL = all.v(Header.LOCATION).to[HRL]
+  def location: HRL = all(Header.LOCATION).to[HRL]
 }
 
 object ResponseHeaders {
-  val empty = ResponseHeaders(Obj.empty)
+  val empty = ResponseHeaders(HeadersMap.empty)
 }
 

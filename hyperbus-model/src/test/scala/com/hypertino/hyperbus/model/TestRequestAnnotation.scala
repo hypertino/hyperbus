@@ -1,10 +1,7 @@
 package com.hypertino.hyperbus.model
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, Reader}
-
-import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value.{Obj, _}
-import com.hypertino.hyperbus.model.annotations.{body, request}
+import com.hypertino.hyperbus.model.annotations.request
 import com.hypertino.hyperbus.serialization.MessageReader
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import org.scalatest.{FlatSpec, Matchers}
@@ -13,11 +10,11 @@ import org.scalatest.{FlatSpec, Matchers}
 case class TestPost1(id: String, body: TestBody1) extends Request[TestBody1]
 
 trait TestPost1ObjectApi {
-  def apply(id: String, x: TestBody1, headers: Obj)(implicit mcx: MessagingContext): TestPost1
+  def apply(id: String, x: TestBody1, headersMap: HeadersMap)(implicit mcx: MessagingContext): TestPost1
 }
 
 object TestPost1 extends RequestMetaCompanion[TestPost1] with TestPost1ObjectApi {
-  def apply(id: String, x: String, headers: Obj)(implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headers)(mcx)
+  def apply(id: String, x: String, headersMap: HeadersMap)(implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headersMap)(mcx)
 }
 
 @request(Method.GET, "hb://test")
@@ -131,7 +128,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   }
 
   "TestPost1" should "serialize with headers" in {
-    val post1 = TestPost1("155", TestBody1("abcde"), Obj.from("test" → Lst.from("a")))
+    val post1 = TestPost1("155", TestBody1("abcde"), Map("test" → Lst.from("a")))
     post1.serializeToString should equal(
       s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"test-body-1","i":"123","test":["a"]}""" + rn +
          """{"data":"abcde"}""")

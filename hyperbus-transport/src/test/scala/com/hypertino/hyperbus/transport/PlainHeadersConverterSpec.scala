@@ -7,7 +7,7 @@ import org.scalatest.{FreeSpec, Matchers}
 class PlainHeadersConverterSpec extends FreeSpec with Matchers {
   "PlainHeadersConverter " - {
     "Should convert headers to http/linear" in {
-      PlainHeadersConverter.toHttp(Obj.from("a" → "1", "b" → Lst.from("2","3"))) should equal (Seq("a" → "1", "b" → "2", "b" → "3"))
+      PlainHeadersConverter.toHttp(Map("a" → "1", "b" → Lst.from("2","3"))) should equal (Seq("a" → "1", "b" → "2", "b" → "3"))
     }
 
     "Should generate http/linear headers to Obj" in {

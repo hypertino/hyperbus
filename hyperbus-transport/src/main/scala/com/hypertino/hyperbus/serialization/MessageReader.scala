@@ -4,8 +4,7 @@ import java.io.{Reader, StringReader}
 
 import com.fasterxml.jackson.core.{JsonFactory, JsonParser}
 import com.hypertino.binders.json.{JacksonParserAdapter, JsonBindersFactory}
-import com.hypertino.binders.value.{Obj, Value}
-import com.hypertino.hyperbus.model.{Body, Headers, Message}
+import com.hypertino.hyperbus.model.{Body, Headers, HeadersMap, Message}
 
 object MessageReader {
   def read[M <: Message[_ <: Body,_ <: Headers]](reader: Reader, concreteDeserializer: MessageDeserializer[M]): M = {
@@ -16,7 +15,7 @@ object MessageReader {
     val headers = try {
       val adapter = new JacksonParserAdapter(jp)
       val headers = JsonBindersFactory.findFactory().withJsonParserApi(adapter) { jpa ⇒
-        jpa.unbind[Value].asInstanceOf[Obj]
+        jpa.unbind[HeadersMap]
       }
 
       jp.nextToken()

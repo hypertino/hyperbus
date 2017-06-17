@@ -101,7 +101,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
           )
         }
 
-        def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headersObj: com.hypertino.binders.value.Obj)
+        def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headersMap: com.hypertino.hyperbus.model.HeadersMap)
          (implicit mcx: com.hypertino.hyperbus.model.MessagingContext):$className[..$classTypeNames] = {
 
           new $className[..$classTypeNames](..${fieldsExceptHeaders.map(_.name)},
@@ -109,7 +109,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
               .withStatusCode(statusCode)
               .withContentType(body.contentType)
               .withContext(mcx)
-              .++=(headersObj)
+              .++=(headersMap)
               .result()),
             plain__init = true
           )
@@ -117,7 +117,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
 
         def apply[..$methodTypeArgs](..$fieldsExceptHeaders)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className[..$classTypeNames]
-          = apply(..${fieldsExceptHeaders.map(_.name)}, com.hypertino.binders.value.Obj.empty)(mcx)
+          = apply(..${fieldsExceptHeaders.map(_.name)}, com.hypertino.hyperbus.model.HeadersMap.empty)(mcx)
 
         def unapply[..$methodTypeArgs](response: $className[..$classTypeNames]) = Some(
           (..${fieldsExceptHeaders.map(f ⇒ q"response.${f.name}")}, response.headers)

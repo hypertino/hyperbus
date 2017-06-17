@@ -55,7 +55,7 @@ class HeadersBuilder(private[this] val mapBuilder: scala.collection.mutable.Link
     this
   }
 
-  def result(): Obj = {
-    new Obj(mapBuilder.filterNot(_._2.isEmpty))
+  def result(): HeadersMap = {
+    mapBuilder.filterNot(_._2.isEmpty)
   }
 }

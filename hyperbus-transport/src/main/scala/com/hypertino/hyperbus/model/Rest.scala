@@ -2,7 +2,6 @@ package com.hypertino.hyperbus.model
 
 import java.io.{Reader, StringWriter, Writer}
 
-import com.hypertino.binders.value.Obj
 import com.hypertino.hyperbus.serialization.{MessageReader, RequestDeserializer, ResponseDeserializer}
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 
@@ -64,7 +63,7 @@ trait RequestMeta[R <: RequestBase] {
   type ResponseType <: ResponseBase
   def responseDeserializer: ResponseDeserializer[ResponseType]
 
-  def apply(reader: Reader, headersObj: Obj): R
+  def apply(reader: Reader, headersMap: HeadersMap): R
   def apply(reader: Reader): R = MessageReader.read(reader, apply)
   def from(s: String): R = MessageReader.from(s, apply)
 }
@@ -85,7 +84,7 @@ trait DefinedResponse[R]
 trait ResponseMeta[PB <: Body, R <: Response[PB]] {
   def statusCode: Int
 
-  def apply[B <: PB](body: B, headersObj: Obj)(implicit messagingContext: MessagingContext): R
+  def apply[B <: PB](body: B, headersMap: HeadersMap)(implicit messagingContext: MessagingContext): R
   def apply[B <: PB](body: B)(implicit messagingContext: MessagingContext): R
 
   // def unapply[B <: PB](response: Response[PB]): Option[(B,Map[String,Seq[String]])] TODO: this doesn't works, find a workaround

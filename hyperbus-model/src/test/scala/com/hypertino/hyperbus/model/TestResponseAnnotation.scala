@@ -2,7 +2,6 @@ package com.hypertino.hyperbus.model
 
 import java.io.Reader
 
-import com.hypertino.binders.value.Obj
 import com.hypertino.hyperbus.model.annotations.body
 import com.hypertino.hyperbus.serialization.MessageReader
 import org.scalatest.{FlatSpec, Matchers}
@@ -28,7 +27,7 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
     val s = """{"s":201,"t":"test-created-body","i":"123","c":"abc","r":{"l":"hb://test"}}""" + rn +
       """{"resourceId":"100500"}"""
 
-    val deserializer = StandardResponse.apply(_: Reader, _: Obj, {
+    val deserializer = StandardResponse.apply(_: Reader, _: HeadersMap, {
       case h: ResponseHeaders if h.contentType.contains("test-created-body") ⇒ TestCreatedBody.apply
     })
 
@@ -39,7 +38,7 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
   }
 
   "Response with headers" should "serialize" in {
-    val msg = Created(TestCreatedBody("100500"), HRL("hb://test"), Obj.from("test" → "a"))
+    val msg = Created(TestCreatedBody("100500"), HRL("hb://test"), Map("test" → "a"))
     msg.serializeToString should equal("""{"s":201,"t":"test-created-body","i":"123","c":"abc","test":"a","l":{"l":"hb://test"}}""" + rn +
       """{"resourceId":"100500"}""")
   }
