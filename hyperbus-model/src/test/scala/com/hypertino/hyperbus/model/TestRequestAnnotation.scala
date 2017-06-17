@@ -128,7 +128,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   }
 
   "TestPost1" should "serialize with headers" in {
-    val post1 = TestPost1("155", TestBody1("abcde"), Map("test" → Lst.from("a")))
+    val post1 = TestPost1("155", TestBody1("abcde"), HeadersMap("test" → Lst.from("a")))
     post1.serializeToString should equal(
       s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"test-body-1","i":"123","test":["a"]}""" + rn +
          """{"data":"abcde"}""")

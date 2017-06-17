@@ -16,11 +16,13 @@ trait ResponseMetaWithLocation[PB <: Body, R <: Response[PB]] extends ResponseMe
   import com.hypertino.binders.value._
 
   def apply[B <: PB](body: B, location: HRL, headersMap: HeadersMap)(implicit mcx: MessagingContext): R = {
+    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
     apply[B](body, headersMap ++ Seq(Header.LOCATION → location.toValue))(mcx)
   }
 
   def apply[B <: PB](body: B, location: HRL)(implicit mcx: MessagingContext): R = {
-    apply[B](body, Map(Header.LOCATION → location.toValue))(mcx)
+    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
+    apply[B](body, HeadersMap(Header.LOCATION → location.toValue))(mcx)
   }
 }
 

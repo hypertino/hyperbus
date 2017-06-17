@@ -4,8 +4,13 @@ import java.io.Writer
 
 import com.hypertino.binders.value.Value
 
+import scala.collection.immutable.ListMap
+
 object HeadersMap {
-  val empty: scala.collection.Map[String,Value] = Map.empty[String,Value]
+  val empty: ListMap[String, Value] = ListMap.empty[String,Value]
+  def builder = new HeadersBuilder
+
+  def apply(elements: (String, Value)*) = ListMap(elements: _*)
 }
 
 trait Headers {

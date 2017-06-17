@@ -5,13 +5,15 @@ import com.hypertino.hyperbus.model.HeadersMap
 
 object PlainHeadersConverter extends HeadersConverter {
   override def fromHttp(headers: Seq[(String, String)]): HeadersMap = {
-    headers.groupBy(_._1).map { case (k, v) ⇒
-      if (v.tail.isEmpty) { // just one element
-        k → Text(v.head._2)
-      } else {
-        k → Lst(v.map(i ⇒ Text(i._2)))
+    HeadersMap.builder.++=(
+      headers.groupBy(_._1).map { case (k, v) ⇒
+        if (v.tail.isEmpty) { // just one element
+          k → Text(v.head._2)
+        } else {
+          k → Lst(v.map(i ⇒ Text(i._2)))
+        }
       }
-    }
+    ).result()
   }
 
   override def toHttp(headers: HeadersMap): Seq[(String, String)] = {

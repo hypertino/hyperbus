@@ -7,10 +7,11 @@ import com.hypertino.hyperbus.transport.api.matchers.{HeaderIndexKey, RequestMat
 import com.hypertino.hyperbus.util.CanFuzzyMatchable
 
 import scala.collection.concurrent.TrieMap
+import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 package object model {
-  type HeadersMap = scala.collection.Map[String, Value]
+  type HeadersMap = ListMap[String, Value]
   type MessageBase = Message[Body, Headers]
   type RequestBase = Request[Body]
   type ResponseBase = Response[Body]

@@ -358,7 +358,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       HRL("/test"),
       Method.GET,
       DynamicBody("haha", Some("some-content")),
-      Map(
+      HeadersMap(
         Header.CONTENT_TYPE → "some-content",
         Header.MESSAGE_ID → "123"
       )

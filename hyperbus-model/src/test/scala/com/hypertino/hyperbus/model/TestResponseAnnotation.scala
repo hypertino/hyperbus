@@ -24,7 +24,7 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
   }
 
   "Response" should "deserialize" in {
-    val s = """{"s":201,"t":"test-created-body","i":"123","c":"abc","r":{"l":"hb://test"}}""" + rn +
+    val s = """{"s":201,"t":"test-created-body","i":"123","c":"abc","l":{"l":"hb://test"}}""" + rn +
       """{"resourceId":"100500"}"""
 
     val deserializer = StandardResponse.apply(_: Reader, _: HeadersMap, {
@@ -38,8 +38,8 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
   }
 
   "Response with headers" should "serialize" in {
-    val msg = Created(TestCreatedBody("100500"), HRL("hb://test"), Map("test" → "a"))
-    msg.serializeToString should equal("""{"s":201,"t":"test-created-body","i":"123","c":"abc","test":"a","l":{"l":"hb://test"}}""" + rn +
+    val msg = Created(TestCreatedBody("100500"), HRL("hb://test"), HeadersMap("test" → "a"))
+    msg.serializeToString should equal("""{"s":201,"t":"test-created-body","i":"123","c":"abc","l":{"l":"hb://test"},"test":"a"}""" + rn +
       """{"resourceId":"100500"}""")
   }
 

@@ -2,8 +2,10 @@ package com.hypertino.hyperbus.model
 
 import com.hypertino.binders.value._
 
-class HeadersBuilder(private[this] val mapBuilder: scala.collection.mutable.LinkedHashMap[String, Value]) {
-  def this() = this(scala.collection.mutable.LinkedHashMap[String, Value]())
+import scala.collection.immutable.ListMap
+
+class HeadersBuilder() {
+  private[this] val mapBuilder = ListMap.newBuilder[String, Value]
 
   def +=(kv: (String, Value)): HeadersBuilder = {
     mapBuilder += kv._1 → kv._2
@@ -11,12 +13,12 @@ class HeadersBuilder(private[this] val mapBuilder: scala.collection.mutable.Link
   }
 
   def ++=(headers: Obj): HeadersBuilder = {
-    mapBuilder ++= headers.v
+    mapBuilder ++= headers.v.toSeq.reverse
     this
   }
 
   def ++=(headers: Seq[(String, Value)]): HeadersBuilder = {
-    mapBuilder ++= headers
+    mapBuilder ++= headers.reverse
     this
   }
 
@@ -46,6 +48,7 @@ class HeadersBuilder(private[this] val mapBuilder: scala.collection.mutable.Link
   }
 
   def withHRL(hrl: HRL): HeadersBuilder = {
+    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
     mapBuilder += Header.HRL → hrl.toValue
     this
   }
@@ -56,6 +59,8 @@ class HeadersBuilder(private[this] val mapBuilder: scala.collection.mutable.Link
   }
 
   def result(): HeadersMap = {
-    mapBuilder.filterNot(_._2.isEmpty)
+    mapBuilder
+      .result()
+      .filterNot(_._2.isEmpty) // todo: move this to the stage of building?
   }
 }

@@ -11,11 +11,11 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     val requestMatcher = RequestMatcher(Map(Header.METHOD → Specific("get")))
 
     requestMatcher.matches(
-      request(Map(Header.METHOD → "get"))
+      request(HeadersMap(Header.METHOD → "get"))
     ) shouldBe true
 
     requestMatcher.matches(
-      request(Map(Header.METHOD → "post"))
+      request(HeadersMap(Header.METHOD → "post"))
     ) shouldBe false
   }
 
@@ -28,11 +28,11 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     val requestMatcher = RequestMatcher(Map(Header.METHOD → RegexMatcher("g.*")))
 
     requestMatcher.matches(
-      request(Map(Header.METHOD → "get"))
+      request(HeadersMap(Header.METHOD → "get"))
     ) shouldBe true
 
     requestMatcher.matches(
-      request(Map(Header.METHOD → "post"))
+      request(HeadersMap(Header.METHOD → "post"))
     ) shouldBe false
   }
 
@@ -40,11 +40,11 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     val requestMatcher = RequestMatcher(Map("r.l" → Specific("hb://test")))
 
     requestMatcher.matches(
-      request(Map("r" → Obj.from("l" → "hb://test")))
+      request(HeadersMap("r" → Obj.from("l" → "hb://test")))
     ) shouldBe true
 
     requestMatcher.matches(
-      request(Map(Header.METHOD → "post"))
+      request(HeadersMap(Header.METHOD → "post"))
     ) shouldBe false
   }
 
