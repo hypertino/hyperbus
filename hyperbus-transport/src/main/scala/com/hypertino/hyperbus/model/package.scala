@@ -15,6 +15,7 @@ package object model {
   type MessageBase = Message[Body, Headers]
   type RequestBase = Request[Body]
   type ResponseBase = Response[Body]
+  type DynamicMessage = Message[DynamicBody, Headers]
   type DynamicResponse = Response[DynamicBody]
 
 
