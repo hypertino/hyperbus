@@ -70,14 +70,14 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "TestPost1" should "serialize" in {
     val post1 = TestPost1("155", TestBody1("abcde"))
     post1.serializeToString should equal(
-      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
+      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
         """{"data":"abcde"}""")
   }
 
   "TestPost1DefinedResponse" should "serialize" in {
     val post1 = TestPost1DefinedResponse("155", TestBody1("abcde"))
     post1.serializeToString should equal(
-      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
+      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
         """{"data":"abcde"}""")
   }
 
@@ -130,12 +130,12 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "TestPost1" should "serialize with headers" in {
     val post1 = TestPost1("155", TestBody1("abcde"), HeadersMap("test" → Lst.from("a")))
     post1.serializeToString should equal(
-      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"test-body-1","i":"123","test":["a"]}""" + rn +
+      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123","test":["a"]}""" + rn +
          """{"data":"abcde"}""")
   }
 
   "TestPost1" should "deserialize" in {
-    val str = """{"r":{"q":{"id":"155"},"l":"hb://test-post-1"},"m":"post","t":"test-body-1","i":"123"}""" + rn +
+    val str = """{"r":{"q":{"id":"155"},"l":"hb://test-post-1"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
       """{"data":"abcde"}"""
     val post = TestPost1.from(str)
     post.headers.hrl should equal(HRL("hb://test-post-1", Obj.from("id" -> "155")))

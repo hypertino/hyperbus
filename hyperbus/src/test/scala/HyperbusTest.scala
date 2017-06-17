@@ -140,7 +140,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val f = hyperbus ask testclasses.TestPost1(testclasses.TestBody1("ha ha")) runAsync
 
     ct.input should equal(
-      """{"r":{"l":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
+      """{"r":{"l":"hb://resources"},"m":"post","t":"application/vnd.test-1+json","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
     )
 
     f.futureValue.body should equal(testclasses.TestCreatedBody("100500"))
@@ -162,7 +162,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     ) runAsync
 
     ct.input should equal(
-      """{"r":{"l":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
+      """{"r":{"l":"hb://resources"},"m":"post","t":"application/vnd.test-1+json","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
     )
 
     val r = f.futureValue
@@ -179,7 +179,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val f = hyperbus ask TestPostWithNoContent(testclasses.TestBody1("empty")) runAsync
 
     ct.input should equal(
-      """{"r":{"l":"hb://empty"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"empty"}"""
+      """{"r":{"l":"hb://empty"},"m":"post","t":"application/vnd.test-1+json","i":"123"}""" + "\r\n" + """{"resourceData":"empty"}"""
     )
 
     val r = f.futureValue
@@ -264,7 +264,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val f = hyperbus ask testclasses.TestPost1(testclasses.TestBody1("ha ha")) runAsync
 
     ct.input should equal(
-      """{"r":{"l":"hb://resources"},"m":"post","t":"test-1","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
+      """{"r":{"l":"hb://resources"},"m":"post","t":"application/vnd.test-1+json","i":"123"}""" + "\r\n" + """{"resourceData":"ha ha"}"""
     )
 
     val r = f.failed.futureValue
