@@ -34,7 +34,7 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
     val o = Created(TestCreatedBody("100500"), HRL("hb://test"))
     val response = MessageReader.from(s, deserializer)
     response.body should equal (o.body)
-    response.headers.all.toSet should equal(o.headers.all.toSet)
+    response.headers.toSet should equal(o.headers.toSet)
   }
 
   "Response with headers" should "serialize" in {

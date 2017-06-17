@@ -22,11 +22,6 @@ package object model {
     MessagingContext(requestBase.headers.correlationId)
   }
 
-  implicit class HeadersMapWrapper(val h: HeadersMap) {
-    def safe(name: String): Value = h.getOrElse(name, throw new NoSuchHeaderException(name))
-    def byPath(path: Seq[String]): Value = h.getOrElse(path.head, Null)(path.tail)
-  }
-
   implicit class ValueWrapper(val v: Value) extends AnyVal {
     def apply(path: Seq[String]): Value = PathSelector.inner(path, v)
   }
@@ -40,7 +35,7 @@ package object model {
   implicit object RequestBaseCanFuzzyMatchable extends CanFuzzyMatchable[RequestBase] {
     override def indexProperties(bloomFilter: TrieMap[Any, AtomicLong], a: RequestBase): Seq[Any] = {
       val r = mutable.MutableList[Any]()
-      a.headers.all.foreach { case (k, v) ⇒
+      a.headers.foreach { case (k, v) ⇒
         appendIndexProperties(bloomFilter, k, v, r)
       }
       r

@@ -35,7 +35,7 @@ case class RequestMatcher(headers: Map[String, TextMatcher]) extends FuzzyMatche
   def matchMessage(message: RequestBase): Boolean = {
     import com.hypertino.hyperbus.model._
     pathsToMatcher.forall { case (path, matcher) ⇒
-      message.headers.all.byPath(path) match {
+      message.headers.byPath(path) match {
         case Lst(items) ⇒ items.exists(item ⇒ matcher.matchText(Specific(item.toString)))
         case other ⇒ matcher.matchText(Specific(other.toString))
       }
