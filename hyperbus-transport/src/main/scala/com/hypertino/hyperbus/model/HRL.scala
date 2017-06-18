@@ -18,7 +18,7 @@ case class HRL(@fieldName("l") location: String,
 }
 
 object HRL {
-  def fromURL(url: String, queryConverter: QueryConverter): HRL = {
+  def fromURL(url: String, queryConverter: QueryConverter = PlainQueryConverter): HRL = {
     val queryPos = url.indexOf('?')
     if (queryPos > 0) {
       HRL(url.substring(0, queryPos), queryConverter.parseQueryString(url.substring(queryPos+1)))

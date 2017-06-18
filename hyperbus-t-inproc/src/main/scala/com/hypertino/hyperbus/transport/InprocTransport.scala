@@ -77,8 +77,8 @@ class InprocTransport(serialize: Boolean = false)
         .map { subscriptions ⇒
           val subscription = getRandom(subscriptions._2).get
 
-          val request: RequestBase = serialized.map { reader ⇒
-            MessageReader.read(reader, subscription.inputDeserializer)
+          val request: RequestBase = serialized.map { serializedMessage ⇒
+            MessageReader.fromString(serializedMessage, subscription.inputDeserializer)
           } getOrElse {
             message
           }
