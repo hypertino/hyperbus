@@ -90,7 +90,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     val s = """{"s":200,"t":"test-body-2","i":"123","r":{"l":"hb://test"}}""" + rn +
       """{"x":"100500","y":555}"""
 
-    val response: requestMeta.ResponseType = MessageReader.from(s, requestMeta.responseDeserializer)
+    val response: requestMeta.ResponseType = MessageReader.fromString(s, requestMeta.responseDeserializer)
     response.body should equal (TestBody2("100500",555))
     response shouldBe a[Ok[_]]
   }
@@ -104,14 +104,14 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     val s1 = """{"s":200,"t":"test-body-2","i":"123","r":{"l":"hb://test"}}""" + rn +
       """{"x":"100500","y":555}"""
 
-    val response1: requestMeta.ResponseType = MessageReader.from(s1, requestMeta.responseDeserializer)
+    val response1: requestMeta.ResponseType = MessageReader.fromString(s1, requestMeta.responseDeserializer)
     response1.body should equal (TestBody2("100500",555))
     response1 shouldBe a[Ok[_]]
 
     val s2 = """{"s":200,"t":"test-body-3","i":"123","r":{"l":"hb://test"}}""" + rn +
       """{"x":"100500","y":555, "z": 888}"""
 
-    val response2: requestMeta.ResponseType = MessageReader.from(s2, requestMeta.responseDeserializer)
+    val response2: requestMeta.ResponseType = MessageReader.fromString(s2, requestMeta.responseDeserializer)
     response2.body should equal (TestBody3("100500",555, 888l))
     response2 shouldBe a[Ok[_]]
   }

@@ -41,8 +41,8 @@ class InprocTransport(serialize: Boolean = false)
     val resultTask: Option[Task[ResponseBase]] = getRandom(commandSubscriptions
       .lookupAll(message)).map { subscription ⇒
 
-      val request: RequestBase = serialized.map { reader ⇒
-        MessageReader.read(reader, subscription.inputDeserializer)
+      val request: RequestBase = serialized.map { serializedMessage ⇒
+        MessageReader.fromString(serializedMessage, subscription.inputDeserializer)
       } getOrElse {
         message
       }
@@ -54,10 +54,10 @@ class InprocTransport(serialize: Boolean = false)
 
       if (serialize) {
         t.map { result ⇒
-          MessageReader.read(new StringReader(result.serializeToString), responseDeserializer)
+          MessageReader.fromString(result.serializeToString, responseDeserializer)
         } onErrorHandleWith {
           case r: ResponseBase ⇒
-            Task.now(MessageReader.read(new StringReader(r.serializeToString), responseDeserializer))
+            Task.now(MessageReader.fromString(r.serializeToString, responseDeserializer))
         }
       }
       else {
@@ -133,9 +133,9 @@ class InprocTransport(serialize: Boolean = false)
     Task.now(true)
   }
 
-  private def serialize(message: Message[_,_]): Option[StringReader] = {
+  private def serialize(message: Message[_,_]): Option[String] = {
     if (serialize) {
-      Some(new StringReader(message.serializeToString))
+      Some(message.serializeToString)
     }
     else {
       None

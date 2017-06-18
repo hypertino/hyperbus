@@ -65,7 +65,7 @@ trait RequestMeta[R <: RequestBase] {
 
   def apply(reader: Reader, headersMap: HeadersMap): R
   def apply(reader: Reader): R = MessageReader.read(reader, apply)
-  def from(s: String): R = MessageReader.from(s, apply)
+  def from(s: String): R = MessageReader.fromString(s, apply)
 }
 
 trait RequestMetaCompanion[R <: RequestBase]

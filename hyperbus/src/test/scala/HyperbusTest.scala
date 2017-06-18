@@ -30,7 +30,7 @@ class ClientTransportTest(output: String) extends ClientTransport {
   override def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase] = {
     messageBuf.append(message.serializeToString)
 
-    val out = MessageReader.from(output, responseDeserializer)
+    val out = MessageReader.fromString(output, responseDeserializer)
     Task.now(out)
   }
 

@@ -32,7 +32,7 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
     })
 
     val o = Created(TestCreatedBody("100500"), HRL("hb://test"))
-    val response = MessageReader.from(s, deserializer)
+    val response = MessageReader.fromString(s, deserializer)
     response.body should equal (o.body)
     response.headers.toSet should equal(o.headers.toSet)
   }

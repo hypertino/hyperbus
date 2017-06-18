@@ -39,7 +39,7 @@ object MessageReader {
     concreteDeserializer(reader, headers)
   }
 
-  def from[M <: Message[_ <: Body,_ <: Headers]](message: String, concreteDeserializer: MessageDeserializer[M]): M = {
+  def fromString[M <: Message[_ <: Body,_ <: Headers]](message: String, concreteDeserializer: MessageDeserializer[M]): M = {
     val stringReader = new StringReader(message)
     try {
       read(stringReader, concreteDeserializer)
