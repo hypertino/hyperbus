@@ -34,7 +34,7 @@ trait Headers extends Map[String, Value] {
 
   def safe(name: String): Value = {
     getOrElse(name, {
-      val fullName = Header.fullNameMap.get(name).map(s ⇒ s"$name ($s)").getOrElse("")
+      val fullName = Header.fullNameMap.get(name).map(s ⇒ s" ($s)").getOrElse("")
       throw new NoSuchHeaderException(s"$name$fullName")
     })
   }
