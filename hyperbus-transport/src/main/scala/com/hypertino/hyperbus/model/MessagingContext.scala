@@ -8,12 +8,14 @@ trait MessagingContext {
 }
 
 object MessagingContext {
-  /*val empty = MessagingContext(None)
+  val empty = new MessagingContext {
+    override def correlationId: String = throw new RuntimeException("No correlationId for empty context")
+    override def toString = s"MessagingContext.empty"
+  }
 
   object Implicits {
     implicit val empty: MessagingContext = MessagingContext.empty
   }
-*/
 
   def apply(withCorrelationId: String): MessagingContext = new MessagingContext {
     def correlationId: String = withCorrelationId
