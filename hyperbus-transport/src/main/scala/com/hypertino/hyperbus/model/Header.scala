@@ -9,6 +9,17 @@ object Header {
   val REVISION = "v"
   val STATUS_CODE = "s"
   val LOCATION = "l"
+
+  val fullNameMap = Map(
+    HRL → "HRL",
+    METHOD → "METHOD",
+    CONTENT_TYPE → "CONTENT_TYPE",
+    MESSAGE_ID → "MESSAGE_ID",
+    CORRELATION_ID → "CORRELATION_ID",
+    REVISION → "REVISION",
+    STATUS_CODE → "STATUS_CODE",
+    LOCATION → "LOCATION"
+  )
 }
 
 object HeaderHRL {

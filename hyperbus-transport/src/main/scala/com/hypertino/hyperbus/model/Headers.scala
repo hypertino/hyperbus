@@ -32,7 +32,12 @@ trait Headers extends Map[String, Value] {
     transformedSeq.writeJson(writer)
   }
 
-  def safe(name: String): Value = getOrElse(name, throw new NoSuchHeaderException(name))
+  def safe(name: String): Value = {
+    getOrElse(name, {
+      val fullName = Header.fullNameMap.get(name).map(s ⇒ "/"+s).getOrElse("")
+      throw new NoSuchHeaderException(s"$name$fullName")
+    })
+  }
   def byPath(path: Seq[String]): Value = getOrElse(path.head, Null)(path.tail)
 
   /* map implementation */
