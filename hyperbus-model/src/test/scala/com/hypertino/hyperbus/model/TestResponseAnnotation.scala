@@ -14,7 +14,7 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
   val rn = "\r\n"
   implicit val mcx = new MessagingContext {
     override def createMessageId() = "123"
-    override def correlationId = Some("abc")
+    override def correlationId = "abc"
   }
 
   "Response" should "serialize" in {

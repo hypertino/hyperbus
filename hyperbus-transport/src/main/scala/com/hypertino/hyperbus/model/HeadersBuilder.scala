@@ -22,14 +22,21 @@ class HeadersBuilder() {
     this
   }
 
-  def withCorrelation(correlationId: Option[String]): HeadersBuilder = {
-    mapBuilder ++= correlationId.map(c ⇒ Header.CORRELATION_ID → Text(c))
+  def withCorrelation(correlationId: String): HeadersBuilder = {
+    mapBuilder += Header.CORRELATION_ID → Text(correlationId)
     this
   }
 
   def withContext(mcx: com.hypertino.hyperbus.model.MessagingContext): HeadersBuilder = {
-    withMessageId(mcx.createMessageId())
-    withCorrelation(mcx.correlationId)
+    val messageId = mcx.createMessageId()
+    val correlationId = mcx.correlationId
+    if (messageId != correlationId) {
+      withMessageId(messageId)
+      withCorrelation(mcx.correlationId)
+    }
+    else {
+      withMessageId(messageId)
+    }
   }
 
   def withMessageId(messageId: String): HeadersBuilder = {

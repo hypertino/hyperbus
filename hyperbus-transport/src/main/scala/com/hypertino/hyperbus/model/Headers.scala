@@ -18,7 +18,7 @@ trait Headers extends Map[String, Value] {
 
   def messageId: String = this.safe(Header.MESSAGE_ID).toString
 
-  def correlationId: Option[String] = underlying.get(Header.CORRELATION_ID).map(_.toString).orElse(Some(messageId))
+  def correlationId: String = underlying.get(Header.CORRELATION_ID).map(_.toString).getOrElse(messageId)
 
   def contentType: Option[String] = underlying.get(Header.CONTENT_TYPE).map(_.toString)
 

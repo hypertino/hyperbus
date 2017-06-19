@@ -63,7 +63,7 @@ case class TestPost1MultipleDefinedResponse(id: String, body: TestBody1)
 class TestRequestAnnotation extends FlatSpec with Matchers {
   implicit val mcx = new MessagingContext {
     override def createMessageId() = "123"
-    override def correlationId = None
+    override def correlationId = "123"
   }
   val rn = "\r\n"
 
@@ -142,7 +142,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     post.headers.contentType should equal(Some("test-body-1"))
     post.headers.method should equal("post")
     post.headers.messageId should equal("123")
-    post.headers.correlationId should equal(Some("123"))
+    post.headers.correlationId should equal("123")
 
     post.body should equal(TestBody1("abcde"))
     post.id should equal("155")
@@ -190,7 +190,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     request.headers.method should equal("custom-method")
     request.headers.hrl should equal(HRL("hb://test-outer-resource"))
     request.headers.messageId should equal("123")
-    request.correlationId should equal(Some("123"))
+    request.correlationId should equal("123")
     request.body should equal(DynamicBody(Obj.from("resourceId" -> "100500"), Some("test-body-1")))
   }
 

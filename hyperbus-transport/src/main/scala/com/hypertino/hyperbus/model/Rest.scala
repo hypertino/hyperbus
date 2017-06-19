@@ -52,7 +52,7 @@ trait Message[+B <: Body, +H <: Headers] {
 }
 
 trait Request[+B <: Body] extends Message[B, RequestHeaders] with MessagingContext {
-  override def correlationId: Option[String] = headers.correlationId
+  override def correlationId: String = headers.correlationId
 }
 
 trait RequestObservableMeta[R <: RequestBase] {
