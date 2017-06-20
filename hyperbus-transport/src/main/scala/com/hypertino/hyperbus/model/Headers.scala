@@ -65,9 +65,9 @@ object RequestHeaders {
 }
 
 case class ResponseHeaders(underlying: HeadersMap) extends Headers with MapLike[String, Value, ResponseHeaders]{
-  lazy val statusCode: Int = underlying(Header.STATUS_CODE).toInt
+  lazy val statusCode: Int = this.safe(Header.STATUS_CODE).toInt
 
-  def location: HRL = underlying(Header.LOCATION).to[HRL]
+  def location: HRL = this.safe(Header.LOCATION).to[HRL]
 
   override def +[B1 >: Value](kv: (String, B1)): ResponseHeaders = ResponseHeaders((underlying + kv).asInstanceOf[HeadersMap])
   override def -(key: String):ResponseHeaders = ResponseHeaders(underlying - key)
