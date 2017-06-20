@@ -119,11 +119,11 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "TestGet1 (with EmptyBody)" should "serialize" in {
     val r = TestGet1("155", EmptyBody)
     r.serializeToString should equal(
-      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"get","i":"123"}""")
+      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"get","i":"123"}""" + rn + "{}")
   }
 
   "TestGet1 (with EmptyBody)" should "deserialize" in {
-    val str = s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"get","i":"123"}"""
+    val str = s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"get","i":"123"}""" + rn + "{}"
     TestGet1.from(str) should equal (TestGet1("155", EmptyBody))
   }
 

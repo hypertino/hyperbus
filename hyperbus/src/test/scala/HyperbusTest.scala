@@ -172,7 +172,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
   "ask " should " receive empty response (client)" in {
     val ct = new ClientTransportTest(
-      """{"s":204,"i":"123"}"""
+      """{"s":204,"i":"123"}""" + "\r\n" + "{}"
     )
 
     val hyperbus = newHyperbus(ct, null)
@@ -189,7 +189,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
     "ask " should " send static request with dynamic body (client)" in {
     val ct = new ClientTransportTest(
-      """{"s":204,"i":"123"}"""
+      """{"s":204,"i":"123"}""" + "\r\n" + "{}"
     )
 
     val hyperbus = newHyperbus(ct, null)
@@ -206,14 +206,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
   "ask " should " send static request with empty body (client)" in {
     val ct = new ClientTransportTest(
-      """{"s":204,"i":"123"}"""
+      """{"s":204,"i":"123"}""" + "\r\n" + "{}"
     )
 
     val hyperbus = newHyperbus(ct, null)
     val f = hyperbus ask StaticPostWithEmptyBody() runAsync
 
     ct.input should equal(
-      """{"r":{"l":"hb://empty"},"m":"post","i":"123"}"""
+      """{"r":{"l":"hb://empty"},"m":"post","i":"123"}""" + "\r\n" + "{}"
     )
 
     val r = f.futureValue
@@ -223,7 +223,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
   "ask" should "send static request with body without contentType specified" in {
     val ct = new ClientTransportTest(
-      """{"s":204,"i":"123"}"""
+      """{"s":204,"i":"123"}""" + "\r\n" + "{}"
     )
 
     val hyperbus = newHyperbus(ct, null)
@@ -247,7 +247,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val f = hyperbus ask StaticGetWithQuery() runAsync
 
     ct.input should equal(
-      """{"r":{"l":"hb://empty"},"m":"get","i":"123"}"""
+      """{"r":{"l":"hb://empty"},"m":"get","i":"123"}""" + "\r\n" + "{}"
     )
 
     val r = f.futureValue

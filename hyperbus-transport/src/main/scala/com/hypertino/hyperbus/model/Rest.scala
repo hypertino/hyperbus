@@ -29,10 +29,8 @@ trait Message[+B <: Body, +H <: Headers] {
 
   def serialize(writer: Writer): Unit = {
     headers.serialize(writer)
-    if (!body.isEmpty) {
-      writer.write("\r\n")
-      body.serialize(writer)
-    }
+    writer.write("\r\n")
+    body.serialize(writer)
   }
 
   def serializeToString: String = {
