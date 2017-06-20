@@ -14,7 +14,7 @@ object MessagingContext {
   }
 
   object Implicits {
-    implicit val empty: MessagingContext = MessagingContext.empty
+    implicit val emptyContext: MessagingContext = MessagingContext.empty
   }
 
   def apply(withCorrelationId: String): MessagingContext = new MessagingContext {
