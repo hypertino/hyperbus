@@ -23,9 +23,9 @@ object Header {
 }
 
 object HeaderHRL {
-  val HRL = "l"
+  val LOCATION = "l"
   val QUERY = "q"
 
-  val FULL_HRL: String = Header.HRL + "." + HeaderHRL.HRL
+  val FULL_HRL: String = Header.HRL + "." + HeaderHRL.LOCATION
   val FULL_QUERY: String = Header.HRL + "." + HeaderHRL.QUERY
 }
