@@ -6,10 +6,10 @@ import com.hypertino.hyperbus.model.HRL
 import com.hypertino.hyperbus.transport.api.{NoTransportRouteException, ServiceEndpoint, ServiceResolver}
 import monix.reactive.Observable
 
-case class ConfiguredEndpoint(hostname: String, port: Option[Int]) extends ServiceEndpoint
+case class PlainEndpoint(hostname: String, port: Option[Int]) extends ServiceEndpoint
 
-class ConfigurationResolver(endpointsMap: Map[String, Seq[ConfiguredEndpoint]]) extends ServiceResolver {
-  def this(serviceName: String, hostname: String, port: Option[Int]) = this(Map(serviceName → Seq(ConfiguredEndpoint(hostname, port))))
+class PlainResolver(endpointsMap: Map[String, Seq[PlainEndpoint]]) extends ServiceResolver {
+  def this(serviceName: String, hostname: String, port: Option[Int]) = this(Map(serviceName → Seq(PlainEndpoint(hostname, port))))
 
   override def serviceObservable(hrl: HRL): Observable[Seq[ServiceEndpoint]] = {
     val uri = new URI(hrl.location)
