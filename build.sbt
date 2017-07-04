@@ -20,6 +20,7 @@ lazy val configBinders = "com.hypertino" %% "typesafe-config-binders" % "0.13-SN
 lazy val scalaMock = "org.scalamock" %% "scalamock-scalatest-support" % "3.5.0" % "test"
 lazy val monix = "io.monix" %% "monix" % "2.2.2"
 lazy val scaldi = "org.scaldi" %% "scaldi" % "0.5.8"
+lazy val scalaUri = "io.lemonlabs" %% "scala-uri" % "0.4.16-NO-SPRAY"
 lazy val slf4j = "org.slf4j" % "slf4j-api" % "1.7.22"
 lazy val logback = "ch.qos.logback" % "logback-classic" % "1.1.8"
 lazy val quasiQuotes = "org.scalamacros" %% "quasiquotes" % "2.1.0" cross CrossVersion.binary
@@ -34,6 +35,7 @@ lazy val `hyperbus-transport` = project in file("hyperbus-transport") settings (
       configBinders,
       monix,
       scaldi,
+      scalaUri,
       slf4j,
       scalaMock
     )
