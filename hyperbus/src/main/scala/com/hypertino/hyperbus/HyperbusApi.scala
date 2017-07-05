@@ -2,12 +2,10 @@ package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.transport.api._
-import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import monix.eval.Task
 import monix.reactive.Observable
 
 import scala.concurrent.duration.FiniteDuration
-import scala.language.experimental.macros
 
 // todo: document API
 trait HyperbusApi {

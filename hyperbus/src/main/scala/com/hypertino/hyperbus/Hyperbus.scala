@@ -2,14 +2,11 @@ package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.model.{RequestBase, RequestMeta, RequestObservableMeta}
 import com.hypertino.hyperbus.transport.api._
-import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import monix.eval.Task
-import monix.execution.Scheduler
 import monix.reactive.Observable
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration.FiniteDuration
-import scala.language.experimental.macros
 
 class Hyperbus(val transportManager: TransportManager,
                val defaultGroupName: Option[String] = None,

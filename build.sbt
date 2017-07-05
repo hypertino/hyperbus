@@ -26,30 +26,13 @@ lazy val logback = "ch.qos.logback" % "logback-classic" % "1.1.8"
 lazy val quasiQuotes = "org.scalamacros" %% "quasiquotes" % "2.1.0" cross CrossVersion.binary
 lazy val macroParadise = compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
-lazy val `hyperbus-transport` = project in file("hyperbus-transport") settings (
-    commonSettings,
-    name := "hyperbus-transport",
-    libraryDependencies ++= Seq(
-      binders,
-      jsonBinders,
-      configBinders,
-      monix,
-      scaldi,
-      scalaUri,
-      slf4j,
-      scalaMock
-    )
+lazy val `hyperbus-macro` = project in file("hyperbus-macro") settings (
+  commonSettings,
+  name := "hyperbus-macro",
+  libraryDependencies ++= Seq(
+    binders
   )
-
-lazy val `hyperbus-model` = project in file("hyperbus-model") settings (
-    commonSettings,
-    name := "hyperbus-model",
-    libraryDependencies ++= Seq(
-      binders,
-      slf4j,
-      scalaMock
-    )
-  ) dependsOn `hyperbus-transport`
+)
 
 lazy val `hyperbus` = project in file("hyperbus") settings (
     commonSettings,
@@ -57,10 +40,14 @@ lazy val `hyperbus` = project in file("hyperbus") settings (
     libraryDependencies ++= Seq(
       monix,
       binders,
+      jsonBinders,
       scaldi,
+      configBinders,
+      scalaUri,
+      slf4j,
       scalaMock
     )
-  ) dependsOn(`hyperbus-model`, `hyperbus-t-inproc`)
+  ) dependsOn `hyperbus-macro`
 
 lazy val `hyperbus-t-inproc` = project in file("hyperbus-t-inproc") settings (
     commonSettings,
@@ -71,11 +58,9 @@ lazy val `hyperbus-t-inproc` = project in file("hyperbus-t-inproc") settings (
       scaldi,
       logback % "test"
     )
-  ) dependsOn (`hyperbus-transport`, `hyperbus-model`)
+  ) dependsOn `hyperbus`
 
 lazy val `hyperbus-root` = project.in(file(".")) aggregate (
-    `hyperbus-transport`,
-    `hyperbus-model`,
     `hyperbus`,
     `hyperbus-t-inproc`
   )

@@ -1,9 +1,10 @@
+package com.hypertino.hyperbus.transport
+
 
 
 import com.hypertino.binders.value.{Null, Text}
 import com.hypertino.hyperbus.Hyperbus
 import com.hypertino.hyperbus.model._
-import com.hypertino.hyperbus.transport._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import monix.execution.Ack.Continue

@@ -1,5 +1,6 @@
 package com.hypertino.hyperbus.model.annotations
 
+import scala.language.experimental.macros
 import scala.reflect.macros.blackbox.Context
 
 private[annotations] trait AnnotationMacroImplBase {
