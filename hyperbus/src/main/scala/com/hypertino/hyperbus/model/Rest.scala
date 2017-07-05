@@ -5,10 +5,24 @@ import java.io.{Reader, StringWriter, Writer}
 import com.hypertino.hyperbus.serialization.{MessageReader, RequestDeserializer, ResponseDeserializer}
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 
-trait Body {
+trait Writable {
+  def serialize(writer: Writer)
+
+  def serializeToString: String = {
+    val writer = new StringWriter()
+    try {
+      serialize(writer)
+      writer.toString
+    }
+    finally {
+      writer.close()
+    }
+  }
+}
+
+trait Body extends Writable {
   def isEmpty: Boolean = false
   def contentType: Option[String]
-  def serialize(writer: Writer)
 }
 
 trait BodyObjectApi[B <: Body] {
@@ -22,7 +36,7 @@ trait NoContentType {
 
 trait DynamicBodyTrait
 
-trait Message[+B <: Body, +H <: Headers] {
+trait Message[+B <: Body, +H <: Headers] extends Writable {
   def headers: H
 
   def body: B
@@ -31,17 +45,6 @@ trait Message[+B <: Body, +H <: Headers] {
     headers.serialize(writer)
     writer.write("\r\n")
     body.serialize(writer)
-  }
-
-  def serializeToString: String = {
-    val writer = new StringWriter()
-    try {
-      serialize(writer)
-      writer.toString
-    }
-    finally {
-      writer.close()
-    }
   }
 
   override def toString: String = {

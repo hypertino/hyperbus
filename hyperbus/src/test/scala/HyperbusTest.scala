@@ -538,10 +538,16 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     st.sEventsSubject should equal(null)
   }
 
-  "this" should "compile" in {
+  "this" should "compile to ensure that we use covariance" in {
     val y: CommandEvent[TestPost1] = null
-    val x: CommandEvent[RequestBase] = y // this should compile to ensure that we use covariance
+    val x: CommandEvent[RequestBase] = y
     x shouldBe null
+  }
+
+  "this" should "compile to ?" in {
+    val y: CommandEvent[TestPost1] = null
+    val t: Task[ResponseBase] = null
+    t.runOnComplete(y.reply)
   }
 
   def newHyperbus(ct: ClientTransport, st: ServerTransport) = {
