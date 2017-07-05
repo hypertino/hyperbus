@@ -61,6 +61,7 @@ lazy val `hyperbus-t-inproc` = project in file("hyperbus-t-inproc") settings (
   ) dependsOn `hyperbus`
 
 lazy val `hyperbus-root` = project.in(file(".")) aggregate (
+    `hyperbus-macro`,
     `hyperbus`,
     `hyperbus-t-inproc`
   )

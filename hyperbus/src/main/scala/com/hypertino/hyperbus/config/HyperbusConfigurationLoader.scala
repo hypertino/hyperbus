@@ -15,12 +15,12 @@ object HyperbusConfigurationLoader {
   import scala.collection.JavaConversions._
 
   def fromConfig(config: Config, inj: Injector): HyperbusConfiguration = {
-    val sc = config.getConfig("hyperbus")
+    val hc = config.getConfig("hyperbus")
 
-    val st = sc.getObject("transports")
+    val st = hc.getObject("transports")
     val transportMap = st.entrySet().map { entry ⇒
       val transportTag = entry.getKey
-      val transportConfig = sc.getConfig("transports." + transportTag)
+      val transportConfig = hc.getConfig("transports." + transportTag)
       val transport = createTransport(transportConfig, inj)
       transportTag → transport
     }.toMap
@@ -28,17 +28,17 @@ object HyperbusConfigurationLoader {
     import com.hypertino.binders.config.ConfigBinders._
 
     HyperbusConfiguration(
-      sc.getConfigList("client-routes").map { li ⇒
+      hc.getConfigList("client-routes").map { li ⇒
         val transportName = li.read[String]("transport")
         getTransportRoute[ClientTransport](transportName, transportMap, li)
       },
-      sc.getConfigList("server-routes").map { li ⇒
+      hc.getConfigList("server-routes").map { li ⇒
         val transportName = li.read[String]("transport")
         getTransportRoute[ServerTransport](transportName, transportMap, li)
       },
-      config.getOptionString("scheduler"),
-      config.getOptionString("group-name"),
-      config.getOptionBoolean("log-messages").getOrElse(false)
+      hc.getOptionString("scheduler"),
+      hc.getOptionString("group-name"),
+      hc.getOptionBoolean("log-messages").getOrElse(false)
     )
   }
 
