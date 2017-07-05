@@ -2,7 +2,7 @@ package com.hypertino.hyperbus.transport.api.matchers
 
 import com.typesafe.config.ConfigValue
 import com.hypertino.binders.annotations.fieldName
-import com.hypertino.hyperbus.transport.api.TransportConfigurationError
+import com.hypertino.hyperbus.config.HyperbusConfigurationError
 
 import scala.util.matching.Regex
 
@@ -24,13 +24,13 @@ object TextMatcher {
   def apply(value: Option[String], matchType: Option[String]): TextMatcher = matchType match {
     case Some("Any") ⇒ Any
     case Some("Regex") ⇒ RegexMatcher(value.getOrElse(
-      throw new TransportConfigurationError("Please provide value for Regex matcher"))
+      throw new HyperbusConfigurationError("Please provide value for Regex matcher"))
     )
     case Some("Specific") | None ⇒ Specific(value.getOrElse(
-      throw new TransportConfigurationError("Please provide value for Specific matcher"))
+      throw new HyperbusConfigurationError("Please provide value for Specific matcher"))
     )
     case other ⇒
-      throw new TransportConfigurationError(s"Unsupported TextMatcher: $other")
+      throw new HyperbusConfigurationError(s"Unsupported TextMatcher: $other")
   }
 
   private[api] def apply(pojo: TextMatcherPojo): TextMatcher = apply(pojo.value, pojo.matchType)

@@ -1,5 +1,6 @@
 package com.hypertino.hyperbus.transport
 
+import com.hypertino.hyperbus.config.HyperbusConfigurationLoader
 import com.hypertino.hyperbus.model.{Body, Request, RequestBase, ResponseBase}
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
@@ -34,11 +35,10 @@ class MockServerTransport(config: Config, inj: Injector) extends ServerTransport
   override def shutdown(duration: FiniteDuration): Task[Boolean] = ???
 }
 
-class TransportManagerConfigurationTest extends FreeSpec with ScalaFutures with Matchers {
-  "Transport Manager" - {
-    "Configuration Test" in {
-      val config = ConfigFactory.parseString(
-        """
+class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers {
+  "Configuration Test" in {
+    val config = ConfigFactory.parseString(
+      """
         hyperbus: {
           transports: {
             mock-client.class-name: com.hypertino.hyperbus.transport.MockClientTransport,
@@ -70,18 +70,20 @@ class TransportManagerConfigurationTest extends FreeSpec with ScalaFutures with 
         }
         """)
 
-      implicit val injector = new Module {
-        bind [Scheduler] to monix.execution.Scheduler.Implicits.global
-      }
-      val sbc = TransportConfigurationLoader.fromConfig(config, injector)
-
-      sbc.clientRoutes should not be empty
-      sbc.clientRoutes.head.matcher.headers should contain theSameElementsAs Map("u" → Specific("/topic"), "m" → Specific("post"))
-      sbc.clientRoutes.head.transport shouldBe a[MockClientTransport]
-
-      sbc.serverRoutes should not be empty
-      sbc.serverRoutes.head.matcher.headers should contain theSameElementsAs Map("u" → RegexMatcher("/topic/.*"))
-      sbc.serverRoutes.head.transport shouldBe a[MockServerTransport]
+    implicit val injector = new Module {
+      bind[Scheduler] to monix.execution.Scheduler.Implicits.global
     }
+    val conf = HyperbusConfigurationLoader.fromConfig(config, injector)
+
+    conf.defaultGroupName shouldBe empty
+    conf.logMessages shouldBe false
+
+    conf.clientRoutes should not be empty
+    conf.clientRoutes.head.matcher.headers should contain theSameElementsAs Map("u" → Specific("/topic"), "m" → Specific("post"))
+    conf.clientRoutes.head.transport shouldBe a[MockClientTransport]
+
+    conf.serverRoutes should not be empty
+    conf.serverRoutes.head.matcher.headers should contain theSameElementsAs Map("u" → RegexMatcher("/topic/.*"))
+    conf.serverRoutes.head.transport shouldBe a[MockServerTransport]
   }
 }

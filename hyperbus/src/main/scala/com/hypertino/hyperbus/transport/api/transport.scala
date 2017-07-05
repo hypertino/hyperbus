@@ -25,7 +25,7 @@ trait ClientTransport {
   def shutdown(duration: FiniteDuration): Task[Boolean]
 }
 
-case class CommandEvent[REQ <: RequestBase](request: REQ, reply: Callback[ResponseBase]) extends MessagingContext {
+case class CommandEvent[+REQ <: RequestBase](request: REQ, reply: Callback[ResponseBase]) extends MessagingContext {
   override def correlationId: String = request.correlationId
 }
 

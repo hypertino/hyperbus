@@ -71,7 +71,7 @@ object RequestMatcher {
 
   def apply(url: String, method: String): RequestMatcher = apply(url, method, None)
 
-  private[transport] def apply(config: ConfigValue): RequestMatcher = {
+  def apply(config: ConfigValue): RequestMatcher = {
     import com.hypertino.binders.config.ConfigBinders._
     val headersPojo = config.read[Map[String, TextMatcherPojo]]
     apply(headersPojo.map { case (k, v) ⇒
