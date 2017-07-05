@@ -544,7 +544,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     x shouldBe null
   }
 
-  "this" should "compile to ?" in {
+  "this" should "compile to ?" ignore {
     val y: CommandEvent[TestPost1] = null
     val t: Task[ResponseBase] = null
     t.runOnComplete(y.reply)
