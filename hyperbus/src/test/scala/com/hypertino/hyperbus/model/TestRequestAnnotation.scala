@@ -18,7 +18,7 @@ object TestPost1 extends RequestMetaCompanion[TestPost1] with TestPost1ObjectApi
 }
 
 @request(Method.GET, "hb://test")
-case class TestGet1(id: String, body: EmptyBody) extends Request[EmptyBody]
+case class TestGet1(id: String, body: EmptyBody = EmptyBody) extends Request[EmptyBody]
 
 @request(Method.POST, "hb://test")
 case class TestPost1DefinedResponse(id: String, body: TestBody1)
@@ -117,14 +117,14 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   }
 
   "TestGet1 (with EmptyBody)" should "serialize" in {
-    val r = TestGet1("155", EmptyBody)
+    val r = TestGet1("155")
     r.serializeToString should equal(
       s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"get","i":"123"}""" + rn + "{}")
   }
 
   "TestGet1 (with EmptyBody)" should "deserialize" in {
     val str = s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"get","i":"123"}""" + rn + "{}"
-    TestGet1.from(str) should equal (TestGet1("155", EmptyBody))
+    TestGet1.from(str) should equal (TestGet1("155"))
   }
 
   "TestPost1" should "serialize with headers" in {

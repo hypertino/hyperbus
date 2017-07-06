@@ -255,6 +255,23 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     r.body shouldBe a[DynamicBody]
   }
 
+  "ask" should "send static request with some query with optional params (client)" in {
+    val ct = new ClientTransportTest(
+      """{"s":200,"i":"123"}""" + "\r\n" + """{"data":"abc"}"""
+    )
+
+    val hyperbus = newHyperbus(ct, null)
+    val f = hyperbus ask StaticGetWithQueryAndOptionalParams(x = Some("abc")) runAsync
+
+    ct.input should equal(
+      """{"r":{"q":{"x":"abc"},"l":"hb://test-optional-query-params"},"m":"get","i":"123"}""" + "\r\n" + "{}"
+    )
+
+    val r = f.futureValue
+    r shouldBe a[Ok[_]]
+    r.body shouldBe a[DynamicBody]
+  }
+
   "ask" should "catch client exception" in {
     val ct = new ClientTransportTest(
       """{"s":409,"i":"abcde12345"}""" + "\r\n" + """{"code":"failed","errorId":"abcde12345"}"""

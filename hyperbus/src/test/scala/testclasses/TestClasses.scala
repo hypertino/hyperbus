@@ -39,11 +39,11 @@ case class StaticPostWithDynamicBody(body: DynamicBody) extends Request[DynamicB
   with DefinedResponse[NoContent[EmptyBody]]
 
 @request(Method.POST, "hb://empty")
-case class StaticPostWithEmptyBody(body: EmptyBody) extends Request[EmptyBody]
+case class StaticPostWithEmptyBody(body: EmptyBody = EmptyBody) extends Request[EmptyBody]
   with DefinedResponse[NoContent[EmptyBody]]
 
 @request(Method.GET, "hb://empty")
-case class StaticGetWithQuery(body: EmptyBody) extends Request[EmptyBody]
+case class StaticGetWithQuery(body: EmptyBody = EmptyBody) extends Request[EmptyBody]
   with DefinedResponse[Ok[DynamicBody]]
 
 @request(Method.POST, "hb://content-body-not-specified")
@@ -76,7 +76,7 @@ case class SomeContentPut(
 
 
 @request(Method.GET, "hb://test-optional-query-params")
-case class TestGetWithQuery(a: Option[String], body: EmptyBody) extends Request[EmptyBody]
+case class StaticGetWithQueryAndOptionalParams(a: Option[String] = None, x: Option[String] = None, body: EmptyBody = EmptyBody) extends Request[EmptyBody]
   with DefinedResponse[Ok[TestAnotherBody]]
 
 

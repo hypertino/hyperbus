@@ -53,30 +53,14 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       cq"$idx => this.$name"
     }
 
-    val fieldsExceptHeaders = classFields.filterNot(_.name.toString == "headers").map { field: ValDef ⇒
-      // todo: the following is hack. due to compiler restriction, defval can't be provided as def field arg
-      // it's also possible to explore field-type if it has a default constructor, companion with apply ?
-      val rhs = if (isEmptyBodyFieldType(field)) {
-        q"com.hypertino.hyperbus.model.EmptyBody"
-      }
-      else {
-        if (isOptionBodyFieldType(field)) {
-          q"None"
-        }
-        else {
-          field.rhs
-        }
-      }
-      ValDef(field.mods, field.name, field.tpt, rhs)
-    }
-
+    val fieldsExceptHeaders = classFields.filterNot(_.name.toString == "headers")
     val queryFields = fieldsExceptHeaders.filterNot(_.name.decodedName == bodyFieldName.decodedName)
 
     val newClass =
       q"""
         @com.hypertino.hyperbus.model.annotations.location($location)
         @com.hypertino.hyperbus.model.annotations.method($method)
-        class $className(..${classFields.map(stripDefaultValue)}, plain__init: Boolean)
+        class $className(..$classFields, plain__init: Boolean = false)
           extends ..$bases with scala.Product {
           ..$body
 
@@ -190,7 +174,8 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       q"""
         type ResponseType = $responseType
 
-        def apply(..${fieldsExceptHeaders.map(stripDefaultValue)}, headersMap: com.hypertino.hyperbus.model.HeadersMap)
+        def apply(..$fieldsExceptHeaders,
+          headersMap: com.hypertino.hyperbus.model.HeadersMap = com.hypertino.hyperbus.model.HeadersMap.empty)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
 
           val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, $query)
@@ -206,8 +191,6 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
             plain__init = true
           )
         }
-
-        ..$defMethods
 
         def apply(reader: java.io.Reader, headersMap: com.hypertino.hyperbus.model.HeadersMap): $className = {
           val $headersVal = com.hypertino.hyperbus.model.RequestHeaders(headersMap)
@@ -292,22 +275,6 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     }.headOption.getOrElse {
       c.abort(c.enclosingPosition, "No Body parameter was found")
     }
-  }
-
-  def isEmptyBodyFieldType(field: Trees#ValDef): Boolean = field.tpt match {
-    case i: Ident ⇒
-      val typeName = i.name.toTypeName
-      val s = c.typecheck(q"(??? : $typeName)").tpe.toString
-      s == "com.hypertino.hyperbus.model.EmptyBody"
-
-    case other ⇒ false
-  }
-
-  def isOptionBodyFieldType(field: Trees#ValDef): Boolean = field.tpt match {
-    case a @ AppliedTypeTree(o : Ident, _) ⇒
-      o.toString == "Option"
-
-    case other ⇒ false
   }
 
   // todo: test this
