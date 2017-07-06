@@ -75,4 +75,8 @@ case class SomeContentPut(
     )]
 
 
+@request(Method.GET, "hb://test-optional-query-params")
+case class TestGetWithQuery(a: Option[String], body: EmptyBody) extends Request[EmptyBody]
+  with DefinedResponse[Ok[TestAnotherBody]]
+
 

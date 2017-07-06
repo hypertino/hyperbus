@@ -54,12 +54,13 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     }
 
     val fieldsExceptHeaders = classFields.filterNot(_.name.toString == "headers").map { field: ValDef ⇒
-      val ft = getFieldType(field)
       // todo: the following is hack. due to compiler restriction, defval can't be provided as def field arg
       // it's also possible to explore field-type if it has a default constructor, companion with apply ?
-      val rhs = ft.toString match {
-        case "com.hypertino.hyperbus.model.EmptyBody" ⇒ q"com.hypertino.hyperbus.model.EmptyBody"
-        case other => field.rhs
+      val rhs = if (isEmptyBodyFieldType(field)) {
+        q"com.hypertino.hyperbus.model.EmptyBody"
+      }
+      else {
+        field.rhs
       }
       ValDef(field.mods, field.name, field.tpt, rhs)
     }
@@ -288,10 +289,12 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     }
   }
 
-  def getFieldType(field: Trees#ValDef): Type = field.tpt match {
+  def isEmptyBodyFieldType(field: Trees#ValDef): Boolean = field.tpt match {
     case i: Ident ⇒
       val typeName = i.name.toTypeName
-      c.typecheck(q"(??? : $typeName)").tpe
+      c.typecheck(q"(??? : $typeName)").tpe.toString == "com.hypertino.hyperbus.model.EmptyBody"
+
+    case other ⇒ false
   }
 
   // todo: test this
