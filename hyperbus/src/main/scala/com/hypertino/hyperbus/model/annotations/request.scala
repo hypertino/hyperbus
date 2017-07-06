@@ -60,7 +60,12 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         q"com.hypertino.hyperbus.model.EmptyBody"
       }
       else {
-        field.rhs
+        if (isOptionBodyFieldType(field)) {
+          q"None"
+        }
+        else {
+          field.rhs
+        }
       }
       ValDef(field.mods, field.name, field.tpt, rhs)
     }
@@ -292,7 +297,15 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
   def isEmptyBodyFieldType(field: Trees#ValDef): Boolean = field.tpt match {
     case i: Ident ⇒
       val typeName = i.name.toTypeName
-      c.typecheck(q"(??? : $typeName)").tpe.toString == "com.hypertino.hyperbus.model.EmptyBody"
+      val s = c.typecheck(q"(??? : $typeName)").tpe.toString
+      s == "com.hypertino.hyperbus.model.EmptyBody"
+
+    case other ⇒ false
+  }
+
+  def isOptionBodyFieldType(field: Trees#ValDef): Boolean = field.tpt match {
+    case a @ AppliedTypeTree(o : Ident, _) ⇒
+      o.toString == "Option"
 
     case other ⇒ false
   }
