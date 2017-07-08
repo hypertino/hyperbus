@@ -2,13 +2,14 @@ package com.hypertino.hyperbus.model
 
 import java.io.{Reader, StringWriter, Writer}
 
+import com.hypertino.binders.core.BindOptions
 import com.hypertino.hyperbus.serialization.{MessageReader, RequestDeserializer, ResponseDeserializer}
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 
 trait Writable {
-  def serialize(writer: Writer)
+  def serialize(writer: Writer)(implicit bindOptions: BindOptions)
 
-  def serializeToString: String = {
+  def serializeToString(implicit bindOptions: BindOptions): String = {
     val writer = new StringWriter()
     try {
       serialize(writer)
@@ -19,6 +20,10 @@ trait Writable {
     }
   }
 }
+
+//object Writable {
+//  implicit val defaultBindOptions: BindOptions = BindOptions(skipOptionalFields = true)
+//}
 
 trait Body extends Writable {
   def isEmpty: Boolean = false
@@ -41,7 +46,7 @@ trait Message[+B <: Body, +H <: Headers] extends Writable {
 
   def body: B
 
-  def serialize(writer: Writer): Unit = {
+  def serialize(writer: Writer)(implicit bindOptions: BindOptions): Unit = {
     headers.serialize(writer)
     writer.write("\r\n")
     body.serialize(writer)
@@ -82,8 +87,10 @@ trait DefinedResponse[R]
 trait ResponseMeta[PB <: Body, R <: Response[PB]] {
   def statusCode: Int
 
-  def apply[B <: PB](body: B, headersMap: HeadersMap)(implicit messagingContext: MessagingContext): R
-  def apply[B <: PB](body: B)(implicit messagingContext: MessagingContext): R
+  def apply[B <: PB](body: B, headersMap: HeadersMap)
+                    (implicit messagingContext: MessagingContext): R
+  def apply[B <: PB](body: B)
+                    (implicit messagingContext: MessagingContext): R
 
   // def unapply[B <: PB](response: Response[PB]): Option[(B,Map[String,Seq[String]])] TODO: this doesn't works, find a workaround
 }

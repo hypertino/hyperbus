@@ -94,16 +94,16 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
       q"""
         def statusCode: Int = $statusCode
 
-        def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headers: com.hypertino.hyperbus.model.ResponseHeaders):$className[..$classTypeNames] = {
-
+        def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headers: com.hypertino.hyperbus.model.ResponseHeaders)
+          :$className[..$classTypeNames] = {
           new $className[..$classTypeNames](..${fieldsExceptHeaders.map(_.name)},headers,
             plain__init = true
           )
         }
 
         def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headersMap: com.hypertino.hyperbus.model.HeadersMap)
-         (implicit mcx: com.hypertino.hyperbus.model.MessagingContext):$className[..$classTypeNames] = {
-
+         (implicit mcx: com.hypertino.hyperbus.model.MessagingContext)
+         :$className[..$classTypeNames] = {
           new $className[..$classTypeNames](..${fieldsExceptHeaders.map(_.name)},
             headers = com.hypertino.hyperbus.model.ResponseHeaders(new com.hypertino.hyperbus.model.HeadersBuilder()
               .withStatusCode(statusCode)
@@ -116,7 +116,8 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
         }
 
         def apply[..$methodTypeArgs](..$fieldsExceptHeaders)
-          (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className[..$classTypeNames]
+          (implicit mcx: com.hypertino.hyperbus.model.MessagingContext)
+          : $className[..$classTypeNames]
           = apply(..${fieldsExceptHeaders.map(_.name)}, com.hypertino.hyperbus.model.HeadersMap.empty)(mcx)
 
         def unapply[..$methodTypeArgs](response: $className[..$classTypeNames]) = Some(

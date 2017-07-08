@@ -1,5 +1,6 @@
 package com.hypertino.hyperbus.model
 
+import com.hypertino.binders.core.BindOptions
 import com.hypertino.binders.value._
 
 import scala.collection.immutable.ListMap
@@ -54,8 +55,7 @@ class HeadersBuilder() {
     this
   }
 
-  def withHRL(hrl: HRL): HeadersBuilder = {
-    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
+  def withHRL(hrl: HRL)(implicit bindOptions: BindOptions): HeadersBuilder = {
     mapBuilder += Header.HRL → hrl.toValue
     this
   }

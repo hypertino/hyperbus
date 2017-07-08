@@ -2,6 +2,7 @@ package com.hypertino.hyperbus.model
 
 import java.io.Writer
 
+import com.hypertino.binders.core.BindOptions
 import com.hypertino.binders.value.{Null, Value}
 import com.hypertino.hyperbus.serialization.JsonContentTypeConverter
 
@@ -22,9 +23,8 @@ trait Headers extends Map[String, Value] {
 
   def contentType: Option[String] = underlying.get(Header.CONTENT_TYPE).map(_.toString)
 
-  def serialize(writer: Writer) : Unit = {
+  def serialize(writer: Writer)(implicit bindOptions: BindOptions) : Unit = {
     import com.hypertino.binders.json.JsonBinders._
-    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
     val transformedSeq = underlying.map {
       case (Header.CONTENT_TYPE, value) ⇒ Header.CONTENT_TYPE → JsonContentTypeConverter.localContentTypeToUniversalJson(value)
       case other ⇒ other

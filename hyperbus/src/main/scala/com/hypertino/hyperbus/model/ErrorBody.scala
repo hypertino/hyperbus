@@ -2,6 +2,7 @@ package com.hypertino.hyperbus.model
 
 import java.io.{Reader, Writer}
 
+import com.hypertino.binders.core.BindOptions
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value._
 import com.hypertino.hyperbus.util.SeqGenerator
@@ -51,7 +52,6 @@ object ErrorBody {
   )
 
   def apply(reader: Reader, contentType: Option[String]): DynamicBody = {
-    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
     JsonBindersFactory.findFactory().withReader(reader) { deserializer =>
       deserializer.unbind[ErrorBodyContainer].copyErrorBody(contentType = contentType)
     }
@@ -66,8 +66,7 @@ private[model] case class ErrorBodyContainer(code: String,
 
   def message = code + description.map(": " + _).getOrElse("") + ". #" + errorId
 
-  override def serialize(writer: Writer): Unit = {
-    implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
+  override def serialize(writer: Writer)(implicit bindOptions: BindOptions): Unit = {
     JsonBindersFactory.findFactory().withWriter(writer) { serializer =>
       serializer.bind(this.copyErrorBody(contentType = None)) // find other way to skip contentType
     }

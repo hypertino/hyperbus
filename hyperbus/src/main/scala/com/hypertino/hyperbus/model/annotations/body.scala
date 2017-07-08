@@ -39,9 +39,8 @@ private[annotations] trait BodyAnnotationMacroImpl extends AnnotationMacroImplBa
     val newBodyContent = q"""
       ..$body
       def contentType = ${className.toTermName}.contentType
-      override def serialize(writer: java.io.Writer) = {
+      override def serialize(writer: java.io.Writer)(implicit bindOptions: com.hypertino.binders.core.BindOptions) = {
         import com.hypertino.binders.json.JsonBinders._
-        implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
         this.writeJson(writer)
       }
     """
@@ -67,7 +66,6 @@ private[annotations] trait BodyAnnotationMacroImpl extends AnnotationMacroImplBa
         def contentType = $contentType
         def apply(reader: java.io.Reader, contentType: Option[String]): $className = {
           import com.hypertino.binders.json.JsonBinders._
-          implicit val bindOptions = com.hypertino.hyperbus.serialization.bindOptions
           reader.readJson[$className]
         }
         """
