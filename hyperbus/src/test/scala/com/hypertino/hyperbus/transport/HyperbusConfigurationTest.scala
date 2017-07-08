@@ -35,6 +35,8 @@ class MockServerTransport(config: Config, inj: Injector) extends ServerTransport
   override def shutdown(duration: FiniteDuration): Task[Boolean] = ???
 }
 
+// todo: document match syntax
+
 class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers {
   "Configuration Test" in {
     val config = ConfigFactory.parseString(
@@ -47,15 +49,10 @@ class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers
           client-routes: [
             {
               match: {
-                "r.l": {
-                  value: "/topic", type: Specific
-                },
-                "r.q.id": {
-                  value: "100500"
-                }
-                m: {
-                  value: "post"
-                }
+                r.l: "/topic"
+                r.q.id: "100500"
+                r.q.name: "**"
+                m: "post"
               }
               transport: mock-client
             }
@@ -63,10 +60,8 @@ class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers
           server-routes: [
             {
               match: {
-                "r.l": {
-                  value: "/topic/.*", type: Regex
-                }
-
+                r.l: "~/topic/.*"
+                m: "*"
               }
               transport: mock-server
             }
@@ -84,12 +79,18 @@ class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers
 
     conf.clientRoutes should not be empty
     conf.clientRoutes.head.matcher.headers should contain theSameElementsAs Map(
-      "r.l" → Specific("/topic"), "r.q.id" → Specific("100500"), "m" → Specific("post")
+      "r.l" → Specific("/topic"),
+      "r.q.id" → Specific("100500"),
+      "r.q.name" → Specific("*"),
+      "m" → Specific("post")
     )
     conf.clientRoutes.head.transport shouldBe a[MockClientTransport]
 
     conf.serverRoutes should not be empty
-    conf.serverRoutes.head.matcher.headers should contain theSameElementsAs Map("r.l" → RegexMatcher("/topic/.*"))
+    conf.serverRoutes.head.matcher.headers should contain theSameElementsAs Map(
+      "r.l" → RegexMatcher("/topic/.*"),
+      "m" → Any
+    )
     conf.serverRoutes.head.transport shouldBe a[MockServerTransport]
   }
 }

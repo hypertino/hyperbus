@@ -16,11 +16,6 @@ sealed trait TextMatcher {
 }
 
 object TextMatcher {
-  def apply(configValue: ConfigValue): TextMatcher = {
-    import com.hypertino.binders.config.ConfigBinders._
-    apply(configValue.read[TextMatcherPojo])
-  }
-
   def apply(value: Option[String], matchType: Option[String]): TextMatcher = matchType match {
     case Some("Any") ⇒ Any
     case Some("Regex") ⇒ RegexMatcher(value.getOrElse(
@@ -33,10 +28,19 @@ object TextMatcher {
       throw new HyperbusConfigurationError(s"Unsupported TextMatcher: $other")
   }
 
-  private[api] def apply(pojo: TextMatcherPojo): TextMatcher = apply(pojo.value, pojo.matchType)
+  def fromCompactString(v: String): TextMatcher = {
+    v match {
+      case "\\*" ⇒ Specific("*")                                  // '\*' = *
+      case "*" ⇒ Any                                              // '*' = Any
+      case _ if v.startsWith("\\~") ⇒ Specific(v.substring(1))    // \~... = ~...
+      case _ if v.startsWith("\\\\") ⇒ Specific(v.substring(1))   // \\... = \...
+      case _ if v.startsWith("~") ⇒ RegexMatcher(v.substring(1))  //
+      case other ⇒ Specific(other)
+    }
+  }
 
-  implicit def stringToSpecific(v: String): TextMatcher = Specific(v)
-  implicit def regextToRegexMatcher(r: Regex): TextMatcher = RegexMatcher(r)
+  implicit def apply(v: String): Specific = Specific(v)
+  implicit def apply(r: Regex): RegexMatcher = RegexMatcher(r)
 }
 
 case object Any extends TextMatcher {
@@ -64,4 +68,4 @@ case class Specific(value: String) extends TextMatcher {
 
 // todo: + ignore case flag, StartsWith, EndsWith
 
-private[api] case class TextMatcherPojo(value: Option[String], @fieldName("type") matchType: Option[String])
+// private[api] case class TextMatcherPojo(value: Option[String], @fieldName("type") matchType: Option[String])

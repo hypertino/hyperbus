@@ -2,7 +2,7 @@ package com.hypertino.hyperbus.transport.api.matchers
 
 import java.util.concurrent.atomic.AtomicLong
 
-import com.hypertino.binders.value.Lst
+import com.hypertino.binders.value.{Lst, Obj, Value}
 import com.hypertino.hyperbus.model.{Header, HeaderHRL, RequestBase}
 import com.hypertino.hyperbus.util.{CanFuzzyMatchable, FuzzyIndexItemMetaInfo, FuzzyMatcher}
 import com.typesafe.config.ConfigValue
@@ -73,10 +73,15 @@ object RequestMatcher {
 
   def apply(config: ConfigValue): RequestMatcher = {
     import com.hypertino.binders.config.ConfigBinders._
-    val headersPojo = config.read[Map[String, TextMatcherPojo]]
-    apply(headersPojo.map { case (k, v) ⇒
-      k → TextMatcher(v)
-    })
+    val obj = config.read[Value].asInstanceOf[Obj]
+    apply(recursive("", obj).toMap)
+  }
+
+  private def recursive(path: String, obj: Obj): Seq[(String, TextMatcher)] = {
+    obj.v.toSeq.flatMap {
+      case (s, inner: Obj) ⇒ recursive(path + s + ".", inner)
+      case (s, other) ⇒ Seq((path + s, TextMatcher.fromCompactString(other.toString())))
+    }
   }
 
   implicit object RequestMatcherCanFuzzyMatchable extends CanFuzzyMatchable[RequestMatcher] {
@@ -84,4 +89,4 @@ object RequestMatcher {
   }
 }
 
-private[transport] case class RequestMatcherPojo(headers: Map[String, TextMatcherPojo])
+//private[transport] case class RequestMatcherPojo(headers: Map[String, TextMatcherPojo])
