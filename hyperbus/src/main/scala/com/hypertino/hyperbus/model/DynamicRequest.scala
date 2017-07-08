@@ -15,7 +15,7 @@ case class DynamicRequestObservableMeta(requestMatcher: RequestMatcher)
 
 object DynamicRequest extends RequestMeta[DynamicRequest] {
   type ResponseType = DynamicResponse
-  implicit val requestMeta: RequestMeta[DynamicRequest] = this
+  implicit val requestMeta = this
 
   def apply(hrl: HRL, method: String, body: DynamicBody, headersMap: HeadersMap)
            (implicit mcx: MessagingContext): DynamicRequest = {

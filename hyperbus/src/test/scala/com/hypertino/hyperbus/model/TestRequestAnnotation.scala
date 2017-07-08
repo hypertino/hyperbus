@@ -14,7 +14,11 @@ trait TestPost1ObjectApi {
 }
 
 object TestPost1 extends RequestMetaCompanion[TestPost1] with TestPost1ObjectApi {
-  def apply(id: String, x: String, headersMap: HeadersMap)(implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headersMap)(mcx)
+  def apply(id: String, x: String, headersMap: HeadersMap)
+           (implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headersMap)(mcx)
+
+  type ResponseType = ResponseBase
+  implicit val meta = this
 }
 
 @request(Method.GET, "hb://test")
@@ -82,7 +86,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   }
 
   "TestPost1DefinedResponse" should " have meta" in {
-    val requestMeta = implicitly[RequestMeta[TestPost1DefinedResponse]]
+    val requestMeta  = implicitly[RequestMeta[TestPost1DefinedResponse]]
     val observableMeta = implicitly[RequestObservableMeta[TestPost1DefinedResponse]]
 
     observableMeta.requestMatcher should equal(RequestMatcher("hb://test", "post", Some("test-body-1")))
@@ -92,6 +96,8 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
 
     val response: requestMeta.ResponseType = MessageReader.fromString(s, requestMeta.responseDeserializer)
     response.body should equal (TestBody2("100500",555))
+    // response.body.x should equal("100500") // todo: make something to work this
+    // response.body.y should equal(555)
     response shouldBe a[Ok[_]]
   }
 

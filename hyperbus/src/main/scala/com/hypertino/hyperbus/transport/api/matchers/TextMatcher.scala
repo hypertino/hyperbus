@@ -34,20 +34,25 @@ object TextMatcher {
   }
 
   private[api] def apply(pojo: TextMatcherPojo): TextMatcher = apply(pojo.value, pojo.matchType)
+
+  implicit def stringToSpecific(v: String): TextMatcher = Specific(v)
+  implicit def regextToRegexMatcher(r: Regex): TextMatcher = RegexMatcher(r)
 }
 
 case object Any extends TextMatcher {
   def matchText(other: TextMatcher) = true
 }
 
-case class RegexMatcher(value: String) extends TextMatcher {
-  lazy val valueRegex = new Regex(value)
-
+case class RegexMatcher(valueRegex: Regex) extends TextMatcher {
   def matchText(other: TextMatcher) = other match {
     case Specific(otherValue) ⇒ valueRegex.findFirstMatchIn(otherValue).isDefined
-    case RegexMatcher(otherRegexValue) ⇒ otherRegexValue == value
+    case RegexMatcher(otherRegexValue) ⇒ otherRegexValue == valueRegex
     case _ ⇒ false
   }
+}
+
+object RegexMatcher {
+  def apply(value: String): RegexMatcher = RegexMatcher(new Regex(value))
 }
 
 case class Specific(value: String) extends TextMatcher {

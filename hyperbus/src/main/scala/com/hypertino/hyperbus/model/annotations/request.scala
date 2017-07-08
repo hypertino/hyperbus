@@ -172,8 +172,6 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val hrlVal = fresh("hrl")
     val companionExtra =
       q"""
-        type ResponseType = $responseType
-
         def apply(..$fieldsExceptHeaders,
           headersMap: com.hypertino.hyperbus.model.HeadersMap = com.hypertino.hyperbus.model.HeadersMap.empty)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
@@ -234,6 +232,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
             ..$body
 
             import com.hypertino.binders.value._
+
             ..$companionExtra
           }
         """
@@ -241,6 +240,10 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       q"""
         object ${className.toTermName} extends com.hypertino.hyperbus.model.RequestMetaCompanion[${className.toTypeName}] {
           import com.hypertino.binders.value._
+
+          type ResponseType = $responseType
+          implicit val meta = this
+
           ..$companionExtra
         }
       """

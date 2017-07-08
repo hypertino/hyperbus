@@ -44,13 +44,13 @@ class Hyperbus(val defaultGroupName: Option[String],
     }
   }
 
-  override def ask[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[requestMeta.ResponseType] = {
+  override def ask[REQ <: RequestBase, M <: RequestMeta[REQ]](request: REQ)(implicit requestMeta: M): Task[M#ResponseType] = {
     this
       .lookupClientTransport(request)
       .ask(request, requestMeta.responseDeserializer)
       .flatMap {
         case e: Throwable ⇒ Task.raiseError(e)
-        case other ⇒ Task.now(other.asInstanceOf[requestMeta.ResponseType])
+        case other ⇒ Task.now(other.asInstanceOf[M#ResponseType])
       }
   }
 

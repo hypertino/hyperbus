@@ -9,7 +9,7 @@ import scala.concurrent.duration.FiniteDuration
 
 // todo: document API
 trait HyperbusApi {
-  def ask[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[requestMeta.ResponseType]
+  def ask[REQ <: RequestBase, M <: RequestMeta[REQ]](request: REQ)(implicit requestMeta: M): Task[M#ResponseType]
 
   def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[PublishResult]
 

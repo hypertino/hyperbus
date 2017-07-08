@@ -70,10 +70,7 @@ trait RequestMeta[R <: RequestBase] {
 }
 
 trait RequestMetaCompanion[R <: RequestBase]
-  extends RequestMeta[R] with RequestObservableMeta[R] {
-  implicit val requestMeta: RequestMeta[R] = this
-  implicit val observableMeta: RequestObservableMeta[R] = this
-}
+  extends RequestMeta[R] with RequestObservableMeta[R]
 
 trait Response[+B <: Body] extends Message[B, ResponseHeaders]
 

@@ -2,7 +2,7 @@ package com.hypertino.hyperbus.transport
 
 import com.hypertino.binders.value.{Obj, _}
 import com.hypertino.hyperbus.model.{Body, Header, HeadersMap, RequestBase, RequestHeaders}
-import com.hypertino.hyperbus.transport.api.matchers.{HeaderIndexKey, RegexMatcher, RequestMatcher, Specific}
+import com.hypertino.hyperbus.transport.api.matchers._
 import org.scalatest.{FlatSpec, Matchers}
 import com.hypertino.hyperbus.util.FuzzyIndexItemMetaInfo
 
@@ -37,10 +37,10 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
   }
 
   "RequestMatcher" should "match a Request with inner header matcher" in {
-    val requestMatcher = RequestMatcher(Map("r.l" → Specific("hb://test")))
+    val requestMatcher = RequestMatcher(Map[String, TextMatcher]("r.l" → "hb://test", "r.q.id" → "100500", "r.q.name" → "M.*".r))
 
     requestMatcher.matches(
-      request(HeadersMap("r" → Obj.from("l" → "hb://test")))
+      request(HeadersMap("r" → Obj.from("l" → "hb://test", "q" → Obj.from("id" → 100500, "name" → "Maga"))))
     ) shouldBe true
 
     requestMatcher.matches(

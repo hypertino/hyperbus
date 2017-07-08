@@ -144,6 +144,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     )
 
     f.futureValue.body should equal(testclasses.TestCreatedBody("100500"))
+    f.futureValue.body.resourceId should equal("100500")
   }
 
   "ask " should "send a request, dynamic (client)" in {

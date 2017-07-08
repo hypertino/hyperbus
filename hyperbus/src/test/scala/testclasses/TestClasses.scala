@@ -22,6 +22,11 @@ case class TestBodyNoContentType(resourceData: String) extends Body
 case class TestPost1(body: TestBody1) extends Request[TestBody1]
   with DefinedResponse[Created[TestCreatedBody]]
 
+object TestPost1 extends com.hypertino.hyperbus.model.RequestMetaCompanion[TestPost1] {
+  type ResponseType = Created[TestCreatedBody]
+  implicit val meta = this
+}
+
 @request(Method.POST, "hb://resources")
 case class TestPost2(body: TestBody2) extends Request[TestBody2]
   with DefinedResponse[Created[TestCreatedBody]]
