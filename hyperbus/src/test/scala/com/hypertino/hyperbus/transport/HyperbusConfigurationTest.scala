@@ -51,7 +51,7 @@ class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers
               match: {
                 r.l: "/topic"
                 r.q.id: "100500"
-                r.q.name: "**"
+                r.q.name: "\\*"
                 m: "post"
               }
               transport: mock-client

@@ -22,6 +22,7 @@ lazy val monix = "io.monix" %% "monix" % "2.2.2"
 lazy val scaldi = "org.scaldi" %% "scaldi" % "0.5.8"
 lazy val scalaUri = "io.lemonlabs" %% "scala-uri" % "0.4.16-NO-SPRAY"
 lazy val slf4j = "org.slf4j" % "slf4j-api" % "1.7.22"
+lazy val apacheLang3 = "org.apache.commons" % "commons-lang3" % "3.6"
 lazy val logback = "ch.qos.logback" % "logback-classic" % "1.1.8"
 lazy val quasiQuotes = "org.scalamacros" %% "quasiquotes" % "2.1.0" cross CrossVersion.binary
 lazy val macroParadise = compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
@@ -44,6 +45,7 @@ lazy val `hyperbus` = project in file("hyperbus") settings (
       scaldi,
       configBinders,
       scalaUri,
+      apacheLang3,
       slf4j,
       scalaMock
     )

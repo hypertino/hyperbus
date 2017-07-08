@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.transport
 
 import com.hypertino.binders.value.{Obj, _}
-import com.hypertino.hyperbus.model.{Body, Header, HeadersMap, RequestBase, RequestHeaders}
+import com.hypertino.hyperbus.model.{Body, HRL, Header, HeadersMap, RequestBase, RequestHeaders}
 import com.hypertino.hyperbus.transport.api.matchers._
 import org.scalatest.{FlatSpec, Matchers}
 import com.hypertino.hyperbus.util.FuzzyIndexItemMetaInfo
@@ -37,7 +37,7 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
   }
 
   "RequestMatcher" should "match a Request with inner header matcher" in {
-    val requestMatcher = RequestMatcher(Map[String, TextMatcher]("r.l" → "hb://test", "r.q.id" → "100500", "r.q.name" → "M.*".r))
+    val requestMatcher = RequestMatcher(Map[String, TextMatcher]("r.l" → "hb://test", "r.q.id" → "100500", "r.q.name" → RegexMatcher("M.*")))
 
     requestMatcher.matches(
       request(HeadersMap("r" → Obj.from("l" → "hb://test", "q" → Obj.from("id" → 100500, "name" → "Maga"))))
@@ -48,9 +48,56 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     ) shouldBe false
   }
 
+  "RequestMatcher" should "match a Request with PartMatcher" in {
+    val fs = RequestMatcher(TextMatcher.fromCompactString("^f^/abcde"))
+    fs.matches(request("/abcde")) shouldBe true
+    fs.matches(request("/abcdE")) shouldBe false
+
+    val fi = RequestMatcher(TextMatcher.fromCompactString("^fi^/abcde"))
+    fi.matches(request("/abcde")) shouldBe true
+    fi.matches(request("/abcdE")) shouldBe true
+    fi.matches(request("/abcdex")) shouldBe false
+
+    val ls = RequestMatcher(TextMatcher.fromCompactString("^l^/abcde"))
+    ls.matches(request("/abcdef")) shouldBe true
+    ls.matches(request("/abcdEf")) shouldBe false
+
+    val li = RequestMatcher(TextMatcher.fromCompactString("^li^/abcde"))
+    li.matches(request("/abcdef")) shouldBe true
+    li.matches(request("/abcdEf")) shouldBe true
+    li.matches(request("/abxcdex")) shouldBe false
+
+    val rs = RequestMatcher(TextMatcher.fromCompactString("^r^/abcde"))
+    rs.matches(request("qqq/abcdef")) shouldBe true
+    rs.matches(request("qqq/abcdEf")) shouldBe false
+
+    val ri = RequestMatcher(TextMatcher.fromCompactString("^ri^/abcde"))
+    ri.matches(request("qqq/abcdef")) shouldBe true
+    ri.matches(request("qqq/abcdEf")) shouldBe true
+    ri.matches(request("qqq/abxcdex")) shouldBe false
+
+    val ss = RequestMatcher(TextMatcher.fromCompactString("^s^/abcde/"))
+    ss.matches(request("qqq/abcde/f")) shouldBe true
+    ss.matches(request("qqq/abcdE/f")) shouldBe false
+
+    val si = RequestMatcher(TextMatcher.fromCompactString("^si^/abcde/"))
+    si.matches(request("qqq/abcde/f")) shouldBe true
+    si.matches(request("qqq/abcdE/f")) shouldBe true
+    si.matches(request("qqq/abxcd/ex")) shouldBe false
+  }
+
   def request(all: HeadersMap): RequestBase = {
     new RequestBase{
       override def headers: RequestHeaders = RequestHeaders(all)
+      override def body: Body = null
+    }
+  }
+
+  def request(location: String, query: Value = Null): RequestBase = {
+    new RequestBase{
+      override def headers: RequestHeaders = RequestHeaders(
+        HeadersMap(Header.HRL → HRL(location, query).toValue)
+      )
       override def body: Body = null
     }
   }
