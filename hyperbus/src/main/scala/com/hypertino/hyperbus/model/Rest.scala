@@ -75,7 +75,14 @@ trait RequestMeta[R <: RequestBase] {
 }
 
 trait RequestMetaCompanion[R <: RequestBase]
-  extends RequestMeta[R] with RequestObservableMeta[R]
+  extends RequestMeta[R] with RequestObservableMeta[R] {
+
+  def location: String
+  def method: String
+  def contentType: Option[String]
+  def requestMatcher: RequestMatcher
+  def responseDeserializer: com.hypertino.hyperbus.serialization.ResponseDeserializer[ResponseType]
+}
 
 trait Response[+B <: Body] extends Message[B, ResponseHeaders]
 
