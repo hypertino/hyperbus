@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.model
 
 import com.hypertino.binders.value.{Obj, _}
-import com.hypertino.hyperbus.model.annotations.request
+import com.hypertino.hyperbus.model.annotations.{body, request}
 import com.hypertino.hyperbus.serialization.MessageReader
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import org.scalatest.{FlatSpec, Matchers}
@@ -33,6 +33,14 @@ case class TestPost1DefinedResponse(id: String, body: TestBody1)
 case class TestPost1MultipleDefinedResponse(id: String, body: TestBody1)
   extends Request[TestBody1]
     with DefinedResponse[(Ok[TestBody2], Ok[TestBody3])]
+
+case class TestItem(x: String, y: Int)
+
+@body("test-collection")
+case class TestCollectionBody(items: Seq[TestItem]) extends Body
+
+@request(Method.GET, "hb://test")
+case class TestCollectionGet(body: TestCollectionBody) extends Request[TestCollectionBody]
 
 
 //
@@ -76,6 +84,13 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     post1.serializeToString should equal(
       s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
         """{"data":"abcde"}""")
+  }
+
+  "TestCollection" should "serialize" in {
+    val post1 = TestCollectionGet(TestCollectionBody(Seq(TestItem("abcde", 123), TestItem("eklmn", 456))))
+    post1.serializeToString should equal(
+      s"""{"r":{"l":"hb://test"},"m":"get","t":"application/vnd.test-collection+json","i":"123"}""" + rn +
+        """{"items":[{"x":"abcde","y":123},{"x":"eklmn","y":456}]}""")
   }
 
   "TestPost1DefinedResponse" should "serialize" in {
