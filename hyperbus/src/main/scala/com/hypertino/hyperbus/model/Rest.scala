@@ -3,16 +3,18 @@ package com.hypertino.hyperbus.model
 import java.io.{Reader, StringWriter, Writer}
 
 import com.hypertino.binders.core.BindOptions
-import com.hypertino.hyperbus.serialization.{MessageReader, RequestDeserializer, ResponseDeserializer}
+import com.hypertino.hyperbus.serialization.{MessageReader, RequestDeserializer, ResponseDeserializer, SerializationOptions}
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 
-trait Writable {
-  def serialize(writer: Writer)(implicit bindOptions: BindOptions)
+import scala.reflect.ClassTag
 
-  def serializeToString(implicit bindOptions: BindOptions): String = {
+trait Writable {
+  def serialize(writer: Writer)(implicit so: SerializationOptions)
+
+  def serializeToString(implicit so: SerializationOptions): String = {
     val writer = new StringWriter()
     try {
-      serialize(writer)
+      serialize(writer)(so)
       writer.toString
     }
     finally {
@@ -26,13 +28,16 @@ trait Writable {
 //}
 
 trait Body extends Writable {
-  def isEmpty: Boolean = false
   def contentType: Option[String]
 }
 
 trait BodyObjectApi[B <: Body] {
   def contentType: Option[String]
   def apply(reader: Reader, contentType: Option[String]): B
+}
+
+trait CollectionBody[T] extends Body {
+  def items: Seq[T]
 }
 
 trait NoContentType {
@@ -46,8 +51,8 @@ trait Message[+B <: Body, +H <: Headers] extends Writable {
 
   def body: B
 
-  def serialize(writer: Writer)(implicit bindOptions: BindOptions): Unit = {
-    headers.serialize(writer)
+  def serialize(writer: Writer)(implicit so: SerializationOptions): Unit = {
+    headers.serialize(writer)(so)
     writer.write("\r\n")
     body.serialize(writer)
   }

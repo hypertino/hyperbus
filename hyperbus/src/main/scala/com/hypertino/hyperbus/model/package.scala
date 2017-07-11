@@ -2,7 +2,6 @@ package com.hypertino.hyperbus
 
 import java.util.concurrent.atomic.AtomicLong
 
-import com.hypertino.binders.core.BindOptions
 import com.hypertino.binders.value._
 import com.hypertino.hyperbus.transport.api.matchers.{HeaderIndexKey, RequestMatcher}
 import com.hypertino.hyperbus.util.CanFuzzyMatchable
@@ -18,8 +17,6 @@ package object model {
   type ResponseBase = Response[Body]
   type DynamicMessage = Message[DynamicBody, Headers]
   type DynamicResponse = Response[DynamicBody]
-
-  implicit val bindOptions: BindOptions = BindOptions(skipOptionalFields = true)
 
   implicit def requestToMessageContext(requestBase: RequestBase): MessagingContext = {
     MessagingContext(requestBase.headers.correlationId)

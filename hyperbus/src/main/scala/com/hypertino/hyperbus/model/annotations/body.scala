@@ -1,5 +1,7 @@
 package com.hypertino.hyperbus.model.annotations
 
+import com.hypertino.hyperbus.model.CollectionBody
+
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.language.experimental.macros
 import scala.reflect.macros.blackbox.Context
@@ -36,13 +38,40 @@ private[annotations] trait BodyAnnotationMacroImpl extends AnnotationMacroImplBa
     val serializerVal = fresh("serializer")
     val deserializerVal = fresh("deserializer")
 
+    val collectionBodyTypeSig = typeOf[CollectionBody[_]].typeSymbol.typeSignature
+    val collectionItemType = bases.flatMap { b ⇒
+      val baseType = c.typecheck(q"(??? : $b)").tpe
+      if (baseType.typeSymbol.typeSignature <:< collectionBodyTypeSig) {
+        baseType.typeArgs.headOption
+      }
+      else {
+        None
+      }
+    }.headOption
+
+    val serializerMethod = if (collectionItemType.isDefined) {
+      q"""
+      override def serialize(writer: java.io.Writer)(implicit so: com.hypertino.hyperbus.serialization.SerializationOptions) = {
+        import com.hypertino.binders.json.JsonBinders._
+        import so._
+        items.writeJson(writer)
+      }
+       """
+    }
+    else {
+      q"""
+      override def serialize(writer: java.io.Writer)(implicit so: com.hypertino.hyperbus.serialization.SerializationOptions) = {
+        import com.hypertino.binders.json.JsonBinders._
+        import so._
+        this.writeJson(writer)
+      }
+       """
+    }
+
     val newBodyContent = q"""
       ..$body
       def contentType = ${className.toTermName}.contentType
-      override def serialize(writer: java.io.Writer)(implicit bindOptions: com.hypertino.binders.core.BindOptions) = {
-        import com.hypertino.binders.json.JsonBinders._
-        this.writeJson(writer)
-      }
+      $serializerMethod
     """
 
     val newClass = contentType match {
@@ -60,14 +89,33 @@ private[annotations] trait BodyAnnotationMacroImpl extends AnnotationMacroImplBa
         """
     }
 
+    val deserializeMethod = collectionItemType match {
+      case Some(typ) ⇒
+        q"""
+          def apply(reader: java.io.Reader, contentType: Option[String])
+            (implicit so: com.hypertino.hyperbus.serialization.SerializationOptions): $className = {
+            import com.hypertino.binders.json.JsonBinders._
+            import so._
+            ${className.toTermName}(reader.readJson[Seq[$typ]])
+          }
+        """
+
+      case None ⇒
+        q"""
+          def apply(reader: java.io.Reader, contentType: Option[String])
+            (implicit so: com.hypertino.hyperbus.serialization.SerializationOptions): $className = {
+            import com.hypertino.binders.json.JsonBinders._
+            import so._
+            reader.readJson[$className]
+          }
+        """
+    }
+
     // check requestHeader
     val companionExtra =
       q"""
         def contentType = $contentType
-        def apply(reader: java.io.Reader, contentType: Option[String]): $className = {
-          import com.hypertino.binders.json.JsonBinders._
-          reader.readJson[$className]
-        }
+        $deserializeMethod
         """
 
     val newCompanion = clzCompanion map { existingCompanion =>

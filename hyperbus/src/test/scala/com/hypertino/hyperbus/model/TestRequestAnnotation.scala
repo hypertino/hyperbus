@@ -1,9 +1,14 @@
 package com.hypertino.hyperbus.model
 
+import java.io.Writer
+
+import com.hypertino.binders.core.BindOptions
+import com.hypertino.binders.json.{DefaultJsonBindersFactory, JsonBindersFactory}
 import com.hypertino.binders.value.{Obj, _}
 import com.hypertino.hyperbus.model.annotations.{body, request}
-import com.hypertino.hyperbus.serialization.MessageReader
+import com.hypertino.hyperbus.serialization.{MessageReader, SerializationOptions}
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
+import com.hypertino.inflector.naming.{CamelCaseToSnakeCaseConverter, PlainConverter}
 import org.scalatest.{FlatSpec, Matchers}
 
 @request(Method.POST, "hb://test")
@@ -37,10 +42,16 @@ case class TestPost1MultipleDefinedResponse(id: String, body: TestBody1)
 case class TestItem(x: String, y: Int)
 
 @body("test-collection")
-case class TestCollectionBody(items: Seq[TestItem]) extends Body
+case class TestCollectionBody(items: Seq[TestItem]) extends CollectionBody[TestItem]
 
-@request(Method.GET, "hb://test")
-case class TestCollectionGet(body: TestCollectionBody) extends Request[TestCollectionBody]
+@request(Method.POST, "hb://test")
+case class TestCollectionPost(body: TestCollectionBody) extends Request[TestCollectionBody]
+
+@body("test-case")
+case class TestCaseBody(intField: Int, stringField: String) extends Body
+
+@request(Method.POST, "hb://test")
+case class TestCasePost(body: TestCaseBody) extends Request[TestCaseBody]
 
 
 //
@@ -86,12 +97,36 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
         """{"data":"abcde"}""")
   }
 
-  "TestCollection" should "serialize" in {
-    val post1 = TestCollectionGet(TestCollectionBody(Seq(TestItem("abcde", 123), TestItem("eklmn", 456))))
+  "TestCollectionPost" should "serialize" in {
+    val post1 = TestCollectionPost(TestCollectionBody(Seq(TestItem("abcde", 123), TestItem("eklmn", 456))))
     post1.serializeToString should equal(
-      s"""{"r":{"l":"hb://test"},"m":"get","t":"application/vnd.test-collection+json","i":"123"}""" + rn +
-        """{"items":[{"x":"abcde","y":123},{"x":"eklmn","y":456}]}""")
+      s"""{"r":{"l":"hb://test"},"m":"post","t":"application/vnd.test-collection+json","i":"123"}""" + rn +
+        """[{"x":"abcde","y":123},{"x":"eklmn","y":456}]""")
   }
+
+  "TestCollectionPost" should "deserialize" in {
+    val str = s"""{"r":{"l":"hb://test"},"m":"post","t":"application/vnd.test-collection+json","i":"123"}""" + rn +
+      """[{"x":"abcde","y":123},{"x":"eklmn","y":456}]"""
+    TestCollectionPost.from(str) should equal (
+      TestCollectionPost(TestCollectionBody(Seq(TestItem("abcde", 123), TestItem("eklmn", 456))))
+    )
+  }
+
+  "TestCasePost" should "serialize" in {
+    val post1 = TestCasePost(TestCaseBody(intField=100500, stringField="Yey"))
+    post1.serializeToString should equal(
+      s"""{"r":{"l":"hb://test"},"m":"post","t":"application/vnd.test-case+json","i":"123"}""" + rn +
+        """{"int_field":100500,"string_field":"Yey"}""")
+  }
+
+  "TestCasePost" should "deserialize" in {
+    val str = s"""{"r":{"l":"hb://test"},"m":"post","t":"application/vnd.test-case+json","i":"123"}""" + rn +
+      """{"int_field":100500,"string_field":"Yey"}"""
+    TestCasePost.from(str) should equal (
+      TestCasePost(TestCaseBody(intField=100500, stringField="Yey"))
+    )
+  }
+
 
   "TestPost1DefinedResponse" should "serialize" in {
     val post1 = TestPost1DefinedResponse("155", TestBody1("abcde"))
@@ -205,14 +240,14 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
 
   "DynamicRequest" should "decode" in {
     val str = """{"r":{"l":"hb://test-outer-resource"},"m":"custom-method","t":"test-body-1","i":"123"}""" + rn +
-      """{"resourceId":"100500"}"""
+      """{"resource_id":"100500"}"""
     val request = DynamicRequest.from(str)
     request shouldBe a[Request[_]]
     request.headers.method should equal("custom-method")
     request.headers.hrl should equal(HRL("hb://test-outer-resource"))
     request.headers.messageId should equal("123")
     request.correlationId should equal("123")
-    request.body should equal(DynamicBody(Obj.from("resourceId" -> "100500"), Some("test-body-1")))
+    request.body should equal(DynamicBody(Obj.from("resource_id" -> "100500"), Some("test-body-1")))
   }
 
   "hashCode, equals, product" should "work" in {

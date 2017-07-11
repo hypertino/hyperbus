@@ -4,7 +4,7 @@ import java.io.Reader
 
 import com.hypertino.binders.core.BindOptions
 import com.hypertino.hyperbus.model.annotations.body
-import com.hypertino.hyperbus.serialization.MessageReader
+import com.hypertino.hyperbus.serialization.{MessageReader, SerializationOptions}
 import org.scalatest.{FlatSpec, Matchers}
 
 @body("test-created-body")
@@ -21,19 +21,19 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
   "Response" should "serialize" in {
     val msg = Created(TestCreatedBody("100500"), HRL("hb://test"))
     msg.serializeToString should equal("""{"s":201,"t":"application/vnd.test-created-body+json","i":"123","c":"abc","l":{"l":"hb://test"}}""" + rn +
-      """{"resourceId":"100500"}""")
+      """{"resource_id":"100500"}""")
   }
 
   "Response with forced null's" should "serialize" in {
-    implicit val bindOptions = BindOptions(skipOptionalFields = false)
+    implicit val so = SerializationOptions.forceOptionalFields
     val msg = Created(TestCreatedBody("100500"), HRL("hb://test"))
     msg.serializeToString should equal("""{"s":201,"t":"application/vnd.test-created-body+json","i":"123","c":"abc","l":{"q":null,"l":"hb://test"}}""" + rn +
-      """{"resourceId":"100500","nullable":null}""")
+      """{"resource_id":"100500","nullable":null}""")
   }
 
   "Response" should "deserialize" in {
     val s = """{"s":201,"t":"application/vnd.test-created-body+json","i":"123","c":"abc","l":{"l":"hb://test"}}""" + rn +
-      """{"resourceId":"100500"}"""
+      """{"resource_id":"100500"}"""
 
     val deserializer = StandardResponse.apply(_: Reader, _: HeadersMap, {
       case h: ResponseHeaders if h.contentType.contains("test-created-body") ⇒ TestCreatedBody.apply
@@ -48,7 +48,7 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
   "Response with headers" should "serialize" in {
     val msg = Created(TestCreatedBody("100500"), HRL("hb://test"), HeadersMap("test" → "a"))
     msg.serializeToString should equal("""{"s":201,"t":"application/vnd.test-created-body+json","i":"123","c":"abc","l":{"l":"hb://test"},"test":"a"}""" + rn +
-      """{"resourceId":"100500"}""")
+      """{"resource_id":"100500"}""")
   }
 
   "hashCode, equals, product" should "work" in {

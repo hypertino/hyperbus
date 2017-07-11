@@ -2,13 +2,11 @@ package com.hypertino.hyperbus.model
 
 import java.io.{Reader, Writer}
 
-import com.hypertino.binders.core.BindOptions
 import com.hypertino.binders.value._
-import com.hypertino.hyperbus.serialization.DeserializeException
+import com.hypertino.hyperbus.serialization.{DeserializeException, SerializationOptions}
 
 trait EmptyBody extends DynamicBody {
-  override def serialize(writer: Writer)(implicit bindOptions: BindOptions): Unit = writer.write("{}")
-  override def isEmpty = true
+  override def serialize(writer: Writer)(implicit so: SerializationOptions): Unit = writer.write("{}")
 }
 
 case object EmptyBody extends EmptyBody {

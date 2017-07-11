@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.model
 
-import com.hypertino.binders.core.BindOptions
 import com.hypertino.hyperbus.model.annotations.response
+import com.hypertino.hyperbus.serialization.SerializationOptions
 
 trait NormalResponse extends ResponseBase
 
@@ -17,12 +17,14 @@ trait ResponseMetaWithLocation[PB <: Body, R <: Response[PB]] extends ResponseMe
   import com.hypertino.binders.value._
 
   def apply[B <: PB](body: B, location: HRL, headersMap: HeadersMap)
-                    (implicit mcx: MessagingContext, bindOptions: BindOptions): R = {
+                    (implicit mcx: MessagingContext, so: SerializationOptions): R = {
+    implicit val bindOptions = so.bindOptions
     apply[B](body, headersMap ++ Seq(Header.LOCATION → location.toValue))(mcx)
   }
 
   def apply[B <: PB](body: B, location: HRL)
-                    (implicit mcx: MessagingContext, bindOptions: BindOptions): R = {
+                    (implicit mcx: MessagingContext, so: SerializationOptions): R = {
+    implicit val bindOptions = so.bindOptions
     apply[B](body, HeadersMap(Header.LOCATION → location.toValue))(mcx)
   }
 }

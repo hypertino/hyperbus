@@ -5,6 +5,7 @@ import java.io.{Reader, Writer}
 import com.hypertino.binders.core.BindOptions
 import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value._
+import com.hypertino.hyperbus.serialization.SerializationOptions
 import com.hypertino.hyperbus.util.SeqGenerator
 
 trait ErrorBody extends DynamicBody {
@@ -66,9 +67,9 @@ private[model] case class ErrorBodyContainer(code: String,
 
   def message = code + description.map(": " + _).getOrElse("") + ". #" + errorId
 
-  override def serialize(writer: Writer)(implicit bindOptions: BindOptions): Unit = {
-    JsonBindersFactory.findFactory().withWriter(writer) { serializer =>
-      serializer.bind(this.copyErrorBody(contentType = None)) // find other way to skip contentType
-    }
+  override def serialize(writer: Writer)(implicit so: SerializationOptions): Unit = {
+    import com.hypertino.binders.json.JsonBinders._
+    import so._
+    copyErrorBody(contentType = None).writeJson(writer) // find other way to skip contentType
   }
 }
