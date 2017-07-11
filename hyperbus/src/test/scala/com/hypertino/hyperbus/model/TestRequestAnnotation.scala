@@ -15,12 +15,12 @@ import org.scalatest.{FlatSpec, Matchers}
 case class TestPost1(id: String, body: TestBody1) extends Request[TestBody1]
 
 trait TestPost1ObjectApi {
-  def apply(id: String, x: TestBody1, headersMap: HeadersMap)(implicit mcx: MessagingContext): TestPost1
+  def apply(id: String, x: TestBody1, headersMap: HeadersMap, extraQuery: Value)(implicit mcx: MessagingContext): TestPost1
 }
 
 object TestPost1 extends RequestMetaCompanion[TestPost1] with TestPost1ObjectApi {
   def apply(id: String, x: String, headersMap: HeadersMap)
-           (implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headersMap)(mcx)
+           (implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headersMap, Null)(mcx)
 
   type ResponseType = ResponseBase
   implicit val meta = this
@@ -188,6 +188,13 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     post1.serializeToString should equal(
       s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123","test":["a"]}""" + rn +
          """{"data":"abcde"}""")
+  }
+
+  "TestPost1" should "serialize with extra query" in {
+    val post1 = TestPost1("155", TestBody1("abcde"), HeadersMap.empty, Obj.from("a" → "100500"))
+    post1.serializeToString should equal(
+      s"""{"r":{"q":{"id":"155","a":"100500"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
+        """{"data":"abcde"}""")
   }
 
   "TestPost1" should "deserialize" in {

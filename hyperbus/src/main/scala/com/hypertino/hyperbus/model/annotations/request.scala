@@ -105,9 +105,10 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       }
       //val name = TermName(if(fmap._1.isEmpty) "em" else "apply")
       q"""def apply(
-            ..${fmap._1}
+            ..${fmap._1},
+            extraQuery: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null
          )(implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className =
-         apply(..${fmap._2}, com.hypertino.hyperbus.model.HeadersMap.empty)(mcx)"""
+         apply(..${fmap._2}, com.hypertino.hyperbus.model.HeadersMap.empty, extraQuery)(mcx)"""
     }
 
     val query = if (queryFields.isEmpty) {
@@ -173,10 +174,11 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val companionExtra =
       q"""
         def apply(..$fieldsExceptHeaders,
-          headersMap: com.hypertino.hyperbus.model.HeadersMap = com.hypertino.hyperbus.model.HeadersMap.empty)
+          headersMap: com.hypertino.hyperbus.model.HeadersMap = com.hypertino.hyperbus.model.HeadersMap.empty,
+          extraQuery: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
 
-          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, $query)
+          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, $query + extraQuery)
 
           new $className(..${fieldsExceptHeaders.map(_.name)},
             headers = com.hypertino.hyperbus.model.RequestHeaders(new com.hypertino.hyperbus.model.HeadersBuilder()

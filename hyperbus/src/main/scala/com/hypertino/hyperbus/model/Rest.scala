@@ -33,7 +33,8 @@ trait Body extends Writable {
 
 trait BodyObjectApi[B <: Body] {
   def contentType: Option[String]
-  def apply(reader: Reader, contentType: Option[String]): B
+  def apply(reader: Reader, contentType: Option[String])
+           (implicit so: com.hypertino.hyperbus.serialization.SerializationOptions): B
 }
 
 trait CollectionBody[T] extends Body {
