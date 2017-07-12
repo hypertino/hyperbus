@@ -31,7 +31,7 @@ trait HyperbusApi {
 
   def shutdown(duration: FiniteDuration): Task[Boolean]
 
-  def subscribe[A](serviceClass: A, log: Option[Logger]): Seq[Cancelable] = macro SubscribeMacro.subscribeWithLog[A]
+  def subscribe[A](serviceClass: A, log: Logger): Seq[Cancelable] = macro SubscribeMacro.subscribeWithLog[A]
 
   def subscribe[A](serviceClass: A): Seq[Cancelable] = macro SubscribeMacro.subscribe[A]
 }

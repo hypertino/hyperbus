@@ -9,7 +9,7 @@ import org.slf4j.Logger
 import scala.reflect.macros.blackbox.Context
 
 private[hyperbus] object SubscribeMacro {
-  def subscribeWithLog[A: c.WeakTypeTag](c: Context)(serviceClass: c.Expr[A], log: c.Expr[Option[Logger]]): c.Expr[Seq[Cancelable]] = {
+  def subscribeWithLog[A: c.WeakTypeTag](c: Context)(serviceClass: c.Expr[A], log: c.Expr[Logger]): c.Expr[Seq[Cancelable]] = {
     val c0: c.type = c
     val bundle = new {
       val c: c0.type = c0
@@ -31,7 +31,7 @@ trait SubscribeMacroImpl {
 
   import c.universe._
 
-  def subscribe[A: c.WeakTypeTag](serviceClass: c.Expr[A], log: Option[c.Expr[Option[Logger]]]): c.Expr[Seq[Cancelable]] = {
+  def subscribe[A: c.WeakTypeTag](serviceClass: c.Expr[A], log: Option[c.Expr[Logger]]): c.Expr[Seq[Cancelable]] = {
     val commandMethods = extractCommandMethods[A]
     val eventMethods = extractEventMethods[A]
     if (commandMethods.isEmpty && eventMethods.isEmpty) {
