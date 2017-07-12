@@ -29,6 +29,9 @@ trait Writable {
 
 trait Body extends Writable {
   def contentType: Option[String]
+  override def toString: String = {
+    s"${getClass.getName}:$serializeToString"
+  }
 }
 
 trait BodyObjectApi[B <: Body] {

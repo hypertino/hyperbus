@@ -98,7 +98,7 @@ object TemporaryRedirect extends ResponseMetaWithLocation[Body, TemporaryRedirec
 // ----------------- Exception base classes -----------------
 
 abstract class HyperbusError[+B <: ErrorBody](body: B)
-  extends RuntimeException(body.toString) with Response[B] {
+  extends RuntimeException(body.serializeToString) with Response[B] {
 }
 
 abstract class HyperbusServerError[+B <: ErrorBody](body: B) extends HyperbusError(body)

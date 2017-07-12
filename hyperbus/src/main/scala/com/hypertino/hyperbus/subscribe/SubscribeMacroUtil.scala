@@ -11,7 +11,9 @@ object SubscribeMacroUtil {
     case h: ErrorResponseBase ⇒ h
     case NonFatal(other) ⇒
       val result = InternalServerError(
-        ErrorBody("unhandled-exception", Some(other.getMessage))
+        ErrorBody("unhandled-exception", Some(other.getClass.toString + {
+          if (other.getMessage != null) {": " + other.getMessage} else {""}
+        }))
       )
       log.foreach(_.error(result.body.toString, other))
       result
