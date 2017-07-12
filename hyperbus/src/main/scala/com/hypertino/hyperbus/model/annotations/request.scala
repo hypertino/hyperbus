@@ -106,9 +106,9 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       //val name = TermName(if(fmap._1.isEmpty) "em" else "apply")
       q"""def apply(
             ..${fmap._1},
-            extraQuery: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null
+            $$query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null
          )(implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className =
-         apply(..${fmap._2}, com.hypertino.hyperbus.model.HeadersMap.empty, extraQuery)(mcx)"""
+         apply(..${fmap._2}, com.hypertino.hyperbus.model.HeadersMap.empty, $$query)(mcx)"""
     }
 
     val query = if (queryFields.isEmpty) {
@@ -174,11 +174,11 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val companionExtra =
       q"""
         def apply(..$fieldsExceptHeaders,
-          headersMap: com.hypertino.hyperbus.model.HeadersMap = com.hypertino.hyperbus.model.HeadersMap.empty,
-          extraQuery: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null)
+          $$headersMap: com.hypertino.hyperbus.model.HeadersMap = com.hypertino.hyperbus.model.HeadersMap.empty,
+          $$query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
 
-          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, $query + extraQuery)
+          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, $query + $$query)
 
           new $className(..${fieldsExceptHeaders.map(_.name)},
             headers = com.hypertino.hyperbus.model.RequestHeaders(new com.hypertino.hyperbus.model.HeadersBuilder()
@@ -186,7 +186,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
               .withMethod(${className.toTermName}.method)
               .withContentType(body.contentType)
               .withContext(mcx)
-              .++=(headersMap)
+              .++=($$headersMap)
               .result()),
             plain__init = true
           )

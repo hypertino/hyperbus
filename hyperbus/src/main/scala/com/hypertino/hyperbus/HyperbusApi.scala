@@ -1,11 +1,15 @@
 package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.model._
+import com.hypertino.hyperbus.subscribe.SubscribeMacro
 import com.hypertino.hyperbus.transport.api._
 import monix.eval.Task
+import monix.execution.Cancelable
 import monix.reactive.Observable
+import org.slf4j.Logger
 
 import scala.concurrent.duration.FiniteDuration
+import scala.language.experimental.macros
 
 // todo: document API
 trait HyperbusApi {
@@ -26,4 +30,8 @@ trait HyperbusApi {
   }
 
   def shutdown(duration: FiniteDuration): Task[Boolean]
+
+  def subscribe[A](serviceClass: A, log: Option[Logger]): Seq[Cancelable] = macro SubscribeMacro.subscribeWithLog[A]
+
+  def subscribe[A](serviceClass: A): Seq[Cancelable] = macro SubscribeMacro.subscribe[A]
 }

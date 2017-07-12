@@ -16,10 +16,10 @@ trait ClientError extends ErrorResponse
 trait ResponseMetaWithLocation[PB <: Body, R <: Response[PB]] extends ResponseMeta[PB, R] {
   import com.hypertino.binders.value._
 
-  def apply[B <: PB](body: B, location: HRL, headersMap: HeadersMap)
+  def apply[B <: PB](body: B, location: HRL, $headersMap: HeadersMap)
                     (implicit mcx: MessagingContext, so: SerializationOptions): R = {
     implicit val bindOptions = so.bindOptions
-    apply[B](body, headersMap ++ Seq(Header.LOCATION → location.toValue))(mcx)
+    apply[B](body, $headersMap ++ Seq(Header.LOCATION → location.toValue))(mcx)
   }
 
   def apply[B <: PB](body: B, location: HRL)

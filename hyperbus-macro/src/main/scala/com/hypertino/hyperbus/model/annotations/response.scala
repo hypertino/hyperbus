@@ -101,7 +101,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
           )
         }
 
-        def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headersMap: com.hypertino.hyperbus.model.HeadersMap)
+        def apply[..$methodTypeArgs](..$fieldsExceptHeaders, $$headersMap: com.hypertino.hyperbus.model.HeadersMap)
          (implicit mcx: com.hypertino.hyperbus.model.MessagingContext)
          :$className[..$classTypeNames] = {
           new $className[..$classTypeNames](..${fieldsExceptHeaders.map(_.name)},
@@ -109,7 +109,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
               .withStatusCode(statusCode)
               .withContentType(body.contentType)
               .withContext(mcx)
-              .++=(headersMap)
+              .++=($$headersMap)
               .result()),
             plain__init = true
           )
@@ -142,7 +142,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
         $newCompanion
       """
 
-    //println(block)
+    // println(block)
 
     c.Expr(
       block

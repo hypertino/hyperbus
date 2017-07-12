@@ -1,15 +1,17 @@
 import java.util.concurrent.atomic.AtomicLong
 
-import com.hypertino.binders.value.{Null, Obj, Text}
+import com.hypertino.binders.value.{Obj, Text}
 import com.hypertino.hyperbus.Hyperbus
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
+import com.hypertino.hyperbus.subscribe.SubscribeMacroUtil
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import monix.eval.Task
 import monix.execution.Ack.Continue
-import monix.execution.{Cancelable, Scheduler}
 import monix.execution.Scheduler.Implicits.global
+import monix.execution.atomic.AtomicInt
+import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import monix.reactive.subjects.ConcurrentSubject
@@ -19,7 +21,6 @@ import scaldi.Module
 import testclasses.{TestPost1, _}
 
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
 class ClientTransportTest(output: String) extends ClientTransport {
@@ -122,6 +123,40 @@ class ServerTransportTest extends ServerTransport {
         override def sent: Option[Boolean] = Some(true)
       }
     }
+  }
+}
+
+class TestServiceClass(hyperbus: Hyperbus) {
+  val subscriptions = hyperbus.subscribe(this)
+  val okEvents = AtomicInt(0)
+  val failedEvents = AtomicInt(0)
+
+  def onTestPost1Command(post1: TestPost1) = Task.eval {
+    implicit val mcx = new MessagingContext {
+      override def createMessageId() = "123"
+      override def correlationId = "123"
+    }
+
+    if (post1.headers.hrl.query.ok.isDefined) {
+      Created(testclasses.TestCreatedBody("100500"))
+    }
+    else {
+      throw Conflict(ErrorBody("failed"))
+    }
+  }
+
+  def onTestPost1Event(post1: TestPost1) = {
+    if (post1.headers.hrl.query.ok.isDefined) {
+      okEvents.incrementAndGet()
+    }
+    else {
+      failedEvents.incrementAndGet()
+    }
+    Continue
+  }
+
+  def stop() = {
+    subscriptions.foreach(_.cancel)
   }
 }
 
@@ -566,6 +601,24 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val y: CommandEvent[TestPost1] = null
     val t: Task[ResponseBase] = null
     t.runOnComplete(y.reply)
+  }
+
+  "TestServiceClass" should "subscribe to commands and events" in {
+    val st = new ServerTransportTest()
+    val hyperbus = newHyperbus(null, st)
+    val ts = new TestServiceClass(hyperbus)
+
+    val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"), $query=Obj.from("ok" → true))
+    val task = st.testCommand(msg)
+    task.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
+
+    val eventTask = st.testEvent(msg)
+    ts.okEvents.get shouldBe 0
+    eventTask.runAsync.futureValue
+    eventually {
+      ts.okEvents.get shouldBe 1
+    }
+    ts.stop()
   }
 
   def newHyperbus(ct: ClientTransport, st: ServerTransport) = {

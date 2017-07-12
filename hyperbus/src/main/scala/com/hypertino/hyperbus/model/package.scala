@@ -17,6 +17,7 @@ package object model {
   type ResponseBase = Response[Body]
   type DynamicMessage = Message[DynamicBody, Headers]
   type DynamicResponse = Response[DynamicBody]
+  type ErrorResponseBase = HyperbusError[ErrorBody]
 
   implicit def requestToMessageContext(requestBase: RequestBase): MessagingContext = {
     MessagingContext(requestBase.headers.correlationId)
