@@ -71,7 +71,7 @@ trait SubscribeMacroImpl {
 
     val block = c.Expr[Seq[Cancelable]](q"""{
       val $tVar = ${c.prefix.tree}
-      Seq[Cancelable](
+      Seq[monix.execution.Cancelable](
         ..$commandSubscriptions,
         ..$eventSubscriptions
       )
