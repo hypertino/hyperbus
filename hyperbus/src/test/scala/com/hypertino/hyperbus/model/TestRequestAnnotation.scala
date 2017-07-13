@@ -115,6 +115,29 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     )
   }
 
+  "Dynamic Collection" should "serialize" in {
+    val post1 = DynamicRequest(HRL("hb://test"), Method.POST,
+      DynamicBody(
+        Lst.from(Obj.from("x" → "abcde", "y" → 123), Obj.from( "x" → "eklmn", "y" → 456))
+      )
+    )
+    post1.serializeToString should equal(
+      s"""{"r":{"l":"hb://test"},"m":"post","i":"123"}""" + rn +
+        """[{"x":"abcde","y":123},{"x":"eklmn","y":456}]""")
+  }
+
+  "Dynamic Collection" should "deserialize" in {
+    val str = s"""{"r":{"l":"hb://test"},"m":"post","i":"123"}""" + rn +
+      """[{"x":"abcde","y":123},{"x":"eklmn","y":456}]"""
+    DynamicRequest.from(str) should equal (
+      DynamicRequest(HRL("hb://test"), Method.POST,
+        DynamicBody(
+          Lst.from(Obj.from("x" → "abcde", "y" → 123), Obj.from( "x" → "eklmn", "y" → 456))
+        )
+      )
+    )
+  }
+
   "TestCasePost" should "serialize" in {
     val post1 = TestCasePost(TestCaseBody(intField=100500, stringField="Yey"))
     post1.serializeToString should equal(
