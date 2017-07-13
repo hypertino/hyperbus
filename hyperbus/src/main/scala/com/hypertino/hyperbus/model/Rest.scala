@@ -30,6 +30,7 @@ trait Writable {
 trait Body extends Writable {
   def contentType: Option[String]
   override def toString: String = {
+    implicit val so = SerializationOptions.forceOptionalFields
     s"${getClass.getName}:$serializeToString"
   }
 }
