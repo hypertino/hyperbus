@@ -116,7 +116,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     }
     else {
       q"""
-          com.hypertino.binders.value.Obj.from(..${queryFields.map(f ⇒ q"${f.name.decodedName.toString} -> ${f.name}")})
+          com.hypertino.binders.value.Obj.from(..${queryFields.map(f ⇒ q"${f.name.decodedName.toString} -> ${f.name}.toValue")})
       """
     }
 

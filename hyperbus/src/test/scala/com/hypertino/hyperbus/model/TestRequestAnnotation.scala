@@ -53,6 +53,9 @@ case class TestCaseBody(intField: Int, stringField: String) extends Body
 @request(Method.POST, "hb://test")
 case class TestCasePost(body: TestCaseBody) extends Request[TestCaseBody]
 
+// don't remove, this should just compile
+@request(Method.POST, "hb://test")
+case class TestSeqStringQueryPost(fields: Option[Seq[String]], body: TestCaseBody) extends Request[TestCaseBody]
 
 //
 //@body("test-inner-body")
