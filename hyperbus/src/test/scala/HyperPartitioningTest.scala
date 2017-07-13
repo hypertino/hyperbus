@@ -15,7 +15,7 @@ class HyperPartitioningTest extends FreeSpec with Matchers with ScalaFutures {
   "HyperPartitioning " - {
     "Partitioning when asking" in {
       val ct = new ClientTransportTest(
-        """{"response":{"status":200,"messageId":"123"},"body":{}}"""
+        """{"response":{"status":200,"message_id":"123"},"body":{}}"""
       )
 
       val hyperbus = newHyperbus(ct, null)
@@ -39,7 +39,7 @@ class HyperPartitioningTest extends FreeSpec with Matchers with ScalaFutures {
         }
       }
 
-      val req = """{"request":{"url":"/resources/{partitionId}","method":"post","contentType":"application/vnd+parition.json","messageId":"123"},"body":{"partitionId":"123","data":"abc"}}"""
+      val req = """{"request":{"url":"/resources/{partitionId}","method":"post","contentType":"application/vnd+parition.json","message_id":"123"},"body":{"partitionId":"123","data":"abc"}}"""
       val ba = new ByteArrayInputStream(req.getBytes("UTF-8"))
       val msg = st.sInputDecoder(ba)
       msg should equal(TestPostPartition1(TestPartition("123", "abc"), messageId = "123", correlationId = "123"))

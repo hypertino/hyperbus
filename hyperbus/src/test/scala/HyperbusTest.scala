@@ -310,7 +310,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
   "ask" should "catch client exception" in {
     val ct = new ClientTransportTest(
-      """{"s":409,"i":"abcde12345"}""" + "\r\n" + """{"code":"failed","errorId":"abcde12345"}"""
+      """{"s":409,"i":"abcde12345"}""" + "\r\n" + """{"code":"failed","error_id":"abcde12345"}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
@@ -423,7 +423,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
   }
 
   "publish" should "publish static request (client)" in {
-    val rsp = """{"status":409,"headers":{"messageId":"123"},"body":{"code":"failed","errorId":"abcde12345"}}"""
+    val rsp = """{"status":409,"headers":{"message_id":"123"},"body":{"code":"failed","error_id":"abcde12345"}}"""
     var sentEvents = List[RequestBase]()
     val clientTransport = new ClientTransportTest(rsp) {
       override def publish(message: RequestBase): Task[PublishResult] = {
@@ -447,7 +447,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
   }
 
   "publish" should "publish dynamic request (client)" in {
-    val rsp = """{"status":409,"headers":{"messageId":"123"},"body":{"code":"failed","errorId":"abcde12345"}}"""
+    val rsp = """{"status":409,"headers":{"message_id":"123"},"body":{"code":"failed","error_id":"abcde12345"}}"""
     var sentEvents = List[RequestBase]()
     val clientTransport = new ClientTransportTest(rsp) {
       override def publish(message: RequestBase): Task[PublishResult] = {

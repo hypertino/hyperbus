@@ -21,7 +21,7 @@ trait ErrorBody extends DynamicBody {
 
   def content = Obj(Map[String,Value](
       "code" → code,
-      "errorId" → errorId
+      "error_id" → errorId
     )
       ++ description.map(s ⇒ "description" → Text(s))
       ++ contentType.map(s ⇒ "contentType" → Text(s))
@@ -52,10 +52,12 @@ object ErrorBody {
     (errorBody.code, errorBody.description, errorBody.errorId, errorBody.extra, errorBody.contentType)
   )
 
-  def apply(reader: Reader, contentType: Option[String]): DynamicBody = {
-    JsonBindersFactory.findFactory().withReader(reader) { deserializer =>
-      deserializer.unbind[ErrorBodyContainer].copyErrorBody(contentType = contentType)
-    }
+  def apply(reader: Reader, contentType: Option[String])
+           (implicit so: SerializationOptions): DynamicBody = {
+    import com.hypertino.binders.json.JsonBinders._
+    import so._
+
+    reader.readJson[ErrorBodyContainer].copyErrorBody(contentType = contentType)
   }
 }
 
