@@ -32,6 +32,7 @@ class InprocTransport(serialize: Boolean = false)
   protected val commandSubscriptions = new FuzzyIndex[CommandSubscription]
   protected val eventSubscriptions = new FuzzyIndex[EventSubscription]
   protected val log: Logger = LoggerFactory.getLogger(this.getClass)
+  protected implicit val serializationOptions = SerializationOptions.forceOptionalFields
 
   // todo: refactor this method, it's awful
   protected def _ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer, isPublish: Boolean): Task[_] = {

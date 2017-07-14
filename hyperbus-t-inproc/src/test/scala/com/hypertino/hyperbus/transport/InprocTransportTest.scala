@@ -2,6 +2,7 @@ package com.hypertino.hyperbus.transport
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import com.hypertino.binders.value.{Null, Obj, Text}
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.model.annotations.{body, request, response}
 import com.hypertino.hyperbus.transport.api.{NoTransportRouteException, _}
@@ -19,7 +20,7 @@ import scala.concurrent.duration._
 import scala.util.Success
 
 @body("mock")
-case class MockBody(test: String) extends Body
+case class MockBody(test: String, testNull: Option[String] = None) extends Body
 
 @request(Method.POST, "hb://mock")
 case class MockRequest(body: MockBody) extends Request[MockBody]
@@ -191,6 +192,19 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers with 
       f3.runAsync.failed.futureValue shouldBe a[NoTransportRouteException]
     }
 
+    "Null serialization test" in {
+      val t = new InprocTransport(serialize=true)
+      val counter = new AtomicInteger(0)
+      t.commands(RequestMatcher(Specific("hb://mock")), MockRequest.apply).subscribe(requestProcessor(counter))
+
+      val f = t.ask(DynamicRequest(HRL("hb://mock"), Method.POST, DynamicBody(
+        Obj.from("test" → "hey", "test_null" → Null)
+      )), StandardResponse.dynamicDeserializer).asInstanceOf[Task[DynamicResponse]]
+      f.runAsync.futureValue.body.content.test should equal(Text("yeh"))
+      f.runAsync.futureValue.body.content.test_null should equal(Null)
+      counter.get should equal(1)
+    }
+
     def eventSubscriber(): (Subscriber[RequestBase], AtomicInteger, AtomicInteger) = {
       val c1 = new AtomicInteger()
       val c2 = new AtomicInteger()
@@ -216,7 +230,7 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers with 
         override implicit def scheduler: Scheduler = monix.execution.Scheduler.Implicits.global
         override def onNext(elem: CommandEvent[MockRequest]): Future[Ack] = {
           elem.reply(Success(
-            MockResponse(MockBody(elem.request.body.test.reverse))
+            MockResponse(MockBody(elem.request.body.test.reverse, elem.request.body.testNull))
           ))
           counter.incrementAndGet()
           Continue
