@@ -45,7 +45,7 @@ trait SubscribeMacroImpl {
       val typeSymbol = t.typeSignature
       q"""
         $tVar.commands[$typeSymbol].subscribe{ implicit c ⇒
-          val $taskVar: monix.eval.Task[ResponseBase] = monix.eval.Task.fromTry{
+          val $taskVar: monix.eval.Task[com.hypertino.hyperbus.model.ResponseBase] = monix.eval.Task.fromTry{
             scala.util.Try {
               $m(c.request)
             }
