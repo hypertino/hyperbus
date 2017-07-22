@@ -14,6 +14,7 @@ class SerializationOptions(aBindOptions: BindOptions, aJsonBindersFactory: Defau
 }
 
 object SerializationOptions {
+  val caseConverter = CamelCaseToSnakeCaseConverter
   implicit val default: SerializationOptions = new SerializationOptions(
     BindOptions(skipOptionalFields=true),
     new DefaultJsonBindersFactory[com.hypertino.inflector.naming.CamelCaseToSnakeCaseConverter.type]

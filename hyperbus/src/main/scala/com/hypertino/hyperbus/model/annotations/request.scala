@@ -1,6 +1,7 @@
 package com.hypertino.hyperbus.model.annotations
 
 import com.hypertino.hyperbus.model.{Body, DefinedResponse, DynamicBodyTrait}
+import com.hypertino.hyperbus.serialization.SerializationOptions
 
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.language.experimental.macros
@@ -116,7 +117,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     }
     else {
       q"""
-          com.hypertino.binders.value.Obj.from(..${queryFields.map(f ⇒ q"${f.name.decodedName.toString} -> ${f.name}.toValue")})
+          com.hypertino.binders.value.Obj.from(..${queryFields.map(f ⇒ q"${SerializationOptions.caseConverter.convert(f.name.decodedName.toString)} -> ${f.name}.toValue")})
       """
     }
 
@@ -203,7 +204,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
           new $className(
             ..${
                 queryFields.map { field ⇒
-                q"${field.name} = $headersVal.hrl.query.${field.name}.to[${field.tpt}]"
+                q"${field.name} = $headersVal.hrl.query.${TermName(SerializationOptions.caseConverter.convert(field.name.decodedName.toString))}.to[${field.tpt}]"
               }
             },
             $bodyFieldName = $bodyVal,

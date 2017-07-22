@@ -50,8 +50,8 @@ case class TestCollectionPost(body: TestCollectionBody) extends Request[TestColl
 @body("test-case")
 case class TestCaseBody(intField: Int, stringField: String) extends Body
 
-@request(Method.POST, "hb://test")
-case class TestCasePost(body: TestCaseBody) extends Request[TestCaseBody]
+@request(Method.POST, "hb://test/{user_id}")
+case class TestCasePost(userId: String, body: TestCaseBody) extends Request[TestCaseBody]
 
 // don't remove, this should just compile
 @request(Method.POST, "hb://test")
@@ -139,17 +139,17 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   }
 
   "TestCasePost" should "serialize" in {
-    val post1 = TestCasePost(TestCaseBody(intField=100500, stringField="Yey"))
+    val post1 = TestCasePost("maqdev", TestCaseBody(intField=100500, stringField="Yey"))
     post1.serializeToString should equal(
-      s"""{"r":{"l":"hb://test"},"m":"post","t":"application/vnd.test-case+json","i":"123"}""" + rn +
+      s"""{"r":{"q":{"user_id":"maqdev"},"l":"hb://test/{user_id}"},"m":"post","t":"application/vnd.test-case+json","i":"123"}""" + rn +
         """{"int_field":100500,"string_field":"Yey"}""")
   }
 
   "TestCasePost" should "deserialize" in {
-    val str = s"""{"r":{"l":"hb://test"},"m":"post","t":"application/vnd.test-case+json","i":"123"}""" + rn +
+    val str = s"""{"r":{"q":{"user_id":"maqdev"},"l":"hb://test/{user_id}"},"m":"post","t":"application/vnd.test-case+json","i":"123"}""" + rn +
       """{"int_field":100500,"string_field":"Yey"}"""
     TestCasePost.from(str) should equal (
-      TestCasePost(TestCaseBody(intField=100500, stringField="Yey"))
+      TestCasePost("maqdev", TestCaseBody(intField=100500, stringField="Yey"))
     )
   }
 
