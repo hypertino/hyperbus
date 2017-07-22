@@ -6,6 +6,9 @@ import com.hypertino.binders.core.BindOptions
 import com.hypertino.hyperbus.model.annotations.body
 import com.hypertino.hyperbus.serialization.{MessageReader, SerializationOptions}
 import org.scalatest.{FlatSpec, Matchers}
+import testclasses.StaticGetWithQuery
+
+import scala.util.Try
 
 @body("test-created-body")
 case class TestCreatedBody(resourceId: String, nullable: Option[String]=None) extends Body
@@ -43,6 +46,16 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
     val response = MessageReader.fromString(s, deserializer)
     response.body should equal (o.body)
     response.headers.toSet should equal(o.headers.toSet)
+  }
+
+  "Response with DynamicBody" should "deserialize ErrorBody" in {
+    val s = """{"s":409,"i":"abcde12345"}""" + "\r\n" + """{"code":"failed","error_id":"abcde12345"}"""
+    val deserializer = StaticGetWithQuery.responseDeserializer
+    val response = Try(MessageReader.fromString(s, deserializer)).recover {
+      case e: HyperbusError[ErrorBody] ⇒ e
+    }.get
+    response.headers.statusCode shouldBe 409
+    response.body shouldBe ErrorBody("failed", errorId="abcde12345")
   }
 
   "Response with headers" should "serialize" in {

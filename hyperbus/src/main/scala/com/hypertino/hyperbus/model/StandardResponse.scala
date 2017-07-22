@@ -14,10 +14,19 @@ object StandardResponse {
     val body =
       if (bodyDeserializer.isDefinedAt(responseHeaders))
         bodyDeserializer(responseHeaders)(reader, responseHeaders.contentType)
-      else
-        StandardResponseBody(reader, responseHeaders)
+      else {
+        if (isError(responseHeaders)) {
+          ErrorBody(reader, responseHeaders.contentType)
+        }
+        else {
+          DynamicBody(reader, responseHeaders.contentType)
+        }
+      }
 
-    apply(body, responseHeaders)
+    apply(body, responseHeaders) match {
+      case e: HyperbusError[ErrorBody] ⇒ throw e
+      case other ⇒ other
+    }
   }
 
   def apply(reader: Reader,
@@ -27,6 +36,7 @@ object StandardResponse {
 
   def dynamicDeserializer: ResponseDeserializer[DynamicResponse] = apply
 
+  def isError(responseHeaders: ResponseHeaders): Boolean = responseHeaders.statusCode >= 400 && responseHeaders.statusCode <= 599
 
   def apply(body: Body, headers: ResponseHeaders): ResponseBase = {
     headers.statusCode match {

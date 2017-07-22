@@ -6,7 +6,7 @@ import com.hypertino.binders.json.JsonBindersFactory
 import com.hypertino.binders.value.{Obj, Value}
 import com.hypertino.hyperbus.serialization.{ResponseDeserializer, SerializationOptions}
 
-trait DynamicBody extends Body with DynamicBodyTrait {
+trait DynamicBody extends Body {
   def content: Value
 
   def serialize(writer: Writer)(implicit so: SerializationOptions): Unit = {

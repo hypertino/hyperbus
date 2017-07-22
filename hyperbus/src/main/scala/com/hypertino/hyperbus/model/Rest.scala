@@ -49,7 +49,7 @@ trait NoContentType {
   def contentType: Option[String] = None
 }
 
-trait DynamicBodyTrait
+//trait DynamicBodyTrait
 
 trait Message[+B <: Body, +H <: Headers] extends Writable {
   def headers: H

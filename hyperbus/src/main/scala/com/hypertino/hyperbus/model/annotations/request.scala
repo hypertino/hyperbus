@@ -1,6 +1,6 @@
 package com.hypertino.hyperbus.model.annotations
 
-import com.hypertino.hyperbus.model.{Body, DefinedResponse, DynamicBodyTrait}
+import com.hypertino.hyperbus.model.{Body, DefinedResponse, DynamicBody, EmptyBody}
 import com.hypertino.hyperbus.serialization.SerializationOptions
 
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
@@ -129,23 +129,14 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         tq"com.hypertino.hyperbus.model.ResponseBase"
 
     val responseDeserializerMethodBody = if (responses.nonEmpty) {
-      val responseBodyTypes = getUniqueResponseBodies(responses)
-
-      responseBodyTypes.groupBy(getContentTypeAnnotation(_) getOrElse "") foreach { kv =>
-        if (kv._2.size > 1) {
-          c.abort(c.enclosingPosition, s"Ambiguous responses for contentType: '${kv._1}': ${kv._2.mkString(",")}")
-        }
-      }
-
-      val dynamicBodyTypeSig = typeOf[DynamicBodyTrait].typeSymbol.typeSignature
-      val bodyCases: Seq[c.Tree] = responseBodyTypes.filterNot { t ⇒
-        t.typeSymbol.typeSignature <:< dynamicBodyTypeSig
-      } map { body =>
+      val bodyCases: Seq[c.Tree] = responses.map { response ⇒
+        val body = response.typeArgs.head
         val ta = getContentTypeAnnotation(body)
         val deserializer = body.companion.decl(TermName("apply"))
-        //if (ta.isEmpty)
-        //  c.abort(c.enclosingPosition, s"@contentType is not defined for $body")
-        cq"""h: com.hypertino.hyperbus.model.ResponseHeaders if h.contentType == $ta => $deserializer(_: java.io.Reader, _: Option[String])"""
+        cq"""
+             h: com.hypertino.hyperbus.model.ResponseHeaders if h.statusCode == ${response.companion.typeSymbol.asClass.name.toTermName}.statusCode && h.contentType == $ta =>
+                $deserializer(_: java.io.Reader, _: Option[String])
+          """
       }
 
       val r = q"""
@@ -258,7 +249,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         $newCompanion
       """
     )
-    // println(block)
+    //println(block)
     block
   }
 
@@ -325,14 +316,14 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     }
   }
 
-  private def getUniqueResponseBodies(definedResponses: Seq[Type]): Seq[c.Type] = {
-    definedResponses.foldLeft(Seq[c.Type]())((seq, el) => {
-      val bodyType = el.typeArgs.head
-      if (!seq.exists(_ =:= bodyType)) {
-        seq ++ Seq(el.typeArgs.head)
-      }
-      else
-        seq
-    })
-  }
+//  private def getUniqueResponseBodies(definedResponses: Seq[Type]): Seq[c.Type] = {
+//    definedResponses.foldLeft(Seq[c.Type]())((seq, el) => {
+//      val bodyType = el.typeArgs.head
+//      if (!seq.exists(_ =:= bodyType)) {
+//        seq ++ Seq(el.typeArgs.head)
+//      }
+//      else
+//        seq
+//    })
+//  }
 }
