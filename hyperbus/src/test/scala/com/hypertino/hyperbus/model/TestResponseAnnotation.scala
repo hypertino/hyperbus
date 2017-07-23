@@ -53,9 +53,9 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
   "Response with DynamicBody" should "deserialize ErrorBody" in {
     val s = """{"s":409,"i":"abcde12345"}""" + "\r\n" + """{"code":"failed","error_id":"abcde12345"}"""
     val deserializer = StaticGetWithQuery.responseDeserializer
-    val response = Try(MessageReader.fromString(s, deserializer)).recover {
-      case e: HyperbusError[ErrorBody] ⇒ e
-    }.get
+    val t = Try(MessageReader.fromString(s, deserializer))
+    t.isFailure shouldBe true
+    val response = t.failed.get.asInstanceOf[HyperbusError[ErrorBody]]
     response.headers.statusCode shouldBe 409
     response.body shouldBe ErrorBody("failed", errorId="abcde12345")
   }
@@ -84,6 +84,29 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
         headers shouldBe a[ResponseHeaders]
       case _ ⇒ fail("unapply didn't matched for a response")
     }
+  }
+
+  "Ok[TestCollectionBody]" should "serialize" in {
+    val ok = Ok(TestCollectionBody(Seq(TestItem("abcde", 123), TestItem("eklmn", 456))))
+    ok.serializeToString should equal(
+      s"""{"s":200,"t":"application/vnd.test-collection+json","i":"123","c":"abc"}""" + rn +
+        """[{"x":"abcde","y":123},{"x":"eklmn","y":456}]""")
+  }
+
+  it should "deserialize" in {
+    val s =  s"""{"s":200,"t":"application/vnd.test-collection+json","i":"123","c":"abc"}""" + rn +
+      """[{"x":"abcde","y":123},{"x":"eklmn","y":456}]"""
+
+    val deserializer = StandardResponse.apply(_: Reader, _: HeadersMap, {
+      case h: ResponseHeaders if h.contentType.contains("test-collection") ⇒ TestCollectionBody.apply
+    },
+      false
+    )
+
+    val o = Ok(TestCollectionBody(Seq(TestItem("abcde", 123), TestItem("eklmn", 456))))
+    val response = MessageReader.fromString(s, deserializer)
+    response.body should equal (o.body)
+    response.headers.toSet should equal(o.headers.toSet)
   }
 }
 
