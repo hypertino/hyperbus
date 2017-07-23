@@ -9,7 +9,9 @@ object StandardResponse {
 
   def apply(reader: Reader,
             headersMap: HeadersMap,
-            bodyDeserializer: PartialFunction[ResponseHeaders, ResponseBodyDeserializer]): ResponseBase = {
+            bodyDeserializer: PartialFunction[ResponseHeaders, ResponseBodyDeserializer],
+            throwIfError: Boolean
+           ): ResponseBase = {
     val responseHeaders = ResponseHeaders(headersMap)
     val body =
       if (bodyDeserializer.isDefinedAt(responseHeaders))
@@ -24,14 +26,14 @@ object StandardResponse {
       }
 
     apply(body, responseHeaders) match {
-      case e: HyperbusError[ErrorBody] ⇒ throw e
+      case e: HyperbusError[ErrorBody] if throwIfError ⇒ throw e
       case other ⇒ other
     }
   }
 
   def apply(reader: Reader,
             headersMap: HeadersMap): DynamicResponse = {
-    apply(reader, headersMap, PartialFunction.empty).asInstanceOf[DynamicResponse]
+    apply(reader, headersMap, PartialFunction.empty, false).asInstanceOf[DynamicResponse]
   }
 
   def dynamicDeserializer: ResponseDeserializer[DynamicResponse] = apply

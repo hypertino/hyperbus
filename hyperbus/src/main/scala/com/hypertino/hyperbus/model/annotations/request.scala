@@ -143,7 +143,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         {
           val pf: PartialFunction[com.hypertino.hyperbus.model.ResponseHeaders, com.hypertino.hyperbus.serialization.ResponseBodyDeserializer] =
             (_: com.hypertino.hyperbus.model.ResponseHeaders) match { case ..$bodyCases }
-          com.hypertino.hyperbus.model.StandardResponse.apply(_: java.io.Reader, _: com.hypertino.hyperbus.model.HeadersMap, pf)
+          com.hypertino.hyperbus.model.StandardResponse.apply(_: java.io.Reader, _: com.hypertino.hyperbus.model.HeadersMap, pf, true)
         }
       """
 

@@ -40,7 +40,9 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
 
     val deserializer = StandardResponse.apply(_: Reader, _: HeadersMap, {
       case h: ResponseHeaders if h.contentType.contains("test-created-body") ⇒ TestCreatedBody.apply
-    })
+    },
+      false
+    )
 
     val o = Created(TestCreatedBody("100500"), HRL("hb://test"))
     val response = MessageReader.fromString(s, deserializer)
