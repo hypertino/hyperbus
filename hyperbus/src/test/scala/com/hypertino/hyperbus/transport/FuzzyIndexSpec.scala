@@ -2,6 +2,7 @@ package com.hypertino.hyperbus.transport
 
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
+import com.hypertino.hyperbus.model.{DynamicRequest, DynamicRequestObservableMeta, EmptyBody, HRL, MessagingContext, Method, RequestBase}
 import com.hypertino.hyperbus.transport.api.matchers.{HeaderIndexKey, RequestMatcher, Specific}
 import com.hypertino.hyperbus.util.{ComplexTrieMap, FuzzyIndex}
 import monix.execution.Ack.{Continue, Stop}
@@ -37,5 +38,15 @@ class FuzzyIndexSpec extends FlatSpec with Matchers with PrivateMethodTester wit
     fuzzyIndex.add(requestMatcher)
 
     fuzzyIndex.lookupAll(requestMatcher) should equal(Seq(requestMatcher))
+  }
+
+  "FuzzyIndex" should "lookup by message if content-type in message is not specified" in {
+    val fuzzyIndex = new FuzzyIndex[RequestMatcher]
+    val requestMatcher = RequestMatcher("hb://test", Method.POST, Some("test-body"))
+    fuzzyIndex.add(requestMatcher)
+    implicit val mcx = MessagingContext.empty
+    //implicit val observable = DynamicRequestObservableMeta(RequestMatcher("hb://test", Method.POST, None))
+    val message: RequestBase = DynamicRequest(HRL("hb://test"), Method.POST, EmptyBody)
+    fuzzyIndex.lookupAll(message) should equal(Seq(requestMatcher))
   }
 }

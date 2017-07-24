@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.transport
 
 import com.hypertino.binders.value.{Obj, _}
-import com.hypertino.hyperbus.model.{Body, HRL, Header, HeadersMap, RequestBase, RequestHeaders}
+import com.hypertino.hyperbus.model.{Body, DynamicRequest, EmptyBody, HRL, Header, HeadersMap, Method, RequestBase, RequestHeaders}
 import com.hypertino.hyperbus.transport.api.matchers._
 import org.scalatest.{FlatSpec, Matchers}
 import com.hypertino.hyperbus.util.FuzzyIndexItemMetaInfo
@@ -84,6 +84,14 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     si.matches(request("qqq/abcde/f")) shouldBe true
     si.matches(request("qqq/abcdE/f")) shouldBe true
     si.matches(request("qqq/abxcd/ex")) shouldBe false
+  }
+
+  "RequestMatcher with content-type header" should "match a Request without a content-type header" in {
+    val requestMatcher = RequestMatcher("hb://test", Method.POST, Some("test-body"))
+    import com.hypertino.hyperbus.model.MessagingContext.Implicits.emptyContext
+    requestMatcher.matches(
+      DynamicRequest(HRL("hb://test"), Method.POST, EmptyBody)
+    ) shouldBe true
   }
 
   def request(all: HeadersMap): RequestBase = {
