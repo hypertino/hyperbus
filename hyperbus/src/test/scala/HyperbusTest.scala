@@ -291,7 +291,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
   "ask" should "send static request with some query with optional params (client)" in {
     val ct = new ClientTransportTest(
-      """{"s":200,"i":"123"}""" + "\r\n" + """{"data":"abc"}"""
+      """{"s":200,"i":"123"}""" + "\r\n" + """{"resource_id":"100500"}"""
     )
 
     val hyperbus = newHyperbus(ct, null)
@@ -303,7 +303,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
     val r = f.futureValue
     r shouldBe a[Ok[_]]
-    r.body shouldBe a[DynamicBody]
+    r.body shouldBe a[TestAnotherBody]
   }
 
   "ask" should "catch client exception" in {

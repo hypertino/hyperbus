@@ -134,7 +134,8 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         val ta = getContentTypeAnnotation(body)
         val deserializer = body.companion.decl(TermName("apply"))
         cq"""
-             h: com.hypertino.hyperbus.model.ResponseHeaders if h.statusCode == ${response.companion.typeSymbol.asClass.name.toTermName}.statusCode && h.contentType == $ta =>
+             h: com.hypertino.hyperbus.model.ResponseHeaders if h.statusCode == ${response.companion.typeSymbol.asClass.name.toTermName}.statusCode &&
+                h.contentType.map(ct => $ta.map(_ == ct).getOrElse(true)).getOrElse(true) =>
                 $deserializer(_: java.io.Reader, _: Option[String])
           """
       }
