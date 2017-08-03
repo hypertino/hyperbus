@@ -9,6 +9,8 @@ object Header {
   val REVISION = "v"
   val STATUS_CODE = "s"
   val LOCATION = "l"
+  val COUNT = "n"
+  val LINK = "k"
 
   val fullNameMap = Map(
     HRL → "HRL",
