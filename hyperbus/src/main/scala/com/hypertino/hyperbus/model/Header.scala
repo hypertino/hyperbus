@@ -20,7 +20,9 @@ object Header {
     CORRELATION_ID → "CORRELATION_ID",
     REVISION → "REVISION",
     STATUS_CODE → "STATUS_CODE",
-    LOCATION → "LOCATION"
+    LOCATION → "LOCATION",
+    COUNT → "COUNT",
+    LINK → "LINK"
   )
 }
 
