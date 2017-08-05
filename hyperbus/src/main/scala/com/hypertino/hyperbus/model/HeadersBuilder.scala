@@ -5,6 +5,7 @@ import com.hypertino.binders.value._
 import com.hypertino.hyperbus.serialization.SerializationOptions
 
 import scala.collection.immutable.ListMap
+import scala.collection.mutable
 
 class HeadersBuilder() {
   private[this] val mapBuilder = ListMap.newBuilder[String, Value]
@@ -67,9 +68,11 @@ class HeadersBuilder() {
     this
   }
 
-  def withLink(hrl: HRL)(implicit so: SerializationOptions): HeadersBuilder = {
+  def withLink(link: Map[String, HRL])(implicit so: SerializationOptions): HeadersBuilder = {
     import so._
-    mapBuilder += Header.LINK → hrl.toValue
+    mapBuilder += Header.LINK → Obj(link.map { case (rel, hrl) ⇒
+      rel → hrl.toValue
+    })
     this
   }
 
