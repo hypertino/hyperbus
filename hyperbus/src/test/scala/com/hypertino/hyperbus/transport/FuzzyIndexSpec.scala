@@ -18,7 +18,7 @@ import scala.concurrent.Future
 class FuzzyIndexSpec extends FlatSpec with Matchers with PrivateMethodTester with ScalaFutures {
   "FuzzyIndex" should "index RequestMatcher properties" in {
     val fuzzyIndex = new FuzzyIndex[RequestMatcher]
-    val requestMatcher = RequestMatcher(Map("m" → Specific("get")))
+    val requestMatcher = RequestMatcher(Map("m" → Seq(Specific("get"))))
     fuzzyIndex.add(requestMatcher)
 
     val privateIndexValue = PrivateMethod[ComplexTrieMap[Any, Vector[RequestMatcher]]]('index)
@@ -34,7 +34,7 @@ class FuzzyIndexSpec extends FlatSpec with Matchers with PrivateMethodTester wit
 
   "FuzzyIndex" should "lookup by RequestMatcher properties" in {
     val fuzzyIndex = new FuzzyIndex[RequestMatcher]
-    val requestMatcher = RequestMatcher(Map("m" → Specific("get")))
+    val requestMatcher = RequestMatcher(Map("m" → Seq(Specific("get"))))
     fuzzyIndex.add(requestMatcher)
 
     fuzzyIndex.lookupAll(requestMatcher) should equal(Seq(requestMatcher))

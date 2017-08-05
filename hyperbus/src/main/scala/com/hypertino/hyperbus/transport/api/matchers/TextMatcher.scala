@@ -57,6 +57,14 @@ object TextMatcher {
   implicit def apply(v: String): Specific = Specific(v)
 }
 
+case object EmptyMatcher extends TextMatcher {
+  def matchText(other: TextMatcher) = other match {
+    case Specific(otherValue) ⇒ otherValue.isEmpty
+    case EmptyMatcher ⇒ true
+    case _ ⇒ false
+  }
+}
+
 case object Any extends TextMatcher {
   def matchText(other: TextMatcher) = true
 }
@@ -134,8 +142,3 @@ object PartMatcher {
     PartMatcher(value, part, ignoreCase)
   }
 }
-
-
-// todo: + ignore case flag, StartsWith, EndsWith
-
-// private[api] case class TextMatcherPojo(value: Option[String], @fieldName("type") matchType: Option[String])

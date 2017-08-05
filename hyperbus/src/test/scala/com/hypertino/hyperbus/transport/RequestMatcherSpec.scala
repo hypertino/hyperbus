@@ -8,7 +8,7 @@ import com.hypertino.hyperbus.util.FuzzyIndexItemMetaInfo
 
 class RequestMatcherSpec extends FlatSpec with Matchers {
   "RequestMatcher" should "match a Request with specific matcher" in {
-    val requestMatcher = RequestMatcher(Map(Header.METHOD → Specific("get")))
+    val requestMatcher = RequestMatcher(Map(Header.METHOD → Seq(Specific("get"))))
 
     requestMatcher.matches(
       request(HeadersMap(Header.METHOD → "get"))
@@ -20,12 +20,12 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
   }
 
   "RequestMatcher" should "return specific matchers as index properties" in {
-    val requestMatcher = RequestMatcher(Map(Header.METHOD → Specific("get")))
+    val requestMatcher = RequestMatcher(Map(Header.METHOD → Seq(Specific("get"))))
     requestMatcher.indexProperties should contain(FuzzyIndexItemMetaInfo(HeaderIndexKey(Header.METHOD, "get"), Header.METHOD))
   }
 
   "RequestMatcher" should "match a Request with RegEx matcher" in {
-    val requestMatcher = RequestMatcher(Map(Header.METHOD → RegexMatcher("g.*")))
+    val requestMatcher = RequestMatcher(Map(Header.METHOD → Seq(RegexMatcher("g.*"))))
 
     requestMatcher.matches(
       request(HeadersMap(Header.METHOD → "get"))
@@ -37,7 +37,11 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
   }
 
   "RequestMatcher" should "match a Request with inner header matcher" in {
-    val requestMatcher = RequestMatcher(Map[String, TextMatcher]("r.l" → "hb://test", "r.q.id" → "100500", "r.q.name" → RegexMatcher("M.*")))
+    val requestMatcher = RequestMatcher(Map(
+      "r.l" → Seq(Specific("hb://test")),
+      "r.q.id" → Seq(Specific("100500")),
+      "r.q.name" → Seq(RegexMatcher("M.*"))
+    ))
 
     requestMatcher.matches(
       request(HeadersMap("r" → Obj.from("l" → "hb://test", "q" → Obj.from("id" → 100500, "name" → "Maga"))))

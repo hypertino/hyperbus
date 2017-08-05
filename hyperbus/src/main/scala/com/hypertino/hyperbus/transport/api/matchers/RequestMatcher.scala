@@ -2,7 +2,7 @@ package com.hypertino.hyperbus.transport.api.matchers
 
 import java.util.concurrent.atomic.AtomicLong
 
-import com.hypertino.binders.value.{Lst, Null, Obj, Value}
+import com.hypertino.binders.value.{Lst, Null, Obj, Text, Value}
 import com.hypertino.hyperbus.model.{Header, HeaderHRL, RequestBase}
 import com.hypertino.hyperbus.util.{CanFuzzyMatchable, FuzzyIndexItemMetaInfo, FuzzyMatcher}
 import com.typesafe.config.ConfigValue
@@ -11,12 +11,15 @@ import scala.collection.concurrent.TrieMap
 
 case class HeaderIndexKey(path: String, value: String)
 
-case class RequestMatcher(headers: Map[String, TextMatcher]) extends FuzzyMatcher {
-  lazy val indexProperties: Seq[FuzzyIndexItemMetaInfo] = headers.collect {
-    case (k, Specific(value)) ⇒ FuzzyIndexItemMetaInfo(HeaderIndexKey(k, value), k)
-  }.toSeq
+case class RequestMatcher(headers: Map[String, Seq[TextMatcher]]) extends FuzzyMatcher {
+  lazy val indexProperties: Seq[FuzzyIndexItemMetaInfo] = headers.toSeq.flatMap { case (k, v) ⇒
+    v.flatMap {
+      case Specific(value) ⇒ Some(FuzzyIndexItemMetaInfo(HeaderIndexKey(k, value), k))
+      case _ ⇒ None
+    }
+  }
 
-  protected lazy val pathsToMatcher: Seq[(Seq[String], TextMatcher)] = headers.toSeq.map{ case (k,v) ⇒
+  protected lazy val pathsToMatcher: Seq[(Seq[String], Seq[TextMatcher])] = headers.toSeq.map{ case (k,v) ⇒
     k.split('.').toSeq -> v
   }
 
@@ -30,20 +33,20 @@ case class RequestMatcher(headers: Map[String, TextMatcher]) extends FuzzyMatche
 
   def matchMessage(message: RequestBase): Boolean = {
     import com.hypertino.hyperbus.model._
-    pathsToMatcher.forall { case (path, matcher) ⇒
+    pathsToMatcher.forall { case (path, matchers) ⇒
       message.headers.byPath(path) match {
-        case Null ⇒ true
-        case Lst(items) ⇒ items.exists(item ⇒ matcher.matchText(Specific(item.toString)))
-        case other ⇒ matcher.matchText(Specific(other.toString))
+        case Null ⇒ matchers.exists(m ⇒ m == Any || m == EmptyMatcher)
+        case Lst(items) ⇒ items.exists(item ⇒ matchers.exists(_.matchText(Specific(item.toString))))
+        case other ⇒ matchers.exists(_.matchText(Specific(other.toString)))
       }
     }
   }
 
   // wide match for routing
   def matchRequestMatcher(other: RequestMatcher): Boolean = {
-    headers.forall { case (headerName, headerMatcher) ⇒
-      other.headers.get(headerName).map { header ⇒
-        headerMatcher.matchText(header)
+    headers.forall { case (headerName, headerMatchers) ⇒
+      other.headers.get(headerName).map { otherMatchers ⇒
+        headerMatchers.exists(hm ⇒ otherMatchers.exists(hm.matchText))
       } getOrElse {
         false
       }
@@ -55,14 +58,14 @@ object RequestMatcher {
   val any = RequestMatcher(Any)
 
   def apply(urlMatcher: TextMatcher): RequestMatcher = new RequestMatcher(
-    Map(HeaderHRL.FULL_HRL → urlMatcher)
+    Map(HeaderHRL.FULL_HRL → Seq(urlMatcher))
   )
 
   def apply(url: String, method: String, contentType: Option[String]): RequestMatcher = {
     RequestMatcher(Map(
-      HeaderHRL.FULL_HRL → Specific(url),
-      Header.METHOD → Specific(method)) ++
-      contentType.map(c ⇒ Header.CONTENT_TYPE → Specific(c))
+      HeaderHRL.FULL_HRL → Seq(Specific(url)),
+      Header.METHOD → Seq(Specific(method))) ++
+      contentType.map(c ⇒ Header.CONTENT_TYPE → Seq(Specific(c), EmptyMatcher))
     )
   }
 
@@ -74,10 +77,11 @@ object RequestMatcher {
     apply(recursive("", obj).toMap)
   }
 
-  private def recursive(path: String, obj: Obj): Seq[(String, TextMatcher)] = {
+  private def recursive(path: String, obj: Obj): Seq[(String, Seq[TextMatcher])] = {
     obj.v.toSeq.flatMap {
       case (s, inner: Obj) ⇒ recursive(path + s + ".", inner)
-      case (s, other) ⇒ Seq((path + s, TextMatcher.fromCompactString(other.toString())))
+      case (s, other: Text) ⇒ Seq((path + s, Seq(TextMatcher.fromCompactString(other.v))))
+      case (s, other: Lst) ⇒ Seq((path + s, other.v.map(t ⇒ TextMatcher.fromCompactString(t.toString))))
     }
   }
 

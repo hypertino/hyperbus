@@ -50,7 +50,7 @@ class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers
             {
               match: {
                 r.l: "/topic"
-                r.q.id: "100500"
+                r.q.id: ["100500", "100501"]
                 r.q.name: "\\*"
                 m: "post"
               }
@@ -79,17 +79,17 @@ class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers
 
     conf.clientRoutes should not be empty
     conf.clientRoutes.head.matcher.headers should contain theSameElementsAs Map(
-      "r.l" → Specific("/topic"),
-      "r.q.id" → Specific("100500"),
-      "r.q.name" → Specific("*"),
-      "m" → Specific("post")
+      "r.l" → Seq(Specific("/topic")),
+      "r.q.id" → Seq(Specific("100500"), Specific("100501")),
+      "r.q.name" → Seq(Specific("*")),
+      "m" → Seq(Specific("post"))
     )
     conf.clientRoutes.head.transport shouldBe a[MockClientTransport]
 
     conf.serverRoutes should not be empty
     conf.serverRoutes.head.matcher.headers should contain theSameElementsAs Map(
-      "r.l" → RegexMatcher("/topic/.*"),
-      "m" → Any
+      "r.l" → Seq(RegexMatcher("/topic/.*")),
+      "m" → Seq(Any)
     )
     conf.serverRoutes.head.transport shouldBe a[MockServerTransport]
   }
