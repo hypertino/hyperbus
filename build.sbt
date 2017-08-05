@@ -17,6 +17,7 @@ lazy val commonSettings = Seq(
 lazy val binders = "com.hypertino" %% "binders" % "1.0-SNAPSHOT"
 lazy val jsonBinders = "com.hypertino" %% "json-binders" % "1.0-SNAPSHOT"
 lazy val configBinders = "com.hypertino" %% "typesafe-config-binders" % "0.13-SNAPSHOT"
+lazy val ramlUtils = "com.hypertino" %% "hyperbus-utils" % "0.1-SNAPSHOT"
 lazy val scalaMock = "org.scalamock" %% "scalamock-scalatest-support" % "3.5.0" % "test"
 lazy val monix = "io.monix" %% "monix" % "2.2.2"
 lazy val scaldi = "org.scaldi" %% "scaldi" % "0.5.8"
@@ -42,6 +43,7 @@ lazy val `hyperbus` = project in file("hyperbus") settings (
       monix,
       binders,
       jsonBinders,
+      ramlUtils,
       scaldi,
       configBinders,
       scalaUri,
