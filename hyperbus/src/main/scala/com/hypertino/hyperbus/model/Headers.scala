@@ -22,6 +22,8 @@ trait Headers extends Map[String, Value] {
 
   def contentType: Option[String] = underlying.get(Header.CONTENT_TYPE).map(_.toString)
 
+  def link: Option[HRL] = underlying.get(Header.LINK).map(_.to[HRL])
+
   def serialize(writer: Writer)(implicit so: SerializationOptions) : Unit = {
     import com.hypertino.binders.json.JsonBinders._
     import so._

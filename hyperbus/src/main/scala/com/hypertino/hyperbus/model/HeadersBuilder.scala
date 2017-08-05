@@ -67,6 +67,12 @@ class HeadersBuilder() {
     this
   }
 
+  def withLink(hrl: HRL)(implicit so: SerializationOptions): HeadersBuilder = {
+    import so._
+    mapBuilder += Header.LINK → hrl.toValue
+    this
+  }
+
   def result(): HeadersMap = {
     mapBuilder
       .result()

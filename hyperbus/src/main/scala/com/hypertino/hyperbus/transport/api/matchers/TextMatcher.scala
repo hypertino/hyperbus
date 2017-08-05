@@ -15,17 +15,6 @@ sealed trait TextMatcher {
 }
 
 object TextMatcher {
-  /*def apply(value: Option[String], matchType: Option[String]): TextMatcher = matchType match {
-    case Some("Any") ⇒ Any
-    case Some("Regex") ⇒ RegexMatcher(value.getOrElse(
-      throw new HyperbusConfigurationError("Please provide value for Regex matcher"))
-    )
-    case Some("Specific") | None ⇒ Specific(value.getOrElse(
-      throw new HyperbusConfigurationError("Please provide value for Specific matcher"))
-    )
-    case other ⇒
-      throw new HyperbusConfigurationError(s"Unsupported TextMatcher: $other")
-  }*/
 
   def fromCompactString(v: String): TextMatcher = {
     v match {
@@ -47,7 +36,7 @@ object TextMatcher {
   private def fromCompactStringWithOptions(v: String, options: Option[String]): TextMatcher = {
     v match {
       case "\\*" ⇒ specificOrPartMatcher("*", options)                                  // '\*' = *
-      case "*" ⇒ Any                                                       // '*' = Any
+      case "*" ⇒ Any                                                                    // '*' = Any
       case _ if v.startsWith("\\~") ⇒ specificOrPartMatcher(v.substring(1), options)    // \~... = ~...
       case _ if v.startsWith("\\\\") ⇒ specificOrPartMatcher(v.substring(1), options)   // \\... = \...
       case _ if v.startsWith("\\^") ⇒ specificOrPartMatcher(v.substring(1), options)    // \\... = \...
