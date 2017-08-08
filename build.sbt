@@ -30,6 +30,7 @@ lazy val macroParadise = compilerPlugin("org.scalamacros" % "paradise" % "2.1.0"
 
 lazy val `hyperbus-macro` = project in file("hyperbus-macro") settings (
   commonSettings,
+  publishSettings,
   name := "hyperbus-macro",
   libraryDependencies ++= Seq(
     binders
@@ -38,6 +39,7 @@ lazy val `hyperbus-macro` = project in file("hyperbus-macro") settings (
 
 lazy val `hyperbus` = project in file("hyperbus") settings (
     commonSettings,
+    publishSettings,
     name := "hyperbus",
     libraryDependencies ++= Seq(
       monix,
@@ -55,6 +57,7 @@ lazy val `hyperbus` = project in file("hyperbus") settings (
 
 lazy val `hyperbus-t-inproc` = project in file("hyperbus-t-inproc") settings (
     commonSettings,
+    publishSettings,
     name := "hyperbus-t-inproc",
     libraryDependencies ++= Seq(
       slf4j,
