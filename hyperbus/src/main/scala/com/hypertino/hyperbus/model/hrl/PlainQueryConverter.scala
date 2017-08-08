@@ -1,8 +1,12 @@
 package com.hypertino.hyperbus.model.hrl
 
+import java.net.{URLDecoder, URLEncoder}
+
 import com.hypertino.binders.value.{Null, Obj, Text, Value}
 
 object PlainQueryConverter extends QueryConverter {
+  final val encoding = "UTF-8"
+
   override def parseQueryString(queryString: String): Value = {
     if (queryString == null || queryString.isEmpty) {
       Null
@@ -12,7 +16,7 @@ object PlainQueryConverter extends QueryConverter {
         val i = s.indexOf('=')
         if (i>0) {
           val left = s.substring(0, i)
-          val right = Text(s.substring(i+1))
+          val right = Text(URLDecoder.decode(s.substring(i+1), encoding))
           left → right
         }
         else {
@@ -31,7 +35,7 @@ object PlainQueryConverter extends QueryConverter {
           k
         }
         else {
-          k + "=" + v.toString
+          k + "=" + URLEncoder.encode(v.toString, encoding)
         }
       } mkString "&"
       case other ⇒ throw new IllegalArgumentException(s"$other is not an Obj or Text")
