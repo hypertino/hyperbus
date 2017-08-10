@@ -3,9 +3,10 @@ package com.hypertino.hyperbus.model
 import com.hypertino.binders.annotations.fieldName
 import com.hypertino.binders.value.{Null, Obj, Value}
 import com.hypertino.hyperbus.model.hrl.{PlainQueryConverter, QueryConverter}
-import com.hypertino.hyperbus.utils.uri.{ParameterToken, TextToken, UriPathParser, SlashToken}
+import com.hypertino.hyperbus.utils.uri.{ParameterToken, SlashToken, TextToken, UriPathParser}
 import com.netaporter.uri.Uri
 import com.netaporter.uri.config.UriConfig
+import com.netaporter.uri.decoding.NoopDecoder
 import com.netaporter.uri.encoding.PercentEncoder
 
 case class HRL(@fieldName("l") location: String,
@@ -62,7 +63,7 @@ object HRL {
   import com.netaporter.uri.encoding.PercentEncoder.PATH_CHARS_TO_ENCODE
 
   private val HRL_PATH_CHARS_TO_ENCODE = PATH_CHARS_TO_ENCODE -- Set ('{','}')
-  private implicit val uriConfig = UriConfig.default.copy(pathEncoder = PercentEncoder(HRL_PATH_CHARS_TO_ENCODE))
+  private implicit val uriConfig = UriConfig.default.copy(pathEncoder = PercentEncoder(HRL_PATH_CHARS_TO_ENCODE), pathDecoder=NoopDecoder)
 
   def fromURL(url: String, queryConverter: QueryConverter = PlainQueryConverter): HRL = {
     val queryPos = url.indexOf('?')
