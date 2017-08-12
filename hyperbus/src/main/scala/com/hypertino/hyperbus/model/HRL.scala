@@ -39,11 +39,11 @@ case class HRL(@fieldName("l") location: String,
     val (l, q) = if (substitutePathParamters && query.isInstanceOf[Obj]) {
       val o = query.asInstanceOf[Obj]
       val lks = UriPathParser.tokens(location).map {
-        case ParameterToken(key, _) ⇒ (o.v.get(key).map(v ⇒ URLEncoder.encode(v.toString, "UTF-8"))
+        case ParameterToken(key) ⇒ (o.v.get(key).map(v ⇒ URLEncoder.encode(v.toString, "UTF-8"))
           .getOrElse("{" + key + "}"), Some(key))
         case TextToken(value) ⇒ (value, None)
         case SlashToken ⇒ ("/", None)
-      }
+      } toSeq
 
       val newLocation = lks.map(_._1).mkString
       val paramTokens = lks.flatMap(_._2).toSet
