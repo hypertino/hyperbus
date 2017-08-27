@@ -57,6 +57,11 @@ case class TestCasePost(userId: String, body: TestCaseBody) extends Request[Test
 @request(Method.POST, "hb://test")
 case class TestSeqStringQueryPost(fields: Option[Seq[String]], body: TestCaseBody) extends Request[TestCaseBody]
 
+@request(Method.POST, "hb://test")
+case class TestMultipleDefinedResponseWithSameBody(id: String, body: TestBody1)
+  extends Request[TestBody1]
+    with DefinedResponse[(Ok[TestBody2], Created[TestBody2])]
+
 //
 //@body("test-inner-body")
 //case class TestInnerBody(innerData: String) extends Body {
@@ -196,6 +201,27 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     val response2: requestMeta.ResponseType = MessageReader.fromString(s2, requestMeta.responseDeserializer)
     response2.body should equal (TestBody3("100500",555, 888l))
     response2 shouldBe a[Ok[_]]
+  }
+
+  "TestMultipleDefinedResponseWithSameBody" should " have meta" in {
+    val requestMeta = implicitly[RequestMeta[TestMultipleDefinedResponseWithSameBody]]
+    val observableMeta = implicitly[RequestObservableMeta[TestMultipleDefinedResponseWithSameBody]]
+
+    val s1 = """{"s":200,"t":"test-body-2","i":"123","r":{"l":"hb://test"}}""" + rn +
+      """{"x":"100500","y":555}"""
+
+    val response1: requestMeta.ResponseType = MessageReader.fromString(s1, requestMeta.responseDeserializer)
+    response1.body should equal (TestBody2("100500",555))
+    response1 shouldBe a[Ok[_]]
+    // this doesn't work :-( response1.body.x shouldBe "100500" // don't remove, this should compile
+    // response1.body.y shouldBe 555
+
+    val s2 = """{"s":201,"t":"test-body-2","i":"123","r":{"l":"hb://test"}}""" + rn +
+      """{"x":"100500","y":555}"""
+
+    val response2: requestMeta.ResponseType = MessageReader.fromString(s2, requestMeta.responseDeserializer)
+    response2.body should equal (TestBody2("100500",555))
+    response2 shouldBe a[Created[_]]
   }
 
   "TestGet1 (with EmptyBody)" should "serialize" in {

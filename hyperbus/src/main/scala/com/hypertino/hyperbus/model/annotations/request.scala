@@ -29,6 +29,25 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
 
   import c.universe._
 
+  def getCommonResponseType(responses: Seq[Type]): Tree = {
+    if (responses.isEmpty || responses.exists(_.typeArgs.isEmpty)) {
+      tq"com.hypertino.hyperbus.model.ResponseBase"
+    }
+    else if (responses.nonEmpty && responses.tail.isEmpty) {
+      tq"${responses.head}"
+    }
+    else {
+      val t = responses.head
+      val headBodyType = t.typeArgs.head
+      if (responses.tail.forall(_.typeArgs.head == headBodyType)) {
+        tq"com.hypertino.hyperbus.model.Response[$headBodyType]"
+      }
+      else {
+        tq"com.hypertino.hyperbus.model.ResponseBase"
+      }
+    }
+  }
+
   def updateClass(existingClass: ClassDef, clzCompanion: Option[ModuleDef] = None): c.Expr[Any] = {
     val (method, location) = c.prefix.tree match {
       case q"new request($method, $location)" => {
@@ -122,11 +141,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     }
 
     val responses = getDefinedResponses(bases)
-    val responseType =
-      if (responses.size == 1)
-        tq"${responses.head}"
-      else
-        tq"com.hypertino.hyperbus.model.ResponseBase"
+    val commonResponseType = getCommonResponseType(responses)
 
     val responseDeserializerMethodBody = if (responses.nonEmpty) {
       val bodyCases: Seq[c.Tree] = responses.map { response ⇒
@@ -148,12 +163,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         }
       """
 
-      if (responses.size == 1) {
-        q"$r.asInstanceOf[com.hypertino.hyperbus.serialization.ResponseDeserializer[${responses.head}]]"
-      }
-      else {
-        r
-      }
+      q"$r.asInstanceOf[com.hypertino.hyperbus.serialization.ResponseDeserializer[$commonResponseType]]"
     }
     else {
       q"com.hypertino.hyperbus.model.StandardResponse.dynamicDeserializer"
@@ -217,7 +227,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
           method,
           contentType
         )
-        def responseDeserializer: com.hypertino.hyperbus.serialization.ResponseDeserializer[$responseType] = $responseDeserializerMethodBody
+        def responseDeserializer: com.hypertino.hyperbus.serialization.ResponseDeserializer[$commonResponseType] = $responseDeserializerMethodBody
     """
 
     val newCompanion = clzCompanion map { existingCompanion =>
@@ -236,7 +246,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         object ${className.toTermName} extends com.hypertino.hyperbus.model.RequestMetaCompanion[${className.toTypeName}] {
           import com.hypertino.binders.value._
 
-          type ResponseType = $responseType
+          type ResponseType = $commonResponseType
           implicit val meta = this
 
           ..$companionExtra
