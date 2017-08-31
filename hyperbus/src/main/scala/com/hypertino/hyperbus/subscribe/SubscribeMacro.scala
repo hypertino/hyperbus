@@ -1,5 +1,6 @@
 package com.hypertino.hyperbus.subscribe
 
+import com.hypertino.binders.util.MacroAdapter
 import com.hypertino.hyperbus.model.{Request, RequestBase}
 import com.hypertino.hyperbus.model.annotations.RequestAnnotationMacroImpl
 import monix.eval.Task
@@ -12,30 +13,30 @@ private[hyperbus] object SubscribeMacro {
   def subscribeWithLog[A: c.WeakTypeTag](c: Context)(serviceClass: c.Expr[A], log: c.Expr[Logger]): c.Expr[Seq[Cancelable]] = {
     val c0: c.type = c
     val bundle = new {
-      val c: c0.type = c0
-    } with SubscribeMacroImpl
+      val ctx: c0.type = c0
+    } with SubscribeMacroImpl[Context]
     bundle.subscribe(serviceClass, Some(log))
   }
 
   def subscribe[A: c.WeakTypeTag](c: Context)(serviceClass: c.Expr[A]): c.Expr[Seq[Cancelable]] = {
     val c0: c.type = c
     val bundle = new {
-      val c: c0.type = c0
-    } with SubscribeMacroImpl
+      val ctx: c0.type = c0
+    } with SubscribeMacroImpl[Context]
     bundle.subscribe(serviceClass, None)
   }
 }
 
-trait SubscribeMacroImpl {
-  val c: Context
+trait SubscribeMacroImpl[C <: Context] extends MacroAdapter[C] {
+  val ctx: C
 
-  import c.universe._
+  import ctx.universe._
 
-  def subscribe[A: c.WeakTypeTag](serviceClass: c.Expr[A], log: Option[c.Expr[Logger]]): c.Expr[Seq[Cancelable]] = {
+  def subscribe[A: ctx.WeakTypeTag](serviceClass: ctx.Expr[A], log: Option[ctx.Expr[Logger]]): ctx.Expr[Seq[Cancelable]] = {
     val commandMethods = extractCommandMethods[A]
     val eventMethods = extractEventMethods[A]
     if (commandMethods.isEmpty && eventMethods.isEmpty) {
-      c.abort(c.enclosingPosition, s"No suitable method is defined in ${weakTypeOf[A]}")
+      ctx.abort(ctx.enclosingPosition, s"No suitable method is defined in ${weakTypeOf[A]}")
     }
 
     val tVar = fresh("t")
@@ -61,16 +62,17 @@ trait SubscribeMacroImpl {
     }
 
     val eventSubscriptions = eventMethods.map { case (m, t) ⇒
+      val groupName = methodGroupName(m)
       val typeSymbol = t.typeSignature
       q"""
-        $tVar.events[$typeSymbol](None).subscribe{ implicit e ⇒
+        $tVar.events[$typeSymbol]($groupName).subscribe{ implicit e ⇒
           $m(e)
         }
       """
     }
 
-    val block = c.Expr[Seq[Cancelable]](q"""{
-      val $tVar = ${c.prefix.tree}
+    val block = ctx.Expr[Seq[Cancelable]](q"""{
+      val $tVar = ${ctx.prefix.tree}
       Seq[monix.execution.Cancelable](
         ..$commandSubscriptions,
         ..$eventSubscriptions
@@ -81,7 +83,7 @@ trait SubscribeMacroImpl {
     block
   }
 
-  protected def extractOnMethods[A: c.WeakTypeTag]: Seq[(MethodSymbol, Symbol)] = {
+  protected def extractOnMethods[A: ctx.WeakTypeTag]: Seq[(MethodSymbol, Symbol)] = {
     val rts = weakTypeOf[RequestBase]//.typeSymbol//.typeSignature
 
     weakTypeOf[A].members.flatMap { member ⇒
@@ -110,14 +112,14 @@ trait SubscribeMacroImpl {
     }.toSeq
   }
 
-  protected def extractCommandMethods[A: c.WeakTypeTag]: Seq[(MethodSymbol, Symbol)] = {
+  protected def extractCommandMethods[A: ctx.WeakTypeTag]: Seq[(MethodSymbol, Symbol)] = {
     val tts = weakTypeOf[Task[_]]
     val all = extractOnMethods[A]
     // println(all)
     all.filter(_._1.returnType <:< tts)
   }
 
-  protected def extractEventMethods[A: c.WeakTypeTag]: Seq[(MethodSymbol, Symbol)] = {
+  protected def extractEventMethods[A: ctx.WeakTypeTag]: Seq[(MethodSymbol, Symbol)] = {
     val tts = weakTypeOf[Ack]//.typeSymbol.typeSignature
     val all = extractOnMethods[A]
     //println(all)
@@ -126,5 +128,17 @@ trait SubscribeMacroImpl {
 
   private def allImplicits(symbols: List[List[Symbol]]): Boolean = !symbols.flatten.exists(!_.isImplicit)
 
-  protected def fresh(prefix: String): TermName = TermName(c.freshName(prefix))
+  protected def fresh(prefix: String): TermName = TermName(ctx.freshName(prefix))
+
+  protected def methodGroupName(symbol: ctx.Symbol): Option[String] = {
+    val annotation = symbol.annotations.find(a => a.treeTpe == typeOf[com.hypertino.hyperbus.subscribe.annotations.groupName])
+    annotation.map { a =>
+      a.arguments.head match {
+        case Literal(Constant(s:String)) => Some(s)
+        case _ => None
+      }
+    } getOrElse {
+      None
+    }
+  }
 }

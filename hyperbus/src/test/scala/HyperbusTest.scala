@@ -4,7 +4,7 @@ import com.hypertino.binders.value.{Obj, Text}
 import com.hypertino.hyperbus.Hyperbus
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
-import com.hypertino.hyperbus.subscribe.SubscribeMacroUtil
+import com.hypertino.hyperbus.subscribe.annotations.groupName
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import monix.eval.Task
@@ -150,6 +150,19 @@ class TestServiceClass(hyperbus: Hyperbus) {
     else {
       failedEvents.incrementAndGet()
     }
+    Continue
+  }
+
+  def stop() = {
+    subscriptions.foreach(_.cancel)
+  }
+}
+
+class TestServiceClass2(hyperbus: Hyperbus) {
+  val subscriptions = hyperbus.subscribe(this)
+
+  @groupName("group2")
+  def onTestPost1Event2(post1: TestPost1) = {
     Continue
   }
 
@@ -601,11 +614,12 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     t.runOnComplete(y.reply)
   }
 
-  "TestServiceClass" should "subscribe to commands and events" in {
+  it should "subscribe to commands and events" in {
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     val ts = new TestServiceClass(hyperbus)
 
+    st.sGroupName shouldBe "group1"
     val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"), $query=Obj.from("ok" → true))
     val task = st.testCommand(msg)
     task.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
@@ -616,6 +630,14 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     eventually {
       ts.okEvents.get shouldBe 1
     }
+    ts.stop()
+  }
+
+  it should "use group if defined in annotation" in {
+    val st = new ServerTransportTest()
+    val hyperbus = newHyperbus(null, st)
+    val ts = new TestServiceClass2(hyperbus)
+    st.sGroupName shouldBe "group2"
     ts.stop()
   }
 
