@@ -26,7 +26,7 @@ object StandardResponse {
       }
 
     apply(body, responseHeaders) match {
-      case e: HyperbusError[ErrorBody] if throwIfError ⇒ throw e
+      case e: HyperbusError[ErrorBody] @unchecked if throwIfError ⇒ throw e
       case other ⇒ other
     }
   }
