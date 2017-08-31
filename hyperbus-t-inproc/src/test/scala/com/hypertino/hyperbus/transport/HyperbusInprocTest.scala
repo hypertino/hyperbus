@@ -11,6 +11,7 @@ import monix.execution.Ack.Continue
 import monix.execution.Scheduler
 import monix.execution.Scheduler.Implicits.global
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FreeSpec, Matchers}
 import scaldi.Module
 
@@ -18,6 +19,7 @@ import scala.util.{Success, Try}
 
 
 class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
+  override implicit val patienceConfig = PatienceConfig(timeout = scaled(Span(10000, Millis)))
   implicit val mcx = MessagingContext("123")
   import testclasses._
 
