@@ -4,6 +4,7 @@ import com.hypertino.binders.value.{Obj, Text}
 import com.hypertino.hyperbus.Hyperbus
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.serialization._
+import com.hypertino.hyperbus.subscribe.Subscribable
 import com.hypertino.hyperbus.subscribe.annotations.groupName
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
@@ -124,7 +125,7 @@ class ServerTransportTest extends ServerTransport {
   }
 }
 
-class TestServiceClass(hyperbus: Hyperbus) {
+class TestServiceClass(hyperbus: Hyperbus) extends Subscribable {
   val subscriptions = hyperbus.subscribe(this)
   val okEvents = AtomicInt(0)
   val failedEvents = AtomicInt(0)
@@ -158,7 +159,7 @@ class TestServiceClass(hyperbus: Hyperbus) {
   }
 }
 
-class TestServiceClass2(hyperbus: Hyperbus) {
+class TestServiceClass2(hyperbus: Hyperbus) extends Subscribable {
   val subscriptions = hyperbus.subscribe(this)
 
   @groupName("group2")
@@ -169,6 +170,8 @@ class TestServiceClass2(hyperbus: Hyperbus) {
   def stop() = {
     subscriptions.foreach(_.cancel)
   }
+
+  override def groupName(existing: Option[String]): Option[String] = existing.map(_ + "-test")
 }
 
 class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventually {
@@ -637,7 +640,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     val ts = new TestServiceClass2(hyperbus)
-    st.sGroupName shouldBe "group2"
+    st.sGroupName shouldBe "group2-test"
     ts.stop()
   }
 

@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.model._
-import com.hypertino.hyperbus.subscribe.SubscribeMacro
+import com.hypertino.hyperbus.subscribe.{Subscribable, SubscribeMacro}
 import com.hypertino.hyperbus.transport.api._
 import monix.eval.Task
 import monix.execution.Cancelable
@@ -33,5 +33,5 @@ trait HyperbusApi {
 
   def subscribe[A](serviceClass: A, log: Logger): Seq[Cancelable] = macro SubscribeMacro.subscribeWithLog[A]
 
-  def subscribe[A](serviceClass: A): Seq[Cancelable] = macro SubscribeMacro.subscribe[A]
+  def subscribe[A <: Subscribable](serviceClass: A): Seq[Cancelable] = macro SubscribeMacro.subscribe[A]
 }

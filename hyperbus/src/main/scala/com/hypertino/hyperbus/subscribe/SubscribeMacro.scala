@@ -65,7 +65,7 @@ trait SubscribeMacroImpl[C <: Context] extends MacroAdapter[C] {
       val groupName = methodGroupName(m)
       val typeSymbol = t.typeSignature
       q"""
-        $tVar.events[$typeSymbol]($groupName).subscribe{ implicit e ⇒
+        $tVar.events[$typeSymbol](this.groupName($groupName)).subscribe{ implicit e ⇒
           $m(e)
         }
       """
