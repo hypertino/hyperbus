@@ -309,6 +309,14 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
     request.body should equal(DynamicBody(Obj.from("resource_id" -> "100500"), Some("test-body-1")))
   }
 
+  it should "lower-case headers" in {
+    val str = """{"r":{"l":"hb://test-outer-resource"},"m":"custom-method","t":"test-body-1","i":"123","Some-Header":"abc"}""" + rn +
+      """{"resource_id":"100500"}"""
+    val request = DynamicRequest.from(str)
+    request shouldBe a[Request[_]]
+    request.headers("some-header") shouldBe Text("abc")
+  }
+
   "hashCode, equals, product" should "work" in {
     val post1 = TestPost1("155", TestBody1("abcde"))
     val post2 = TestPost1("155", TestBody1("abcde"))

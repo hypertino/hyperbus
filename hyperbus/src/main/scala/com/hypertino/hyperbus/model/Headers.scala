@@ -10,7 +10,7 @@ import scala.collection.immutable.{ListMap, MapLike}
 object HeadersMap {
   val empty: ListMap[String, Value] = ListMap.empty[String,Value]
 
-  def apply(elements: (String, Value)*) = ListMap(elements: _*)
+  def apply(elements: (String, Value)*) = ListMap(elements.map(kv => kv._1.toLowerCase() → kv._2): _*)
 }
 
 trait Headers extends Map[String, Value] {
@@ -43,7 +43,7 @@ trait Headers extends Map[String, Value] {
   def byPath(path: Seq[String]): Value = getOrElse(path.head, Null)(path.tail)
 
   /* map implementation */
-  override def get(key: String): Option[Value] = underlying.get(key)
+  override def get(key: String): Option[Value] = underlying.get(key.toLowerCase)
 
   override def iterator: Iterator[(String, Value)] = underlying.iterator
 }

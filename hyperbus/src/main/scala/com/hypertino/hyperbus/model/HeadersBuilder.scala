@@ -11,17 +11,17 @@ class HeadersBuilder() {
   private[this] val mapBuilder = ListMap.newBuilder[String, Value]
 
   def +=(kv: (String, Value)): HeadersBuilder = {
-    mapBuilder += kv._1 → kv._2
+    mapBuilder += kv._1.toLowerCase → kv._2
     this
   }
 
   def ++=(headers: Obj): HeadersBuilder = {
-    mapBuilder ++= headers.v.toSeq.reverse
+    mapBuilder ++= headers.v.toSeq.map(kv ⇒ kv._1.toLowerCase → kv._2).reverse
     this
   }
 
   def ++=(headers: Seq[(String, Value)]): HeadersBuilder = {
-    mapBuilder ++= headers.reverse
+    mapBuilder ++= headers.map(kv ⇒ kv._1.toLowerCase → kv._2).reverse
     this
   }
 
