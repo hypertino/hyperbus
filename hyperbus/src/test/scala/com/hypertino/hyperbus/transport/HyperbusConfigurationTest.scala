@@ -75,7 +75,7 @@ class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers
     val conf = HyperbusConfigurationLoader.fromConfig(config, injector)
 
     conf.defaultGroupName shouldBe empty
-    conf.logMessages shouldBe false
+    conf.messagesLogLevel shouldBe "TRACE"
 
     conf.clientRoutes should not be empty
     conf.clientRoutes.head.matcher.headers should contain theSameElementsAs Map(

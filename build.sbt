@@ -22,7 +22,7 @@ lazy val scalaMock = "org.scalamock" %% "scalamock-scalatest-support" % "3.5.0" 
 lazy val monix = "io.monix" %% "monix" % "2.2.2"
 lazy val scaldi = "org.scaldi" %% "scaldi" % "0.5.8"
 lazy val scalaUri = "com.hypertino" %% "scala-uri" % "0.4.17-NO-SPRAY"
-lazy val slf4j = "org.slf4j" % "slf4j-api" % "1.7.22"
+lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2"
 lazy val apacheLang3 = "org.apache.commons" % "commons-lang3" % "3.6"
 lazy val logback = "ch.qos.logback" % "logback-classic" % "1.1.8"
 lazy val quasiQuotes = "org.scalamacros" %% "quasiquotes" % "2.1.0" cross CrossVersion.binary
@@ -50,7 +50,7 @@ lazy val `hyperbus` = project in file("hyperbus") settings (
       configBinders,
       scalaUri,
       apacheLang3,
-      slf4j,
+      scalaLogging,
       scalaMock
     )
   ) dependsOn `hyperbus-macro`
@@ -60,7 +60,7 @@ lazy val `hyperbus-t-inproc` = project in file("hyperbus-t-inproc") settings (
     publishSettings,
     name := "hyperbus-t-inproc",
     libraryDependencies ++= Seq(
-      slf4j,
+      scalaLogging,
       scalaMock,
       scaldi,
       logback % "test"

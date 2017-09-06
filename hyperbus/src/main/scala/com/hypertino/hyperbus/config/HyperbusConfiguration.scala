@@ -6,5 +6,5 @@ case class HyperbusConfiguration(clientRoutes: Seq[TransportRoute[ClientTranspor
                                  serverRoutes: Seq[TransportRoute[ServerTransport]],
                                  schedulerName: Option[String],
                                  defaultGroupName: Option[String],
-                                 logMessages: Boolean
+                                 messagesLogLevel: String
                                 )

@@ -650,6 +650,6 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     }
     val cr = List(TransportRoute(ct, RequestMatcher.any))
     val sr = List(TransportRoute(st, RequestMatcher.any))
-    new Hyperbus(Some("group1"), logMessages = true, cr, sr, global, injector)
+    new Hyperbus(Some("group1"), messagesLogLevel = "DEBUG", cr, sr, global, injector)
   }
 }

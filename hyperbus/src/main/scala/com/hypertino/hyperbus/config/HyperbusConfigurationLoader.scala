@@ -38,7 +38,7 @@ object HyperbusConfigurationLoader {
       },
       hc.getOptionString("scheduler"),
       hc.getOptionString("group-name"),
-      hc.getOptionBoolean("log-messages").getOrElse(false)
+      hc.getOptionString("messages-log-level").getOrElse("TRACE")
     )
   }
 

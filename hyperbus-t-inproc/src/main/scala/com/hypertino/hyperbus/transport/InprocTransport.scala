@@ -9,17 +9,16 @@ import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.ConfigUtils._
 import com.hypertino.hyperbus.util._
 import com.typesafe.config.Config
+import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
 import monix.reactive.subjects.ConcurrentSubject
-import org.slf4j.{Logger, LoggerFactory}
 import scaldi.Injector
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Random
 
-// todo: log messages?
 class InprocTransport(serialize: Boolean = false)
                      (implicit val scheduler: Scheduler) extends ClientTransport with ServerTransport {
 
@@ -31,7 +30,6 @@ class InprocTransport(serialize: Boolean = false)
 
   protected val commandSubscriptions = new FuzzyIndex[CommandSubscription]
   protected val eventSubscriptions = new FuzzyIndex[EventSubscription]
-  protected val log: Logger = LoggerFactory.getLogger(this.getClass)
   protected implicit val serializationOptions = SerializationOptions.forceOptionalFields
 
   // todo: refactor this method, it's awful
