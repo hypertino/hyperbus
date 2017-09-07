@@ -63,6 +63,7 @@ trait Message[+B <: Body, +H <: Headers] extends Writable {
   }
 
   override def toString: String = {
+    implicit val so = SerializationOptions.forceOptionalFields
     s"${getClass.getName}[${body.getClass.getName}]:$serializeToString"
   }
 }
