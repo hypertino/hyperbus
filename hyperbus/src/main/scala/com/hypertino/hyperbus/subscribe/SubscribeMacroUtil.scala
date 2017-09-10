@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.subscribe
 
 import com.hypertino.hyperbus.model.{ErrorBody, ErrorResponseBase, HyperbusError, InternalServerError, MessagingContext}
-import org.slf4j.Logger
+import com.typesafe.scalalogging.Logger
 
 import scala.util.control.NonFatal
 

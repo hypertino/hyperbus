@@ -1,11 +1,10 @@
 package com.hypertino.hyperbus.subscribe
 
 import com.hypertino.binders.util.MacroAdapter
-import com.hypertino.hyperbus.model.{Request, RequestBase}
-import com.hypertino.hyperbus.model.annotations.RequestAnnotationMacroImpl
+import com.hypertino.hyperbus.model.RequestBase
+import com.typesafe.scalalogging.Logger
 import monix.eval.Task
 import monix.execution.{Ack, Cancelable}
-import org.slf4j.Logger
 
 import scala.reflect.macros.blackbox.Context
 

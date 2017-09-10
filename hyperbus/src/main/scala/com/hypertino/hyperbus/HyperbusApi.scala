@@ -3,10 +3,10 @@ package com.hypertino.hyperbus
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.subscribe.{Subscribable, SubscribeMacro}
 import com.hypertino.hyperbus.transport.api._
+import com.typesafe.scalalogging.Logger
 import monix.eval.Task
 import monix.execution.Cancelable
 import monix.reactive.Observable
-import org.slf4j.Logger
 
 import scala.concurrent.duration.FiniteDuration
 import scala.language.experimental.macros
