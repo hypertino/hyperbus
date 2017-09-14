@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.config.{HyperbusConfiguration, HyperbusConfigurationLoader}
-import com.hypertino.hyperbus.model.{MessageBase, RequestBase, RequestMeta, RequestObservableMeta}
+import com.hypertino.hyperbus.model.{HyperbusError, MessageBase, RequestBase, RequestMeta, RequestObservableMeta}
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.SchedulerInjector
@@ -13,6 +13,7 @@ import monix.reactive.Observable
 import scaldi.{Injectable, Injector}
 
 import scala.concurrent.duration.FiniteDuration
+import scala.util.{Failure, Success}
 
 class Hyperbus(val defaultGroupName: Option[String],
                val messagesLogLevel: String,
@@ -47,15 +48,25 @@ class Hyperbus(val defaultGroupName: Option[String],
     this
       .lookupClientTransport(request)
       .ask(request, requestMeta.responseDeserializer)
-      .flatMap {
-        case e: Throwable ⇒
+      .materialize
+      .map {
+        case Success(e: Throwable) ⇒
           logMessage(e, isClient = true, isEvent = false)
-          Task.raiseError(e)
+          Failure(e)
 
-        case other ⇒
+        case Success(other) ⇒
           logMessage(other, isClient = true, isEvent = false)
-          Task.now(other.asInstanceOf[M#ResponseType])
+          Success(other.asInstanceOf[M#ResponseType])
+
+        case Failure(e: HyperbusError[_]) ⇒
+          logMessage(e, isClient = true, isEvent = false)
+          Failure(e)
+
+        case Failure(e: Throwable) ⇒
+          logThrowableResponse(e, isClient = true)
+          Failure(e)
       }
+      .dematerialize
   }
 
   override def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[PublishResult] = {
@@ -115,6 +126,23 @@ class Hyperbus(val defaultGroupName: Option[String],
       val hfrom = if (isClient) "" else "(h)"
       val hto = if (isClient) "(h)" else ""
       val msg = s"$hfrom$direction$hto: $message"
+
+      messagesLogLevel match {
+        case "TRACE" ⇒ logger.trace(msg)
+        case "DEBUG" ⇒ logger.debug(msg)
+        case "INFO" ⇒ logger.info(msg)
+        case "WARN" ⇒ logger.warn(msg)
+        case "ERROR" ⇒ logger.error(msg)
+      }
+    }
+  }
+
+  protected def logThrowableResponse(e: Throwable, isClient: Boolean): Unit = {
+    if (isLoggingMessages) {
+      val direction = "<~s-"
+      val hfrom = if (isClient) "" else "(h)"
+      val hto = if (isClient) "(h)" else ""
+      val msg = s"$hfrom$direction$hto: $e"
 
       messagesLogLevel match {
         case "TRACE" ⇒ logger.trace(msg)
