@@ -6,6 +6,7 @@ import com.typesafe.scalalogging.Logger
 import monix.eval.Task
 import monix.execution.{Ack, Cancelable}
 
+import scala.concurrent.Future
 import scala.reflect.macros.blackbox.Context
 
 private[hyperbus] object SubscribeMacro {
@@ -120,9 +121,10 @@ trait SubscribeMacroImpl[C <: Context] extends MacroAdapter[C] {
 
   protected def extractEventMethods[A: ctx.WeakTypeTag]: Seq[(MethodSymbol, Symbol)] = {
     val tts = weakTypeOf[Ack]//.typeSymbol.typeSignature
+    val tts2 = weakTypeOf[Future[Ack]]
     val all = extractOnMethods[A]
     //println(all)
-    all.filter(_._1.returnType <:< tts)
+    all.filter(i ⇒ i._1.returnType <:< tts || i._1.returnType <:< tts2)
   }
 
   private def allImplicits(symbols: List[List[Symbol]]): Boolean = !symbols.flatten.exists(!_.isImplicit)

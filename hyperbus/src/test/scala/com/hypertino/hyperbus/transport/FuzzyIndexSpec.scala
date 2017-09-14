@@ -1,19 +1,14 @@
 package com.hypertino.hyperbus.transport
 
-import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
+import java.util.concurrent.atomic.AtomicLong
 
-import com.hypertino.hyperbus.model.{DynamicRequest, DynamicRequestObservableMeta, EmptyBody, HRL, MessagingContext, Method, RequestBase}
+import com.hypertino.hyperbus.model.{DynamicRequest, EmptyBody, HRL, MessagingContext, Method, RequestBase}
 import com.hypertino.hyperbus.transport.api.matchers.{HeaderIndexKey, RequestMatcher, Specific}
 import com.hypertino.hyperbus.util.{ComplexTrieMap, FuzzyIndex}
-import monix.execution.Ack.{Continue, Stop}
-import monix.execution.{Ack, Scheduler}
-import monix.reactive.observers.Subscriber
-import monix.reactive.subjects.{ConcurrentSubject, PublishToOneSubject}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FlatSpec, Matchers, PrivateMethodTester}
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.Future
 
 class FuzzyIndexSpec extends FlatSpec with Matchers with PrivateMethodTester with ScalaFutures {
   "FuzzyIndex" should "index RequestMatcher properties" in {

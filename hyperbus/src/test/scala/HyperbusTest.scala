@@ -12,7 +12,7 @@ import monix.eval.Task
 import monix.execution.Ack.Continue
 import monix.execution.Scheduler.Implicits.global
 import monix.execution.atomic.AtomicInt
-import monix.execution.{Cancelable, Scheduler}
+import monix.execution.{Ack, Cancelable, Scheduler}
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import monix.reactive.subjects.ConcurrentSubject
@@ -21,6 +21,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import scaldi.Module
 import testclasses.{TestPost1, _}
 
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
 
@@ -144,7 +145,7 @@ class TestServiceClass(hyperbus: Hyperbus) extends Subscribable {
     }
   }
 
-  def onTestPost1Event(post1: TestPost1) = {
+  def onTestPost1Event(post1: TestPost1): Ack = {
     if (post1.headers.hrl.query.ok.isDefined) {
       okEvents.incrementAndGet()
     }
@@ -163,7 +164,7 @@ class TestServiceClass2(hyperbus: Hyperbus) extends Subscribable {
   val subscriptions = hyperbus.subscribe(this)
 
   @groupName("group2")
-  def onTestPost1Event2(post1: TestPost1) = {
+  def onTestPost1Event2(post1: TestPost1): Future[Ack] = {
     Continue
   }
 
