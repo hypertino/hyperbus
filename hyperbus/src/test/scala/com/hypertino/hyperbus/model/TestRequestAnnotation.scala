@@ -15,7 +15,10 @@ import org.scalatest.{FlatSpec, Matchers}
 case class TestPost1(id: String, body: TestBody1) extends Request[TestBody1]
 
 trait TestPost1ObjectApi {
-  def apply(id: String, body: TestBody1, headers: Headers, query: Value)(implicit mcx: MessagingContext): TestPost1
+  def apply(id: String, body: TestBody1,
+            headers: com.hypertino.hyperbus.model.Headers = com.hypertino.hyperbus.model.Headers.empty,
+            query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null
+           )(implicit mcx: MessagingContext): TestPost1
 }
 
 object TestPost1 extends RequestMetaCompanion[TestPost1] with TestPost1ObjectApi {
@@ -61,35 +64,6 @@ case class TestSeqStringQueryPost(fields: Option[Seq[String]], body: TestCaseBod
 case class TestMultipleDefinedResponseWithSameBody(id: String, body: TestBody1)
   extends Request[TestBody1]
     with DefinedResponse[(Ok[TestBody2], Created[TestBody2])]
-
-//
-//@body("test-inner-body")
-//case class TestInnerBody(innerData: String) extends Body {
-//  def toEmbedded(links: Links = Links(HRI("hb://test-inner-resource"))) = TestInnerBodyEmbedded(innerData, links)
-//}
-//
-//object TestInnerBody extends BodyObjectApi[TestInnerBody]
-//
-//@body("test-inner-body")
-//case class TestInnerBodyEmbedded(innerData: String) extends Body {
-//  def toOuter: TestInnerBody = TestInnerBody(innerData)
-//}
-//
-//object TestInnerBodyEmbedded extends BodyObjectApi[TestInnerBodyEmbedded]
-//
-//case class TestOuterBodyEmbedded(simple: TestInnerBodyEmbedded, collection: List[TestInnerBodyEmbedded])
-//
-//@body("test-outer-body")
-//case class TestOuterBody(outerData: String,
-//                         @fieldName("_embedded") embedded: TestOuterBodyEmbedded) extends Body
-//
-//object TestOuterBody extends BodyObjectApi[TestOuterBody]
-//
-//
-//@request(Method.GET, "hb://test-outer-resource")
-//case class TestOuterResource(body: TestOuterBody) extends Request[TestOuterBody]
-//
-//object TestOuterResource extends RequestObjectApi[TestOuterResource]
 
 class TestRequestAnnotation extends FlatSpec with Matchers {
   implicit val mcx = new MessagingContext {

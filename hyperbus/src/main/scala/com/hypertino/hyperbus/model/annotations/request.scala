@@ -174,11 +174,21 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val headersVal = fresh("headers")
     val argsVal = fresh("args")
     val hrlVal = fresh("hrl")
-    val companionExtra =
+    def companionExtra(defaults: Boolean) = {
+      val headerFields = if (defaults) {
+        Seq(
+          q"val headers: com.hypertino.hyperbus.model.Headers = com.hypertino.hyperbus.model.Headers.empty",
+          q"val query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null"
+        )
+      } else {
+        Seq(
+          q"val headers: com.hypertino.hyperbus.model.Headers",
+          q"val query: com.hypertino.binders.value.Value"
+        )
+      }
+
       q"""
-        def apply(..$fieldsExceptHeaders,
-          headers: com.hypertino.hyperbus.model.Headers = com.hypertino.hyperbus.model.Headers.empty,
-          query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null)
+        def apply(..$fieldsExceptHeaders, ..$headerFields)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
 
           val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, $query + query)
@@ -205,10 +215,10 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
 
           new $className(
             ..${
-                queryFields.map { field ⇒
-                q"${field.name} = $headersVal.hrl.query.${TermName(SerializationOptions.caseConverter.convert(field.name.decodedName.toString))}.to[${field.tpt}]"
-              }
-            },
+        queryFields.map { field ⇒
+          q"${field.name} = $headersVal.hrl.query.${TermName(SerializationOptions.caseConverter.convert(field.name.decodedName.toString))}.to[${field.tpt}]"
+        }
+      },
             $bodyFieldName = $bodyVal,
             headers = $headersVal,
             plain__init = true
@@ -228,7 +238,8 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
           contentType
         )
         def responseDeserializer: com.hypertino.hyperbus.serialization.ResponseDeserializer[$commonResponseType] = $responseDeserializerMethodBody
-    """
+      """
+    }
 
     val newCompanion = clzCompanion map { existingCompanion =>
       val q"object $companion extends ..$bases { ..$body }" = existingCompanion
@@ -238,7 +249,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
 
             import com.hypertino.binders.value._
 
-            ..$companionExtra
+            ..${companionExtra(false)}
           }
         """
     } getOrElse {
@@ -249,7 +260,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
           type ResponseType = $commonResponseType
           implicit val meta = this
 
-          ..$companionExtra
+          ..${companionExtra(true)}
         }
       """
     }
