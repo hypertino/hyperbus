@@ -17,14 +17,14 @@ object DynamicRequest extends RequestMeta[DynamicRequest] {
   type ResponseType = DynamicResponse
   implicit val requestMeta = this
 
-  def apply(hrl: HRL, method: String, body: DynamicBody, headersMap: HeadersMap)
+  def apply(hrl: HRL, method: String, body: DynamicBody, headers: Headers)
            (implicit mcx: MessagingContext): DynamicRequest = {
     DynamicRequest(body, RequestHeaders(new HeadersBuilder()
       .withHRL(hrl)
       .withMethod(method)
       .withContentType(body.contentType)
       .withContext(mcx)
-      .++=(headersMap)
+      .++=(headers)
       .result())
     )
   }
@@ -40,10 +40,10 @@ object DynamicRequest extends RequestMeta[DynamicRequest] {
     )
   }
 
-  def apply(reader: Reader, headersMap: HeadersMap): DynamicRequest = {
-    val headers = RequestHeaders(headersMap)
-    val body = DynamicBody(reader, headers.contentType)
-    new DynamicRequest(body, headers)
+  def apply(reader: Reader, headers: Headers): DynamicRequest = {
+    val messageHeaders = RequestHeaders(headers)
+    val body = DynamicBody(reader, messageHeaders.contentType)
+    new DynamicRequest(body, messageHeaders)
   }
 
   override def responseDeserializer: ResponseDeserializer[DynamicResponse] = StandardResponse.dynamicDeserializer

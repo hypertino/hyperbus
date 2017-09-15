@@ -7,16 +7,15 @@ import com.hypertino.hyperbus.serialization.{JsonContentTypeConverter, Serializa
 
 import scala.collection.immutable.{ListMap, MapLike}
 
-object HeadersMap {
+object Headers {
   val empty: ListMap[String, Value] = ListMap.empty[String,Value]
-
   def apply(elements: (String, Value)*) = ListMap(elements.map(kv => kv._1.toLowerCase() → kv._2): _*)
 }
 
-trait Headers extends Map[String, Value] {
-  protected def underlying: HeadersMap
+trait MessageHeaders extends Map[String, Value] {
+  protected def underlying: Headers
 
-  def messageId: String = this.safe(Header.MESSAGE_ID).toString
+  def messageId: String = this(Header.MESSAGE_ID).toString
 
   def correlationId: String = underlying.get(Header.CORRELATION_ID).map(_.toString).getOrElse(messageId)
 
@@ -34,49 +33,48 @@ trait Headers extends Map[String, Value] {
     transformedSeq.writeJson(writer)
   }
 
-  def safe(name: String): Value = {
-    getOrElse(name, {
-      val fullName = Header.fullNameMap.get(name).map(s ⇒ s" ($s)").getOrElse("")
-      throw new NoSuchHeaderException(s"$name$fullName")
-    })
-  }
   def byPath(path: Seq[String]): Value = getOrElse(path.head, Null)(path.tail)
 
   /* map implementation */
   override def get(key: String): Option[Value] = underlying.get(key.toLowerCase)
-
   override def iterator: Iterator[(String, Value)] = underlying.iterator
+  override def apply(key: String): Value = {
+    getOrElse(key, {
+      val fullName = Header.fullNameMap.get(key).map(s ⇒ s" ($s)").getOrElse("")
+      throw new NoSuchHeaderException(s"$key$fullName")
+    })
+  }
 }
 
-object Headers {
+object MessageHeaders {
   def builder = new HeadersBuilder
 }
 
-case class RequestHeaders(underlying: HeadersMap) extends Headers with MapLike[String, Value, RequestHeaders] {
-  def hrl: HRL = this.safe(Header.HRL).to[HRL]
+case class RequestHeaders(underlying: Headers) extends MessageHeaders with MapLike[String, Value, RequestHeaders] {
+  def hrl: HRL = this(Header.HRL).to[HRL]
 
-  def method: String = this.safe(Header.METHOD).toString
+  def method: String = this(Header.METHOD).toString
 
-  override def +[B1 >: Value](kv: (String, B1)): RequestHeaders = RequestHeaders((underlying + kv).asInstanceOf[HeadersMap])
+  override def +[B1 >: Value](kv: (String, B1)): RequestHeaders = RequestHeaders((underlying + kv).asInstanceOf[Headers])
   override def -(key: String): RequestHeaders = RequestHeaders(underlying - key)
   override def empty: RequestHeaders = RequestHeaders.empty
 }
 
 object RequestHeaders {
-  val empty = RequestHeaders(HeadersMap.empty)
+  val empty = RequestHeaders(Headers.empty)
 }
 
-case class ResponseHeaders(underlying: HeadersMap) extends Headers with MapLike[String, Value, ResponseHeaders]{
-  lazy val statusCode: Int = this.safe(Header.STATUS_CODE).toInt
+case class ResponseHeaders(underlying: Headers) extends MessageHeaders with MapLike[String, Value, ResponseHeaders]{
+  lazy val statusCode: Int = this(Header.STATUS_CODE).toInt
 
-  def location: HRL = this.safe(Header.LOCATION).to[HRL]
+  def location: HRL = this(Header.LOCATION).to[HRL]
 
-  override def +[B1 >: Value](kv: (String, B1)): ResponseHeaders = ResponseHeaders((underlying + kv).asInstanceOf[HeadersMap])
+  override def +[B1 >: Value](kv: (String, B1)): ResponseHeaders = ResponseHeaders((underlying + kv).asInstanceOf[Headers])
   override def -(key: String):ResponseHeaders = ResponseHeaders(underlying - key)
   override def empty: ResponseHeaders = ResponseHeaders.empty
 }
 
 object ResponseHeaders {
-  val empty = ResponseHeaders(HeadersMap.empty)
+  val empty = ResponseHeaders(Headers.empty)
 }
 

@@ -51,7 +51,7 @@ trait NoContentType {
 
 //trait DynamicBodyTrait
 
-trait Message[+B <: Body, +H <: Headers] extends Writable {
+trait Message[+B <: Body, +H <: MessageHeaders] extends Writable {
   def headers: H
 
   def body: B
@@ -70,6 +70,7 @@ trait Message[+B <: Body, +H <: Headers] extends Writable {
 
 trait Request[+B <: Body] extends Message[B, RequestHeaders] with MessagingContext {
   override def correlationId: String = headers.correlationId
+  override def parentId: Option[String] = Some(headers.messageId)
 }
 
 trait RequestObservableMeta[R <: RequestBase] {
@@ -80,7 +81,7 @@ trait RequestMeta[R <: RequestBase] {
   type ResponseType <: ResponseBase
   def responseDeserializer: ResponseDeserializer[ResponseType]
 
-  def apply(reader: Reader, headersMap: HeadersMap): R
+  def apply(reader: Reader, headers: Headers): R
   def apply(reader: Reader): R = MessageReader.read(reader, apply)
   def from(s: String): R = MessageReader.fromString(s, apply)
 }
@@ -105,7 +106,7 @@ trait DefinedResponse[R]
 trait ResponseMeta[PB <: Body, R <: Response[PB]] {
   def statusCode: Int
 
-  def apply[B <: PB](body: B, headersMap: HeadersMap)
+  def apply[B <: PB](body: B, headers: Headers)
                     (implicit messagingContext: MessagingContext): R
   def apply[B <: PB](body: B)
                     (implicit messagingContext: MessagingContext): R

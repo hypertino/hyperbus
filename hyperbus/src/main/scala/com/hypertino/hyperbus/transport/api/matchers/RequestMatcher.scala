@@ -3,6 +3,7 @@ package com.hypertino.hyperbus.transport.api.matchers
 import java.util.concurrent.atomic.AtomicLong
 
 import com.hypertino.binders.value.{Lst, Null, Obj, Text, Value}
+import com.hypertino.hyperbus.config.HyperbusConfigurationError
 import com.hypertino.hyperbus.model.{Header, HeaderHRL, RequestBase}
 import com.hypertino.hyperbus.util.{CanFuzzyMatchable, FuzzyIndexItemMetaInfo, FuzzyMatcher}
 import com.typesafe.config.ConfigValue
@@ -82,6 +83,7 @@ object RequestMatcher {
       case (s, inner: Obj) ⇒ recursive(path + s + ".", inner)
       case (s, other: Text) ⇒ Seq((path + s, Seq(TextMatcher.fromCompactString(other.v))))
       case (s, other: Lst) ⇒ Seq((path + s, other.v.map(t ⇒ TextMatcher.fromCompactString(t.toString))))
+      case other ⇒ throw new HyperbusConfigurationError(s"Can't use $other to initialize RequestMatcher")
     }
   }
 
@@ -89,5 +91,3 @@ object RequestMatcher {
     override def indexProperties(bloomFilter: TrieMap[Any, AtomicLong], a: RequestMatcher): Seq[Any] = a.indexProperties
   }
 }
-
-//private[transport] case class RequestMatcherPojo(headers: Map[String, TextMatcherPojo])

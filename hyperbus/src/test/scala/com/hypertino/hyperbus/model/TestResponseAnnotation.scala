@@ -17,28 +17,29 @@ case class TestCreatedBody(resourceId: String, nullable: Option[String]=None) ex
 class TestResponseAnnotation extends FlatSpec with Matchers {
   val rn = "\r\n"
   implicit val mcx = new MessagingContext {
-    override def createMessageId() = "123"
-    override def correlationId = "abc"
+    override def createMessageId() = "1"
+    override def correlationId = "2"
+    override def parentId: Option[String] = Some("3")
   }
 
   "Response" should "serialize" in {
     val msg = Created(TestCreatedBody("100500"), HRL("hb://test"))
-    msg.serializeToString should equal("""{"s":201,"t":"application/vnd.test-created-body+json","i":"123","c":"abc","l":{"l":"hb://test"}}""" + rn +
+    msg.serializeToString should equal("""{"s":201,"t":"application/vnd.test-created-body+json","i":"1","c":"2","p":"3","l":{"l":"hb://test"}}""" + rn +
       """{"resource_id":"100500"}""")
   }
 
   "Response with forced null's" should "serialize" in {
     implicit val so = SerializationOptions.forceOptionalFields
     val msg = Created(TestCreatedBody("100500"), HRL("hb://test"))
-    msg.serializeToString should equal("""{"s":201,"t":"application/vnd.test-created-body+json","i":"123","c":"abc","l":{"q":null,"l":"hb://test"}}""" + rn +
+    msg.serializeToString should equal("""{"s":201,"t":"application/vnd.test-created-body+json","i":"1","c":"2","p":"3","l":{"q":null,"l":"hb://test"}}""" + rn +
       """{"resource_id":"100500","nullable":null}""")
   }
 
   "Response" should "deserialize" in {
-    val s = """{"s":201,"t":"application/vnd.test-created-body+json","i":"123","c":"abc","l":{"l":"hb://test"}}""" + rn +
+    val s = """{"s":201,"t":"application/vnd.test-created-body+json","i":"1","c":"2","p":"3","l":{"l":"hb://test"}}""" + rn +
       """{"resource_id":"100500"}"""
 
-    val deserializer = StandardResponse.apply(_: Reader, _: HeadersMap, {
+    val deserializer = StandardResponse.apply(_: Reader, _: Headers, {
       case h: ResponseHeaders if h.contentType.contains("test-created-body") ⇒ TestCreatedBody.apply
     },
       false
@@ -61,8 +62,8 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
   }
 
   "Response with headers" should "serialize" in {
-    val msg = Created(TestCreatedBody("100500"), HRL("hb://test"), HeadersMap("test" → "a"))
-    msg.serializeToString should equal("""{"s":201,"t":"application/vnd.test-created-body+json","i":"123","c":"abc","l":{"l":"hb://test"},"test":"a"}""" + rn +
+    val msg = Created(TestCreatedBody("100500"), HRL("hb://test"), Headers("test" → "a"))
+    msg.serializeToString should equal("""{"s":201,"t":"application/vnd.test-created-body+json","i":"1","c":"2","p":"3","l":{"l":"hb://test"},"test":"a"}""" + rn +
       """{"resource_id":"100500"}""")
   }
 
@@ -89,15 +90,15 @@ class TestResponseAnnotation extends FlatSpec with Matchers {
   "Ok[TestCollectionBody]" should "serialize" in {
     val ok = Ok(TestCollectionBody(Seq(TestItem("abcde", 123), TestItem("eklmn", 456))))
     ok.serializeToString should equal(
-      s"""{"s":200,"t":"application/vnd.test-collection+json","i":"123","c":"abc"}""" + rn +
+      s"""{"s":200,"t":"application/vnd.test-collection+json","i":"1","c":"2","p":"3"}""" + rn +
         """[{"x":"abcde","y":123},{"x":"eklmn","y":456}]""")
   }
 
   it should "deserialize" in {
-    val s =  s"""{"s":200,"t":"application/vnd.test-collection+json","i":"123","c":"abc"}""" + rn +
+    val s =  s"""{"s":200,"t":"application/vnd.test-collection+json","i":"1","c":"2","p":"3"}""" + rn +
       """[{"x":"abcde","y":123},{"x":"eklmn","y":456}]"""
 
-    val deserializer = StandardResponse.apply(_: Reader, _: HeadersMap, {
+    val deserializer = StandardResponse.apply(_: Reader, _: Headers, {
       case h: ResponseHeaders if h.contentType.contains("test-collection") ⇒ TestCollectionBody.apply
     },
       false

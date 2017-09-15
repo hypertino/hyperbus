@@ -126,9 +126,9 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       //val name = TermName(if(fmap._1.isEmpty) "em" else "apply")
       q"""def apply(
             ..${fmap._1},
-            $$query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null
+            query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null
          )(implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className =
-         apply(..${fmap._2}, com.hypertino.hyperbus.model.HeadersMap.empty, $$query)(mcx)"""
+         apply(..${fmap._2}, com.hypertino.hyperbus.model.Headers.empty, query)(mcx)"""
     }
 
     val query = if (queryFields.isEmpty) {
@@ -159,7 +159,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         {
           val pf: PartialFunction[com.hypertino.hyperbus.model.ResponseHeaders, com.hypertino.hyperbus.serialization.ResponseBodyDeserializer] =
             (_: com.hypertino.hyperbus.model.ResponseHeaders) match { case ..$bodyCases }
-          com.hypertino.hyperbus.model.StandardResponse.apply(_: java.io.Reader, _: com.hypertino.hyperbus.model.HeadersMap, pf, true)
+          com.hypertino.hyperbus.model.StandardResponse.apply(_: java.io.Reader, _: com.hypertino.hyperbus.model.Headers, pf, true)
         }
       """
 
@@ -177,11 +177,11 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     val companionExtra =
       q"""
         def apply(..$fieldsExceptHeaders,
-          $$headersMap: com.hypertino.hyperbus.model.HeadersMap = com.hypertino.hyperbus.model.HeadersMap.empty,
-          $$query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null)
+          headers: com.hypertino.hyperbus.model.Headers = com.hypertino.hyperbus.model.Headers.empty,
+          query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
 
-          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, $query + $$query)
+          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, $query + query)
 
           new $className(..${fieldsExceptHeaders.map(_.name)},
             headers = com.hypertino.hyperbus.model.RequestHeaders(new com.hypertino.hyperbus.model.HeadersBuilder()
@@ -189,14 +189,14 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
               .withMethod(${className.toTermName}.method)
               .withContentType(body.contentType)
               .withContext(mcx)
-              .++=($$headersMap)
+              .++=(headers)
               .result()),
             plain__init = true
           )
         }
 
-        def apply(reader: java.io.Reader, headersMap: com.hypertino.hyperbus.model.HeadersMap): $className = {
-          val $headersVal = com.hypertino.hyperbus.model.RequestHeaders(headersMap)
+        def apply(reader: java.io.Reader, headers: com.hypertino.hyperbus.model.Headers): $className = {
+          val $headersVal = com.hypertino.hyperbus.model.RequestHeaders(headers)
           val $bodyVal = ${bodyTypeName.toTermName}(reader, $headersVal.contentType)
 
           //todo: typed uri parts? int/long, etc

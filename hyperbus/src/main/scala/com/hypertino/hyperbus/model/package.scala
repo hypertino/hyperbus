@@ -11,11 +11,11 @@ import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 package object model {
-  type HeadersMap = ListMap[String, Value]
-  type MessageBase = Message[Body, Headers]
+  type Headers = ListMap[String, Value]
+  type MessageBase = Message[Body, MessageHeaders]
   type RequestBase = Request[Body]
   type ResponseBase = Response[Body]
-  type DynamicMessage = Message[DynamicBody, Headers]
+  type DynamicMessage = Message[DynamicBody, MessageHeaders]
   type DynamicResponse = Response[DynamicBody]
   type ErrorResponseBase = HyperbusError[ErrorBody]
 

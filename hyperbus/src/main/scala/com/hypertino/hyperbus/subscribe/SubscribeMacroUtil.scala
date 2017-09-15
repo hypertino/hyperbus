@@ -8,7 +8,7 @@ import scala.util.control.NonFatal
 object SubscribeMacroUtil {
   def convertUnhandledException(log: Option[Logger] = None)
                                (implicit mcx: MessagingContext): PartialFunction[Throwable, ErrorResponseBase] = {
-    case h: ErrorResponseBase ⇒ h
+    case h: ErrorResponseBase @unchecked ⇒ h
     case NonFatal(other) ⇒
       val result = InternalServerError(
         ErrorBody("unhandled-exception", Some(other.getClass.toString + {

@@ -134,7 +134,8 @@ class TestServiceClass(hyperbus: Hyperbus) extends Subscribable {
   def onTestPost1Command(post1: TestPost1) = Task.eval {
     implicit val mcx = new MessagingContext {
       override def createMessageId() = "123"
-      override def correlationId = "123"
+      override def correlationId: String = post1.correlationId
+      override def parentId: Option[String] = post1.parentId
     }
 
     if (post1.headers.hrl.query.ok.isDefined) {
@@ -179,6 +180,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
   implicit val mcx = new MessagingContext {
     override def createMessageId() = "123"
     override def correlationId = "123"
+    override def parentId: Option[String] = Some("123")
   }
 
   "ask " should "send a request (client)" in {
@@ -371,9 +373,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     }
 
     val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"))
-    val headersMap = msg.headers.filterNot(_._1 == Header.CONTENT_TYPE)
+    val headers = msg.headers.filterNot(_._1 == Header.CONTENT_TYPE)
     val msgWithoutContentType = msg.copy(
-      headers = headersMap
+      headers = headers
     )
     val task = st.testCommand(msgWithoutContentType)
     task.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
@@ -426,7 +428,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       HRL("/test"),
       Method.GET,
       DynamicBody("haha", Some("some-content")),
-      HeadersMap(
+      Headers(
         Header.CONTENT_TYPE → "some-content",
         Header.MESSAGE_ID → "123"
       )
@@ -624,7 +626,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val ts = new TestServiceClass(hyperbus)
 
     st.sGroupName shouldBe "group1"
-    val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"), $query=Obj.from("ok" → true))
+    val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"), query=Obj.from("ok" → true))
     val task = st.testCommand(msg)
     task.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
 

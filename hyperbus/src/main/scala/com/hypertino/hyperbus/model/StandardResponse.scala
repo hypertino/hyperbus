@@ -8,11 +8,11 @@ import com.hypertino.hyperbus.serialization._
 object StandardResponse {
 
   def apply(reader: Reader,
-            headersMap: HeadersMap,
+            headers: Headers,
             bodyDeserializer: PartialFunction[ResponseHeaders, ResponseBodyDeserializer],
             throwIfError: Boolean
            ): ResponseBase = {
-    val responseHeaders = ResponseHeaders(headersMap)
+    val responseHeaders = ResponseHeaders(headers)
     val body =
       if (bodyDeserializer.isDefinedAt(responseHeaders))
         bodyDeserializer(responseHeaders)(reader, responseHeaders.contentType)
@@ -32,8 +32,8 @@ object StandardResponse {
   }
 
   def apply(reader: Reader,
-            headersMap: HeadersMap): DynamicResponse = {
-    apply(reader, headersMap, PartialFunction.empty, false).asInstanceOf[DynamicResponse]
+            headers: Headers): DynamicResponse = {
+    apply(reader, headers, PartialFunction.empty, false).asInstanceOf[DynamicResponse]
   }
 
   def dynamicDeserializer: ResponseDeserializer[DynamicResponse] = apply

@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus.transport
 
 import com.hypertino.binders.value.{Obj, _}
-import com.hypertino.hyperbus.model.{Body, DynamicRequest, EmptyBody, HRL, Header, HeadersMap, Method, RequestBase, RequestHeaders}
+import com.hypertino.hyperbus.model.{Body, DynamicRequest, EmptyBody, HRL, Header, Headers, Method, RequestBase, RequestHeaders}
 import com.hypertino.hyperbus.transport.api.matchers._
 import org.scalatest.{FlatSpec, Matchers}
 import com.hypertino.hyperbus.util.FuzzyIndexItemMetaInfo
@@ -11,11 +11,11 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     val requestMatcher = RequestMatcher(Map(Header.METHOD → Seq(Specific("get"))))
 
     requestMatcher.matches(
-      request(HeadersMap(Header.METHOD → "get"))
+      request(Headers(Header.METHOD → "get"))
     ) shouldBe true
 
     requestMatcher.matches(
-      request(HeadersMap(Header.METHOD → "post"))
+      request(Headers(Header.METHOD → "post"))
     ) shouldBe false
   }
 
@@ -28,11 +28,11 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     val requestMatcher = RequestMatcher(Map(Header.METHOD → Seq(RegexMatcher("g.*"))))
 
     requestMatcher.matches(
-      request(HeadersMap(Header.METHOD → "get"))
+      request(Headers(Header.METHOD → "get"))
     ) shouldBe true
 
     requestMatcher.matches(
-      request(HeadersMap(Header.METHOD → "post"))
+      request(Headers(Header.METHOD → "post"))
     ) shouldBe false
   }
 
@@ -44,11 +44,11 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     ))
 
     requestMatcher.matches(
-      request(HeadersMap("r" → Obj.from("l" → "hb://test", "q" → Obj.from("id" → 100500, "name" → "Maga"))))
+      request(Headers("r" → Obj.from("l" → "hb://test", "q" → Obj.from("id" → 100500, "name" → "Maga"))))
     ) shouldBe true
 
     requestMatcher.matches(
-      request(HeadersMap(Header.METHOD → "post"))
+      request(Headers(Header.METHOD → "post"))
     ) shouldBe false
   }
 
@@ -98,7 +98,7 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     ) shouldBe true
   }
 
-  def request(all: HeadersMap): RequestBase = {
+  def request(all: Headers): RequestBase = {
     new RequestBase{
       override def headers: RequestHeaders = RequestHeaders(all)
       override def body: Body = null
@@ -108,7 +108,7 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
   def request(location: String, query: Value = Null): RequestBase = {
     new RequestBase{
       override def headers: RequestHeaders = RequestHeaders(
-        HeadersMap(Header.HRL → HRL(location, query).toValue)
+        Headers(Header.HRL → HRL(location, query).toValue)
       )
       override def body: Body = null
     }

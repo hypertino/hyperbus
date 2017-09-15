@@ -1,18 +1,18 @@
 package com.hypertino.hyperbus.transport
 
 import com.hypertino.binders.value.{Lst, Obj}
-import com.hypertino.hyperbus.model.HeadersMap
+import com.hypertino.hyperbus.model.Headers
 import com.hypertino.hyperbus.model.headers.PlainHeadersConverter
 import org.scalatest.{FreeSpec, Matchers}
 
 class PlainHeadersConverterSpec extends FreeSpec with Matchers {
   "PlainHeadersConverter " - {
     "Should convert headers to http/linear" in {
-      PlainHeadersConverter.toHttp(HeadersMap("a" → "1", "b" → Lst.from("2","3"))) should equal (Seq("a" → "1", "b" → "2", "b" → "3"))
+      PlainHeadersConverter.toHttp(Headers("a" → "1", "b" → Lst.from("2","3"))) should equal (Seq("a" → "1", "b" → "2", "b" → "3"))
     }
 
     "Should generate http/linear headers to Obj" in {
-      PlainHeadersConverter.fromHttp(Seq("a" → "1", "b" → "2", "b" → "3")) should equal (HeadersMap("a" → "1", "b" → Lst.from("2","3")))
+      PlainHeadersConverter.fromHttp(Seq("a" → "1", "b" → "2", "b" → "3")) should equal (Headers("a" → "1", "b" → Lst.from("2","3")))
     }
   }
 }

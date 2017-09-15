@@ -5,7 +5,6 @@ import com.hypertino.binders.value._
 import com.hypertino.hyperbus.serialization.SerializationOptions
 
 import scala.collection.immutable.ListMap
-import scala.collection.mutable
 
 class HeadersBuilder() {
   private[this] val mapBuilder = ListMap.newBuilder[String, Value]
@@ -30,6 +29,11 @@ class HeadersBuilder() {
     this
   }
 
+  def withParentId(parentId: String): HeadersBuilder = {
+    mapBuilder += Header.PARENT_ID → Text(parentId)
+    this
+  }
+
   def withContext(mcx: com.hypertino.hyperbus.model.MessagingContext): HeadersBuilder = {
     val messageId = mcx.createMessageId()
     withMessageId(mcx.createMessageId())
@@ -37,6 +41,12 @@ class HeadersBuilder() {
       val correlationId = mcx.correlationId
       if (messageId != correlationId) {
         withCorrelation(correlationId)
+      }
+
+      mcx.parentId.map { parentId ⇒
+        if (parentId != correlationId) {
+          withParentId(parentId)
+        }
       }
     }
     this
@@ -76,7 +86,7 @@ class HeadersBuilder() {
     this
   }
 
-  def result(): HeadersMap = {
+  def result(): Headers = {
     mapBuilder
       .result()
       .filterNot(_._2.isEmpty) // todo: move this to the stage of building?

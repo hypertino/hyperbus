@@ -15,12 +15,12 @@ import org.scalatest.{FlatSpec, Matchers}
 case class TestPost1(id: String, body: TestBody1) extends Request[TestBody1]
 
 trait TestPost1ObjectApi {
-  def apply(id: String, $body: TestBody1, $headersMap: HeadersMap, $query: Value)(implicit mcx: MessagingContext): TestPost1
+  def apply(id: String, body: TestBody1, headers: Headers, query: Value)(implicit mcx: MessagingContext): TestPost1
 }
 
 object TestPost1 extends RequestMetaCompanion[TestPost1] with TestPost1ObjectApi {
-  def apply(id: String, x: String, $headersMap: HeadersMap)
-           (implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), $headersMap, Null)(mcx)
+  def apply(id: String, x: String, headers: Headers)
+           (implicit mcx: MessagingContext): TestPost1 = TestPost1(id, TestBody1(x), headers, Null)(mcx)
 
   type ResponseType = ResponseBase
   implicit val meta = this
@@ -95,6 +95,7 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   implicit val mcx = new MessagingContext {
     override def createMessageId() = "123"
     override def correlationId = "123"
+    override def parentId: Option[String] = Some("123")
   }
   val rn = "\r\n"
 
@@ -236,14 +237,14 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   }
 
   "TestPost1" should "serialize with headers" in {
-    val post1 = TestPost1("155", TestBody1("abcde"), HeadersMap("test" → Lst.from("a")))
+    val post1 = TestPost1("155", TestBody1("abcde"), Headers("test" → Lst.from("a")))
     post1.serializeToString should equal(
       s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123","test":["a"]}""" + rn +
          """{"data":"abcde"}""")
   }
 
   "TestPost1" should "serialize with extra query" in {
-    val post1 = TestPost1("155", TestBody1("abcde"), HeadersMap.empty, Obj.from("a" → "100500"))
+    val post1 = TestPost1("155", TestBody1("abcde"), Headers.empty, Obj.from("a" → "100500"))
     post1.serializeToString should equal(
       s"""{"r":{"q":{"id":"155","a":"100500"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
         """{"data":"abcde"}""")

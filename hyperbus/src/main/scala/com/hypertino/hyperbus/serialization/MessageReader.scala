@@ -4,11 +4,11 @@ import java.io.{Reader, StringReader}
 
 import com.fasterxml.jackson.core.{JsonFactory, JsonParser}
 import com.hypertino.binders.json.{JacksonParserAdapter, JsonBindersFactory}
-import com.hypertino.binders.value.{Obj, Text, Value}
-import com.hypertino.hyperbus.model.{Body, Header, Headers, HeadersMap, Message}
+import com.hypertino.binders.value.{Obj, Value}
+import com.hypertino.hyperbus.model.{Body, Header, Headers, Message, MessageHeaders}
 
 object MessageReader {
-  def read[M <: Message[_ <: Body,_ <: Headers]](reader: Reader, concreteDeserializer: MessageDeserializer[M]): M = {
+  def read[M <: Message[_ <: Body,_ <: MessageHeaders]](reader: Reader, concreteDeserializer: MessageDeserializer[M]): M = {
     val jacksonFactory = new JsonFactory()
     jacksonFactory.disable(JsonParser.Feature.AUTO_CLOSE_SOURCE)
 
@@ -23,7 +23,7 @@ object MessageReader {
           case other ⇒ other
         }
 
-        HeadersMap(transformedSeq: _*)
+        Headers(transformedSeq: _*)
       }
 
       jp.nextToken()
@@ -39,7 +39,7 @@ object MessageReader {
     concreteDeserializer(reader, headers)
   }
 
-  def fromString[M <: Message[_ <: Body,_ <: Headers]](message: String, concreteDeserializer: MessageDeserializer[M]): M = {
+  def fromString[M <: Message[_ <: Body,_ <: MessageHeaders]](message: String, concreteDeserializer: MessageDeserializer[M]): M = {
     val stringReader = new StringReader(message)
     try {
       read(stringReader, concreteDeserializer)

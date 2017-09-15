@@ -6,6 +6,7 @@ object Header {
   val CONTENT_TYPE = "t"
   val MESSAGE_ID = "i"
   val CORRELATION_ID = "c"
+  val PARENT_ID = "p"
   val REVISION = "v"
   val STATUS_CODE = "s"
   val LOCATION = "l"
@@ -17,6 +18,7 @@ object Header {
     METHOD → "METHOD",
     CONTENT_TYPE → "CONTENT_TYPE",
     MESSAGE_ID → "MESSAGE_ID",
+    PARENT_ID → "PARENT_ID",
     CORRELATION_ID → "CORRELATION_ID",
     REVISION → "REVISION",
     STATUS_CODE → "STATUS_CODE",

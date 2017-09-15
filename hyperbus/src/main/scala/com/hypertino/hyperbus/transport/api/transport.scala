@@ -27,6 +27,7 @@ trait ClientTransport {
 
 case class CommandEvent[+REQ <: RequestBase](request: REQ, reply: Callback[ResponseBase]) extends MessagingContext {
   override def correlationId: String = request.correlationId
+  override def parentId = request.parentId
 }
 
 trait ServerTransport {

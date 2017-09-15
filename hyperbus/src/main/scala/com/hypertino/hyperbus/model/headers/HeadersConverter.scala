@@ -1,8 +1,8 @@
 package com.hypertino.hyperbus.model.headers
 
-import com.hypertino.hyperbus.model.HeadersMap
+import com.hypertino.hyperbus.model.Headers
 
 trait HeadersConverter {
-  def fromHttp(headers: Seq[(String, String)]): HeadersMap
-  def toHttp(headers: HeadersMap): Seq[(String, String)]
+  def fromHttp(headers: Seq[(String, String)]): Headers
+  def toHttp(headers: Headers): Seq[(String, String)]
 }
