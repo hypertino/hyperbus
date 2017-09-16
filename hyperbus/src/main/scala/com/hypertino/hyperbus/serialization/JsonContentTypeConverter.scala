@@ -13,7 +13,10 @@ object JsonContentTypeConverter {
 
   def universalJsonContentTypeToSimple(httpContentType: Value): Value = {
     httpContentType match {
+      // also possible things like application/json; charset=utf-8
+      // todo: support charsets of JSON?
       case Null | Text(COMMON_CONTENT_TYPE) ⇒ Null
+      case Text(s) if s.startsWith(COMMON_CONTENT_TYPE) ⇒ Null
       case Text(s) if (s.startsWith(CERTAIN_CONTENT_TYPE_START)
         && s.endsWith(CERTAIN_CONTENT_TYPE_END)) ⇒
         val beginIndex = CERTAIN_CONTENT_TYPE_START.length
