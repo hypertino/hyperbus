@@ -157,7 +157,7 @@ class Hyperbus(val defaultGroupName: Option[String],
       val hto = if (isClient) "(h)" else ""
       val msg = s"$hfrom$direction$hto: $e"
 
-      readMessagesLogLevel match {
+      level match {
         case "TRACE" ⇒ logger.trace(msg)
         case "DEBUG" ⇒ logger.debug(msg)
         case "INFO" ⇒ logger.info(msg)
