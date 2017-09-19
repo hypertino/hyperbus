@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.config.{HyperbusConfiguration, HyperbusConfigurationLoader}
-import com.hypertino.hyperbus.model.{HyperbusError, MessageBase, RequestBase, RequestMeta, RequestObservableMeta}
+import com.hypertino.hyperbus.model.{Header, HyperbusError, MessageBase, Method, RequestBase, RequestMeta, RequestObservableMeta}
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.SchedulerInjector
@@ -16,7 +16,8 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
 class Hyperbus(val defaultGroupName: Option[String],
-               val messagesLogLevel: String,
+               val readMessagesLogLevel: String,
+               val writeMessagesLogLevel: String,
                protected[this] val clientRoutes: Seq[TransportRoute[ClientTransport]],
                protected[this] val serverRoutes: Seq[TransportRoute[ServerTransport]],
                protected[this] implicit val scheduler: Scheduler,
@@ -25,7 +26,8 @@ class Hyperbus(val defaultGroupName: Option[String],
 
   def this(configuration: HyperbusConfiguration)(implicit inj: Injector) = this(
     configuration.defaultGroupName,
-    configuration.messagesLogLevel.toUpperCase,
+    configuration.readMessagesLogLevel.toUpperCase,
+    configuration.writeMessagesLogLevel.toUpperCase,
     configuration.clientRoutes,
     configuration.serverRoutes,
     SchedulerInjector(configuration.schedulerName),
@@ -44,33 +46,33 @@ class Hyperbus(val defaultGroupName: Option[String],
   }
 
   override def ask[REQ <: RequestBase, M <: RequestMeta[REQ]](request: REQ)(implicit requestMeta: M): Task[M#ResponseType] = {
-    logMessage(request, isClient = true, isEvent = false)
+    logMessage(request, request, isClient = true, isEvent = false)
     this
       .lookupClientTransport(request)
       .ask(request, requestMeta.responseDeserializer)
       .materialize
       .map {
         case Success(e: Throwable) ⇒
-          logMessage(e, isClient = true, isEvent = false)
+          logMessage(request, e, isClient = true, isEvent = false)
           Failure(e)
 
         case Success(other) ⇒
-          logMessage(other, isClient = true, isEvent = false)
+          logMessage(request, other, isClient = true, isEvent = false)
           Success(other.asInstanceOf[M#ResponseType])
 
         case Failure(e: HyperbusError[_]) ⇒
-          logMessage(e, isClient = true, isEvent = false)
+          logMessage(request, e, isClient = true, isEvent = false)
           Failure(e)
 
         case Failure(e: Throwable) ⇒
-          logThrowableResponse(e, isClient = true)
+          logThrowableResponse(request, e, isClient = true)
           Failure(e)
       }
       .dematerialize
   }
 
   override def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[PublishResult] = {
-    logMessage(request, isClient = true, isEvent = true)
+    logMessage(request, request, isClient = true, isEvent = true)
     lookupClientTransport(request).publish(request)
   }
 
@@ -107,16 +109,22 @@ class Hyperbus(val defaultGroupName: Option[String],
     }
   }
 
-  protected def isLoggingMessages: Boolean = messagesLogLevel match {
+  protected def isLoggingMessages(level: String): Boolean = level match {
     case "TRACE" ⇒ logger.underlying.isTraceEnabled()
     case "DEBUG" ⇒ logger.underlying.isDebugEnabled()
     case "INFO" ⇒ logger.underlying.isInfoEnabled()
     case "WARN" ⇒ logger.underlying.isWarnEnabled()
     case "ERROR" ⇒ logger.underlying.isErrorEnabled()
+    case _ ⇒ false
   }
 
-  protected def logMessage(message: MessageBase, isClient: Boolean, isEvent: Boolean): Unit = {
-    if (isLoggingMessages) {
+  protected def logMessage(request: RequestBase, message: MessageBase, isClient: Boolean, isEvent: Boolean): Unit = {
+    val level = request.headers.method match {
+      case Method.GET ⇒ readMessagesLogLevel
+      case _ ⇒ writeMessagesLogLevel
+    }
+
+    if (isLoggingMessages(level)) {
       val direction = (message.isInstanceOf[RequestBase], isEvent) match {
         case (true, false) ⇒ "-~>"
         case (true, true) ⇒ "-|>"
@@ -127,7 +135,7 @@ class Hyperbus(val defaultGroupName: Option[String],
       val hto = if (isClient) "(h)" else ""
       val msg = s"$hfrom$direction$hto: $message"
 
-      messagesLogLevel match {
+      level match {
         case "TRACE" ⇒ logger.trace(msg)
         case "DEBUG" ⇒ logger.debug(msg)
         case "INFO" ⇒ logger.info(msg)
@@ -137,14 +145,19 @@ class Hyperbus(val defaultGroupName: Option[String],
     }
   }
 
-  protected def logThrowableResponse(e: Throwable, isClient: Boolean): Unit = {
-    if (isLoggingMessages) {
+  protected def logThrowableResponse(request: RequestBase, e: Throwable, isClient: Boolean): Unit = {
+    val level = request.headers.method match {
+      case Method.GET ⇒ readMessagesLogLevel
+      case _ ⇒ writeMessagesLogLevel
+    }
+
+    if (isLoggingMessages(level)) {
       val direction = "<~s-"
       val hfrom = if (isClient) "" else "(h)"
       val hto = if (isClient) "(h)" else ""
       val msg = s"$hfrom$direction$hto: $e"
 
-      messagesLogLevel match {
+      readMessagesLogLevel match {
         case "TRACE" ⇒ logger.trace(msg)
         case "DEBUG" ⇒ logger.debug(msg)
         case "INFO" ⇒ logger.info(msg)
