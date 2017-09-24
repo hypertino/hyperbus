@@ -33,7 +33,6 @@ case class RequestMatcher(headers: Map[String, Seq[TextMatcher]]) extends FuzzyM
   }
 
   def matchMessage(message: RequestBase): Boolean = {
-    import com.hypertino.hyperbus.model._
     pathsToMatcher.forall { case (path, matchers) ⇒
       message.headers.byPath(path) match {
         case Null ⇒ matchers.exists(m ⇒ m == Any || m == EmptyMatcher)

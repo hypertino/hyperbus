@@ -87,11 +87,7 @@ class InprocTransport(serialize: Boolean = false)
 
       if (isPublish) {
         Task.zipList(publishTasks: _*).map { _ ⇒
-          new PublishResult {
-            def sent = Some(true)
-            def offset = None
-            override def toString = s"PublishResult(sent=Some(true),offset=None)"
-          }
+          PublishResult.sent
         }
       } else {
         resultTask.get

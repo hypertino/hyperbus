@@ -37,11 +37,7 @@ class ClientTransportTest(output: String) extends ClientTransport {
 
   override def publish(message: RequestBase): Task[PublishResult] = {
     ask(message, null) map { x =>
-      new PublishResult {
-        def sent = None
-
-        def offset = None
-      }
+      PublishResult.empty
     }
   }
 
@@ -118,10 +114,7 @@ class ServerTransportTest extends ServerTransport {
   def testEvent(msg: RequestBase): Task[PublishResult] = {
     sEventsSubject.onNext(msg)
     Task.now {
-      new PublishResult {
-        override def offset: Option[String] = None
-        override def sent: Option[Boolean] = Some(true)
-      }
+      PublishResult.sent
     }
   }
 }
@@ -199,7 +192,35 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     f.futureValue.body.resourceId should equal("100500")
   }
 
-  "ask " should "send a request, dynamic (client)" in {
+  it should "send a request (client) to the transport that has service" in {
+    val ct1 = new ClientTransportTest(
+      """{"s":201,"t":"created-body","i":"123","r":{"l":"hb://fail"}}""" + "\r\n" + """{"resource_id":"fail"}"""
+    )
+    val ct2 = new ClientTransportTest(
+      """{"s":201,"t":"created-body","i":"123","r":{"l":"hb://test"}}""" + "\r\n" + """{"resource_id":"100500"}"""
+    )
+
+    implicit val injector = new Module {
+      bind [Scheduler] to global
+    }
+    val cr: Seq[TransportRoute[ClientTransport]] = Seq(
+      TransportRoute(ct1, RequestMatcher("hb://not-matches")),
+      TransportRoute(ct2, RequestMatcher.any)
+    )
+    val sr = Seq.empty
+    val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
+
+    val f = hyperbus ask testclasses.TestPost1(testclasses.TestBody1("ha ha")) runAsync
+
+    f.futureValue.body should equal(testclasses.TestCreatedBody("100500"))
+    f.futureValue.body.resourceId should equal("100500")
+
+    ct2.input should equal(
+      """{"r":{"l":"hb://resources"},"m":"post","t":"application/vnd.test-1+json","i":"123"}""" + "\r\n" + """{"resource_data":"ha ha"}"""
+    )
+  }
+
+  it should "send a request, dynamic (client)" in {
 
     val ct = new ClientTransportTest(
       """{"s":201,"t":"created-body","i":"123"}""" + "\r\n" + """{"resource_id":"100500"}"""
@@ -223,7 +244,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     r.body shouldBe a[DynamicBody]
   }
 
-  "ask " should " receive empty response (client)" in {
+  it should " receive empty response (client)" in {
     val ct = new ClientTransportTest(
       """{"s":204,"i":"123"}""" + "\r\n" + "{}"
     )
@@ -240,7 +261,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     r.body shouldBe a[EmptyBody]
   }
 
-    "ask " should " send static request with dynamic body (client)" in {
+  it should " send static request with dynamic body (client)" in {
     val ct = new ClientTransportTest(
       """{"s":204,"i":"123"}""" + "\r\n" + "{}"
     )
@@ -257,7 +278,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     r.body shouldBe a[EmptyBody]
   }
 
-  "ask " should " send static request with empty body (client)" in {
+  it should " send static request with empty body (client)" in {
     val ct = new ClientTransportTest(
       """{"s":204,"i":"123"}""" + "\r\n" + "{}"
     )
@@ -274,7 +295,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     r.body shouldBe a[EmptyBody]
   }
 
-  "ask" should "send static request with body without contentType specified" in {
+  it should "send static request with body without contentType specified" in {
     val ct = new ClientTransportTest(
       """{"s":204,"i":"123"}""" + "\r\n" + "{}"
     )
@@ -291,7 +312,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     r.body shouldBe a[EmptyBody]
   }
 
-  "ask" should "send static request with some query (client)" in {
+  it should "send static request with some query (client)" in {
     val ct = new ClientTransportTest(
       """{"s":200,"i":"123"}""" + "\r\n" + """{"data":"abc"}"""
     )
@@ -308,7 +329,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     r.body shouldBe a[DynamicBody]
   }
 
-  "ask" should "send static request with some query with optional params (client)" in {
+  it should "send static request with some query with optional params (client)" in {
     val ct = new ClientTransportTest(
       """{"s":200,"i":"123"}""" + "\r\n" + """{"resource_id":"100500"}"""
     )
@@ -325,7 +346,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     r.body shouldBe a[TestAnotherBody]
   }
 
-  "ask" should "catch client exception" in {
+  it should "catch client exception" in {
     val ct = new ClientTransportTest(
       """{"s":409,"i":"abcde12345"}""" + "\r\n" + """{"code":"failed","error_id":"abcde12345"}"""
     )
@@ -357,7 +378,37 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     task.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
   }
 
-  "commands" should "handle server request when missed a contentType" in {
+  it should "handle server request from multiple transports" in {
+    val st1 = new ServerTransportTest()
+    val st2 = new ServerTransportTest()
+
+    implicit val injector = new Module {
+      bind [Scheduler] to global
+    }
+    val cr = Seq.empty
+    val sr: Seq[TransportRoute[ServerTransport]] = Seq(
+      TransportRoute(st1, RequestMatcher.any),
+      TransportRoute(st2, RequestMatcher.any)
+    )
+    val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
+
+    val subscriptions = hyperbus.commands[TestPost1].subscribe{ c ⇒
+      c.reply(Success(
+        Created(testclasses.TestCreatedBody("100500"))
+      ))
+      Continue
+    }
+
+    val msg = testclasses.TestPost1(testclasses.TestBody1("ha ha"))
+    val task1 = st1.testCommand(msg)
+    val task2 = st2.testCommand(msg)
+    task1.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
+    task2.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
+
+    subscriptions.cancel()
+  }
+
+  it should "handle server request when missed a contentType" in {
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     hyperbus.commands[TestPost1].subscribe{ c ⇒
@@ -381,7 +432,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     task.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
   }
 
-  "commands" should "handle server static request with empty body (server)" in {
+  it should "handle server static request with empty body (server)" in {
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     hyperbus.commands[StaticPostWithEmptyBody].subscribe{ c ⇒
@@ -396,7 +447,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     task.runAsync.futureValue should equal(NoContent(EmptyBody))
   }
 
-  "commands" should "call method for static request with dynamic body (server)" in {
+  it should "call method for static request with dynamic body (server)" in {
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     hyperbus.commands[StaticPostWithDynamicBody].subscribe{ post =>
@@ -411,7 +462,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     task.runAsync.futureValue should equal(NoContent(EmptyBody))
   }
 
-  "commands" should "call method for dynamic request (server)" in {
+  it should "call method for dynamic request (server)" in {
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     hyperbus.commands[DynamicRequest](
@@ -446,11 +497,7 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       override def publish(message: RequestBase): Task[PublishResult] = {
         Task.now {
           sentEvents = sentEvents :+ message
-          new PublishResult {
-            def sent = None
-
-            def offset = None
-          }
+          PublishResult.empty
         }
       }
     }
@@ -463,18 +510,54 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     sentEvents.size should equal(1)
   }
 
-  "publish" should "publish dynamic request (client)" in {
+  it should "publish to every available transport" in {
+    val rsp = """{"status":409,"headers":{"message_id":"123"},"body":{"code":"failed","error_id":"abcde12345"}}"""
+    var sentEvents1 = List[RequestBase]()
+    val ct1 = new ClientTransportTest(rsp) {
+      override def publish(message: RequestBase): Task[PublishResult] = {
+        Task.now {
+          sentEvents1 = sentEvents1 :+ message
+          PublishResult.empty
+        }
+      }
+    }
+
+    var sentEvents2 = List[RequestBase]()
+    val ct2 = new ClientTransportTest(rsp) {
+      override def publish(message: RequestBase): Task[PublishResult] = {
+        Task.now {
+          sentEvents2 = sentEvents2 :+ message
+          PublishResult.empty
+        }
+      }
+    }
+
+    implicit val injector = new Module {
+      bind [Scheduler] to global
+    }
+    val cr: Seq[TransportRoute[ClientTransport]] = Seq(
+      TransportRoute(ct1, RequestMatcher.any),
+      TransportRoute(ct2, RequestMatcher.any)
+    )
+    val sr = Seq.empty
+    val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
+
+    val futureResult = hyperbus.publish {
+      testclasses.TestPost1(testclasses.TestBody1("ha ha"))
+    }.runAsync
+    futureResult.futureValue shouldBe a[Seq[_]]
+    sentEvents1.size should equal(1)
+    sentEvents2.size should equal(1)
+  }
+
+  it should "publish dynamic request (client)" in {
     val rsp = """{"status":409,"headers":{"message_id":"123"},"body":{"code":"failed","error_id":"abcde12345"}}"""
     var sentEvents = List[RequestBase]()
     val clientTransport = new ClientTransportTest(rsp) {
       override def publish(message: RequestBase): Task[PublishResult] = {
         Task.now {
           sentEvents = sentEvents :+ message
-          new PublishResult {
-            def sent = None
-
-            def offset = None
-          }
+          PublishResult.empty
         }
       }
     }
@@ -504,7 +587,41 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     receivedEvents should equal(1)
   }
 
-  "events" should "receive dynamic event (server)" in {
+  it should "receive event (server) from multiple transports" in {
+    val st1 = new ServerTransportTest()
+    val st2 = new ServerTransportTest()
+
+    implicit val injector = new Module {
+      bind [Scheduler] to global
+    }
+    val cr = Seq.empty
+    val sr: Seq[TransportRoute[ServerTransport]] = Seq(
+      TransportRoute(st1, RequestMatcher.any),
+      TransportRoute(st2, RequestMatcher.any)
+    )
+    val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
+
+    val receivedEvents = AtomicInt(0)
+    val subscriptions = hyperbus events[TestPost1] Some("group1") subscribe { post ⇒
+      receivedEvents.increment()
+      Continue
+    }
+
+    val msg1 = testclasses.TestPost1(testclasses.TestBody1("ha ha"))
+    val task1 = st1.testEvent(msg1)
+    task1.runAsync.futureValue shouldBe a[PublishResult]
+
+    val msg2 = testclasses.TestPost1(testclasses.TestBody1("sad"))
+    val task2 = st2.testEvent(msg2)
+    task2.runAsync.futureValue shouldBe a[PublishResult]
+
+    eventually {
+      receivedEvents.get shouldBe 2
+    }
+    subscriptions.cancel()
+  }
+
+  it should "receive dynamic event (server)" in {
     val st = new ServerTransportTest()
     val hyperbus = newHyperbus(null, st)
     @volatile var receivedEvents = 0

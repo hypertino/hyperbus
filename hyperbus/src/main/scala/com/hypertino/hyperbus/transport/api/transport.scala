@@ -13,21 +13,18 @@ import scala.util.Try
 
 trait PublishResult {
   def sent: Option[Boolean]
-
   def offset: Option[String]
 }
 
 trait ClientTransport {
   def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase]
-
-  def publish(message: RequestBase): Task[PublishResult]
-
+  def publish(message: RequestBase): Task[Any]
   def shutdown(duration: FiniteDuration): Task[Boolean]
 }
 
 case class CommandEvent[+REQ <: RequestBase](request: REQ, reply: Callback[ResponseBase]) extends MessagingContext {
   override def correlationId: String = request.correlationId
-  override def parentId = request.parentId
+  override def parentId: Option[String] = request.parentId
 }
 
 trait ServerTransport {
@@ -43,3 +40,15 @@ trait ServerTransport {
 
 class NoTransportRouteException(message: String) extends RuntimeException(message)
 
+object PublishResult {
+  val empty: PublishResult = new PublishResult {
+    override def offset: Option[String] = None
+    override def sent: Option[Boolean] = None
+    override def toString: String = "PublishResult.empty"
+  }
+  val sent: PublishResult = new PublishResult {
+    override def offset: Option[String] = None
+    override def sent: Option[Boolean] = Some(true)
+    override def toString: String = "PublishResult.sent"
+  }
+}
