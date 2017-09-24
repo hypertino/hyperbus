@@ -4,6 +4,7 @@ import com.hypertino.hyperbus.transport.api.{ClientTransport, ServerTransport, T
 
 case class HyperbusConfiguration(clientRoutes: Seq[TransportRoute[ClientTransport]],
                                  serverRoutes: Seq[TransportRoute[ServerTransport]],
+                                 registratorName: Option[String],
                                  schedulerName: Option[String],
                                  defaultGroupName: Option[String],
                                  readMessagesLogLevel: String,

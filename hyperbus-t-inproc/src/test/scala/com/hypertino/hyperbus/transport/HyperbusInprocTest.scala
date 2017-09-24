@@ -7,6 +7,7 @@ import com.hypertino.hyperbus.Hyperbus
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
+import com.hypertino.hyperbus.transport.registrators.DummyRegistrator
 import monix.execution.Ack.Continue
 import monix.execution.Scheduler
 import monix.execution.Scheduler.Implicits.global
@@ -112,6 +113,6 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
     val tr = new InprocTransport
     val cr = List(TransportRoute[ClientTransport](tr, RequestMatcher.any))
     val sr = List(TransportRoute[ServerTransport](tr, RequestMatcher.any))
-    new Hyperbus(defaultGroupName = None, readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
+    new Hyperbus(defaultGroupName = None, readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, DummyRegistrator, global, injector)
   }
 }

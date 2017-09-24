@@ -36,6 +36,7 @@ object HyperbusConfigurationLoader {
         val transportName = li.read[String]("transport")
         getTransportRoute[ServerTransport](transportName, transportMap, li)
       },
+      hc.getOptionString("registrator"),
       hc.getOptionString("scheduler"),
       hc.getOptionString("group-name"),
       hc.getOptionString("read-messages-log-level").getOrElse("TRACE"),
