@@ -21,7 +21,7 @@ lazy val ramlUtils = "com.hypertino" %% "hyperbus-utils" % "0.1-SNAPSHOT"
 lazy val scalaMock = "org.scalamock" %% "scalamock-scalatest-support" % "3.5.0" % "test"
 lazy val monix = "io.monix" %% "monix" % "2.2.2"
 lazy val scaldi = "org.scaldi" %% "scaldi" % "0.5.8"
-lazy val scalaUri = "com.hypertino" %% "scala-uri" % "0.4.18-NO-SPRAY"
+lazy val scalaUri = "com.hypertino" %% "scala-uri" % "0.4.19-NO-SPRAY"
 lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2"
 lazy val apacheLang3 = "org.apache.commons" % "commons-lang3" % "3.6"
 lazy val logback = "ch.qos.logback" % "logback-classic" % "1.1.8"
@@ -68,8 +68,12 @@ lazy val `hyperbus-t-inproc` = project in file("hyperbus-t-inproc") settings (
   ) dependsOn `hyperbus`
 
 lazy val `hyperbus-root` = project.in(file(".")) settings (
-    publishArtifact := false
-  ) aggregate (
+  publishArtifact := false,
+  publishArtifact in Test := false,
+  publishArtifact := false,
+  publish := {},
+  publishLocal := {}
+) aggregate (
     `hyperbus-macro`,
     `hyperbus`,
     `hyperbus-t-inproc`
@@ -78,7 +82,6 @@ lazy val `hyperbus-root` = project.in(file(".")) settings (
 // Sonatype repositary publish options
 val publishSettings = Seq(
   publishMavenStyle := true,
-  
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
     if (isSnapshot.value)
@@ -88,12 +91,11 @@ val publishSettings = Seq(
   },
 
   publishArtifact in Test := false,
-
   pomIncludeRepository := { _ => false},
 
   // pgp keys and credentials
-  pgpSecretRing := file("./travis/ht-oss-private.asc"),
-  pgpPublicRing := file("./travis/ht-oss-public.asc"),
+  pgpSecretRing := file("./travis/script/ht-oss-private.asc"),
+  pgpPublicRing := file("./travis/script/ht-oss-public.asc"),
   usePgpKeyHex("F8CDEF49B0EDEDCC"),
   pgpPassphrase := Option(System.getenv().get("oss_gpg_passphrase")).map(_.toCharArray),
 
@@ -129,13 +131,3 @@ credentials ++= (for {
   username <- Option(System.getenv().get("sonatype_username"))
   password <- Option(System.getenv().get("sonatype_password"))
 } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
-
-publishArtifact in Test := false
-
-publishArtifact := false
-
-publish := ()
-
-publishLocal := ()
-
-  
