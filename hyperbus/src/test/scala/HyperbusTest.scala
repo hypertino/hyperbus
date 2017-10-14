@@ -132,7 +132,7 @@ class TestServiceClass(hyperbus: Hyperbus) extends Subscribable {
       override def parentId: Option[String] = post1.parentId
     }
 
-    if (post1.headers.hrl.query.ok.isDefined) {
+    if (post1.headers.hrl.query.dynamic.ok.isDefined) {
       Created(testclasses.TestCreatedBody("100500"))
     }
     else {
@@ -141,7 +141,7 @@ class TestServiceClass(hyperbus: Hyperbus) extends Subscribable {
   }
 
   def onTestPost1Event(post1: TestPost1): Ack = {
-    if (post1.headers.hrl.query.ok.isDefined) {
+    if (post1.headers.hrl.query.dynamic.ok.isDefined) {
       okEvents.incrementAndGet()
     }
     else {

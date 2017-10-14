@@ -29,7 +29,7 @@ package object model {
 
   private [model] object PathSelector {
     def inner(path: Seq[String], v: Value): Value = if (path.isEmpty) v else {
-      inner(path.tail, v.selectDynamic(path.head))
+      inner(path.tail, v.dynamic.selectDynamic(path.head))
     }
   }
 

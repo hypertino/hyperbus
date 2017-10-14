@@ -200,8 +200,8 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers with 
       val f = t.ask(DynamicRequest(HRL("hb://mock"), Method.POST, DynamicBody(
         Obj.from("test" → "hey", "test_null" → Null)
       )), StandardResponse.dynamicDeserializer).asInstanceOf[Task[DynamicResponse]]
-      f.runAsync.futureValue.body.content.test should equal(Text("yeh"))
-      f.runAsync.futureValue.body.content.test_null should equal(Null)
+      f.runAsync.futureValue.body.content.dynamic.test should equal(Text("yeh"))
+      f.runAsync.futureValue.body.content.dynamic.test_null should equal(Null)
       counter.get should equal(1)
     }
 

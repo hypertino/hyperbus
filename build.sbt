@@ -1,6 +1,6 @@
-crossScalaVersions := Seq("2.12.1", "2.11.8")
+crossScalaVersions := Seq("2.12.3", "2.11.11")
 
-scalaVersion in Global := "2.11.8"
+scalaVersion in Global := crossScalaVersions.value.head
 
 lazy val commonSettings = Seq(
   version := "0.3-SNAPSHOT",
@@ -21,7 +21,7 @@ lazy val ramlUtils = "com.hypertino" %% "hyperbus-utils" % "0.1-SNAPSHOT"
 lazy val scalaMock = "org.scalamock" %% "scalamock-scalatest-support" % "3.5.0" % "test"
 lazy val monix = "io.monix" %% "monix" % "2.2.2"
 lazy val scaldi = "org.scaldi" %% "scaldi" % "0.5.8"
-lazy val scalaUri = "com.hypertino" %% "scala-uri" % "0.4.17-NO-SPRAY"
+lazy val scalaUri = "com.hypertino" %% "scala-uri" % "0.4.18-NO-SPRAY"
 lazy val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2"
 lazy val apacheLang3 = "org.apache.commons" % "commons-lang3" % "3.6"
 lazy val logback = "ch.qos.logback" % "logback-classic" % "1.1.8"

@@ -215,10 +215,10 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
 
           new $className(
             ..${
-        queryFields.map { field ⇒
-          q"${field.name} = $headersVal.hrl.query.${TermName(SerializationOptions.caseConverter.convert(field.name.decodedName.toString))}.to[${field.tpt}]"
-        }
-      },
+              queryFields.map { field ⇒
+                q"${field.name} = $headersVal.hrl.query.dynamic.${TermName(SerializationOptions.caseConverter.convert(field.name.decodedName.toString))}.to[${field.tpt}]"
+              }
+            },
             $bodyFieldName = $bodyVal,
             headers = $headersVal,
             plain__init = true
