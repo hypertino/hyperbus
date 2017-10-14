@@ -1,7 +1,7 @@
 package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.config.{HyperbusConfiguration, HyperbusConfigurationLoader}
-import com.hypertino.hyperbus.model.{Header, HyperbusError, MessageBase, Method, RequestBase, RequestMeta, RequestObservableMeta}
+import com.hypertino.hyperbus.model.{HyperbusError, MessageBase, Method, RequestBase, RequestMeta, RequestObservableMeta}
 import com.hypertino.hyperbus.transport.api.{NoTransportRouteException, _}
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.{ObservableList, SchedulerInjector, ServiceRegistratorInjector}
@@ -10,7 +10,6 @@ import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
 import monix.execution.Scheduler
 import monix.reactive.Observable
-import monix.reactive.subjects.ConcurrentSubject
 import scaldi.{Injectable, Injector}
 
 import scala.concurrent.duration.FiniteDuration
@@ -21,7 +20,6 @@ class Hyperbus(val defaultGroupName: Option[String],
                val writeMessagesLogLevel: String,
                protected[this] val clientRoutes: Seq[TransportRoute[ClientTransport]],
                protected[this] val serverRoutes: Seq[TransportRoute[ServerTransport]],
-               protected[this] val registrator: ServiceRegistrator,
                protected[this] implicit val scheduler: Scheduler,
                protected[this] val inj: Injector)
   extends HyperbusApi with Injectable with StrictLogging {
@@ -32,7 +30,6 @@ class Hyperbus(val defaultGroupName: Option[String],
     configuration.writeMessagesLogLevel.toUpperCase,
     configuration.clientRoutes,
     configuration.serverRoutes,
-    ServiceRegistratorInjector(configuration.registratorName),
     SchedulerInjector(configuration.schedulerName),
     inj
   )

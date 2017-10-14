@@ -29,11 +29,11 @@ case class CommandEvent[+REQ <: RequestBase](request: REQ, reply: Callback[Respo
 
 trait ServerTransport {
   def commands[REQ <: RequestBase](matcher: RequestMatcher,
-                                     inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]]
+                                   inputDeserializer: RequestDeserializer[REQ]): Observable[CommandEvent[REQ]]
 
   def events[REQ <: RequestBase](matcher: RequestMatcher,
-                                   groupName: String,
-                                   inputDeserializer: RequestDeserializer[REQ]): Observable[REQ]
+                                 groupName: String,
+                                 inputDeserializer: RequestDeserializer[REQ]): Observable[REQ]
 
   def shutdown(duration: FiniteDuration): Task[Boolean]
 }

@@ -3,7 +3,7 @@ crossScalaVersions := Seq("2.12.1", "2.11.8")
 scalaVersion in Global := "2.11.8"
 
 lazy val commonSettings = Seq(
-  version := "0.2-SNAPSHOT",
+  version := "0.3-SNAPSHOT",
   organization := "com.hypertino",  
   resolvers ++= Seq(
     Resolver.sonatypeRepo("public")
@@ -14,9 +14,9 @@ lazy val commonSettings = Seq(
 )
 
 // external dependencies
-lazy val binders = "com.hypertino" %% "binders" % "1.0-SNAPSHOT"
-lazy val jsonBinders = "com.hypertino" %% "json-binders" % "1.0-SNAPSHOT"
-lazy val configBinders = "com.hypertino" %% "typesafe-config-binders" % "0.13-SNAPSHOT"
+lazy val binders = "com.hypertino" %% "binders" % "1.2.0"
+lazy val jsonBinders = "com.hypertino" %% "json-binders" % "1.2.0"
+lazy val configBinders = "com.hypertino" %% "typesafe-config-binders" % "0.2.0"
 lazy val ramlUtils = "com.hypertino" %% "hyperbus-utils" % "0.1-SNAPSHOT"
 lazy val scalaMock = "org.scalamock" %% "scalamock-scalatest-support" % "3.5.0" % "test"
 lazy val monix = "io.monix" %% "monix" % "2.2.2"
