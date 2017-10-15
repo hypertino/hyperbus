@@ -204,9 +204,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     implicit val injector = new Module {
       bind [Scheduler] to global
     }
-    val cr: Seq[TransportRoute[ClientTransport]] = Seq(
-      TransportRoute(ct1, RequestMatcher("hb://not-matches")),
-      TransportRoute(ct2, RequestMatcher.any)
+    val cr: Seq[ClientTransportRoute] = Seq(
+      ClientTransportRoute(ct1, RequestMatcher("hb://not-matches")),
+      ClientTransportRoute(ct2, RequestMatcher.any)
     )
     val sr = Seq.empty
     val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
@@ -387,9 +387,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       bind [Scheduler] to global
     }
     val cr = Seq.empty
-    val sr: Seq[TransportRoute[ServerTransport]] = Seq(
-      TransportRoute(st1, RequestMatcher.any),
-      TransportRoute(st2, RequestMatcher.any)
+    val sr: Seq[ServerTransportRoute] = Seq(
+      ServerTransportRoute(st1, RequestMatcher.any, DummyRegistrator),
+      ServerTransportRoute(st2, RequestMatcher.any, DummyRegistrator)
     )
     val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
 
@@ -536,9 +536,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     implicit val injector = new Module {
       bind [Scheduler] to global
     }
-    val cr: Seq[TransportRoute[ClientTransport]] = Seq(
-      TransportRoute(ct1, RequestMatcher.any),
-      TransportRoute(ct2, RequestMatcher.any)
+    val cr: Seq[ClientTransportRoute] = Seq(
+      ClientTransportRoute(ct1, RequestMatcher.any),
+      ClientTransportRoute(ct2, RequestMatcher.any)
     )
     val sr = Seq.empty
     val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
@@ -596,9 +596,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       bind [Scheduler] to global
     }
     val cr = Seq.empty
-    val sr: Seq[TransportRoute[ServerTransport]] = Seq(
-      TransportRoute(st1, RequestMatcher.any),
-      TransportRoute(st2, RequestMatcher.any)
+    val sr: Seq[ServerTransportRoute] = Seq(
+      ServerTransportRoute(st1, RequestMatcher.any, DummyRegistrator),
+      ServerTransportRoute(st2, RequestMatcher.any, DummyRegistrator)
     )
     val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
 
@@ -769,8 +769,8 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     implicit val injector = new Module {
       bind [Scheduler] to global
     }
-    val cr = List(TransportRoute(ct, RequestMatcher.any))
-    val sr = List(TransportRoute(st, RequestMatcher.any))
+    val cr = List(ClientTransportRoute(ct, RequestMatcher.any))
+    val sr = List(ServerTransportRoute(st, RequestMatcher.any, DummyRegistrator))
     new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
   }
 }

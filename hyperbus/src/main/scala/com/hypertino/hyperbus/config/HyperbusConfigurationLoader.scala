@@ -2,7 +2,7 @@ package com.hypertino.hyperbus.config
 
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
-import com.hypertino.hyperbus.util.ConfigUtils
+import com.hypertino.hyperbus.util.{ConfigUtils, ServiceRegistratorInjector}
 import com.typesafe.config.Config
 import scaldi.Injector
 
@@ -30,11 +30,11 @@ object HyperbusConfigurationLoader {
     HyperbusConfiguration(
       hc.getConfigList("client-routes").map { li ⇒
         val transportName = li.read[String]("transport")
-        getTransportRoute[ClientTransport](transportName, transportMap, li)
+        getClientTransportRoute(transportName, transportMap, li)
       },
       hc.getConfigList("server-routes").map { li ⇒
         val transportName = li.read[String]("transport")
-        getTransportRoute[ServerTransport](transportName, transportMap, li)
+        getServerTransportRoute(transportName, transportMap, li)(inj)
       },
       hc.getOptionString("registrator"),
       hc.getOptionString("scheduler"),
@@ -44,7 +44,7 @@ object HyperbusConfigurationLoader {
     )
   }
 
-  private def getTransportRoute[T](transportName: String, transportMap: Map[String, Any], config: Config): TransportRoute[T] = {
+  private def getTransportAndMatcher[T](transportName: String, transportMap: Map[String, Any], config: Config): (T, RequestMatcher) = {
     val transport = transportMap.getOrElse(transportName,
       throw new HyperbusConfigurationError(s"Couldn't find transport '$transportName'")
     ).asInstanceOf[T]
@@ -53,7 +53,21 @@ object HyperbusConfigurationLoader {
       RequestMatcher(config.getValue("match"))
     else
       RequestMatcher.any
-    TransportRoute[T](transport, matcher)
+    (transport, matcher)
+  }
+
+  private def getClientTransportRoute(transportName: String, transportMap: Map[String, Any], config: Config): ClientTransportRoute = {
+    val (transport, matcher) = getTransportAndMatcher[ClientTransport](transportName,transportMap,config)
+    ClientTransportRoute(transport,matcher)
+  }
+
+  private def getServerTransportRoute(transportName: String, transportMap: Map[String, Any], config: Config)(implicit inj: Injector): ServerTransportRoute = {
+    val (transport, matcher) = getTransportAndMatcher[ServerTransport](transportName,transportMap,config)
+    val registratorName = if (config.hasPath("registrator"))
+      Some(config.getString("registrator"))
+    else
+      None
+    ServerTransportRoute(transport,matcher,ServiceRegistratorInjector(registratorName)(inj))
   }
 
   private def createTransport(config: Config, inj: Injector): Any = {

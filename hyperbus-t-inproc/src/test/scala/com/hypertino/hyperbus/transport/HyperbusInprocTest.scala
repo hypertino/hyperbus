@@ -111,8 +111,8 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
       bind [Scheduler] to global
     }
     val tr = new InprocTransport
-    val cr = List(TransportRoute[ClientTransport](tr, RequestMatcher.any))
-    val sr = List(TransportRoute[ServerTransport](tr, RequestMatcher.any))
+    val cr = List(ClientTransportRoute(tr, RequestMatcher.any))
+    val sr = List(ServerTransportRoute(tr, RequestMatcher.any, DummyRegistrator))
     new Hyperbus(defaultGroupName = None, readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
   }
 }

@@ -5,6 +5,7 @@ import com.hypertino.hyperbus.model.{Body, Request, RequestBase, ResponseBase}
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
 import com.hypertino.hyperbus.transport.api.matchers._
+import com.hypertino.hyperbus.transport.registrators.DummyRegistrator
 import com.typesafe.config.{Config, ConfigFactory}
 import monix.eval.Task
 import monix.execution.Scheduler
@@ -71,6 +72,7 @@ class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers
 
     implicit val injector = new Module {
       bind[Scheduler] to monix.execution.Scheduler.Implicits.global
+      bind[ServiceRegistrator] to DummyRegistrator
     }
     val conf = HyperbusConfigurationLoader.fromConfig(config, injector)
 

@@ -18,8 +18,8 @@ import scala.util.{Failure, Success}
 class Hyperbus(val defaultGroupName: Option[String],
                val readMessagesLogLevel: String,
                val writeMessagesLogLevel: String,
-               protected[this] val clientRoutes: Seq[TransportRoute[ClientTransport]],
-               protected[this] val serverRoutes: Seq[TransportRoute[ServerTransport]],
+               protected[this] val clientRoutes: Seq[ClientTransportRoute],
+               protected[this] val serverRoutes: Seq[ServerTransportRoute],
                protected[this] implicit val scheduler: Scheduler,
                protected[this] val inj: Injector)
   extends HyperbusApi with Injectable with StrictLogging {
