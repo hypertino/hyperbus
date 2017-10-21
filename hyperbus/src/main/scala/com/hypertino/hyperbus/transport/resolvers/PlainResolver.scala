@@ -12,7 +12,7 @@ class PlainResolver(endpointsMap: Map[String, Seq[PlainEndpoint]]) extends Servi
   override def serviceObservable(message: RequestBase): Observable[Seq[ServiceEndpoint]] = {
     endpointsMap.get(message.headers.hrl.authority) match {
       case Some(endpoints) ⇒ Observable.now(endpoints)
-      case None ⇒ Observable.raiseError(new NoTransportRouteException(s"Can't resolve service for ${message.headers.hrl}"))
+      case None ⇒ Observable.now(Seq.empty)
     }
   }
 }
