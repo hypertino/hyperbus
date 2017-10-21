@@ -114,7 +114,7 @@ class ServerTransportTest extends ServerTransport {
 
   def testEvent(msg: RequestBase): Task[PublishResult] = {
     sEventsSubject.onNext(msg)
-    Task.eval {
+    Task.now {
       PublishResult.sent
     }
   }
@@ -748,8 +748,8 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val task = st.testCommand(msg)
     task.runAsync.futureValue should equal(Created(testclasses.TestCreatedBody("100500")))
 
-    val eventTask = st.testEvent(msg)
     ts.okEvents.get shouldBe 0
+    val eventTask = st.testEvent(msg)
     eventTask.runAsync.futureValue
     eventually {
       ts.okEvents.get shouldBe 1
