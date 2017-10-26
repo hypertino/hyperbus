@@ -34,7 +34,7 @@ object DynamicBody {
     }
   }
 
-  def unapply(dynamicBody: DynamicBody) = Some((dynamicBody.contentType, dynamicBody.content))
+  def unapply(dynamicBody: DynamicBody) = Some((dynamicBody.content, dynamicBody.contentType))
 }
 
 private[model] case class DynamicBodyContainer(contentType: Option[String], content: Value) extends DynamicBody
