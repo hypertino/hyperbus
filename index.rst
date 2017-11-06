@@ -15,7 +15,7 @@ What Hypertino is trying to provide is a framework and components to implement s
 
 Hypertino services communicate over the Hyperbus.
 
-> Before we go into the details it's worth to mention that protocol and message formats utilized in Hyperbus are language and platform agnostic. We don't use things like Java serialization or Java/Scala specific types to be able to communicate with software written in other languages. Hopefully, one day there will support for other languages.
+.. note:: Before we go into the details it's worth to mention that protocol and message formats utilized in Hyperbus are language and platform agnostic. We don't use things like Java serialization or Java/Scala specific types to be able to communicate with software written in other languages. Hopefully, one day there will support for other languages.
 
 Hyperbus provides an abstraction and interface for communication that is more or less transport independent. In this aspect it's like ESB, however it's not a real ESB with all the middleware. Instead it have locally (inproc) defined configuration on how services are mapped to the specific transport.
 
