@@ -1,13 +1,15 @@
-# Hyperbus
+Hyperbus
+========
 
 If we take some software system, apply SRP and DRY principles and split it to the services, that can be deployed independently, what we'll get in the end is actually are microservices. The term isn't strictly defined and we refer to those microservices just as a services. Anyway those services should become small enough to be able to be reused and loosely coupled to be maintainable.
 
 To make those services loosely cooupled there are numerous techinques such as:
-  - using messaging instead of RPC;
-  - prefering one-way communication over two-way AKA request/reply;
-  - transport and protocol abstraction;
-  - using some glue platforms with rules like ESB;
-  - using common conventions, protocols, RFCs like HTTP/REST.
+
+- using messaging instead of RPC;
+- prefering one-way communication over two-way AKA request/reply;
+- transport and protocol abstraction;
+- using some glue platforms with rules like ESB;
+- using common conventions, protocols, RFCs like HTTP/REST.
 
 What Hypertino is trying to provide is a framework and components to implement services with balanced set of these principles.
 
@@ -29,19 +31,25 @@ Hyperbus provides just two patterns of communication:
 TODO: example of two services communicating with each other for each pattern.
 TODO: Scala specific details
 
-## RAML
+RAML
+----
 
 TODO: raml service specification
 
-## Protocol
+Protocol
+--------
 
-## Transports 
-  - Inproc
-  - ZeroMQ
-  - Kafka
+Transports
+----------
 
-  - Akka.Cluster (outdated)
+- Inproc
+- ZeroMQ
+- Kafka
 
-## Resolvers/registrators
-  - Dummy
-  - Consul  
+- Akka.Cluster (outdated)
+
+Resolvers/registrators
+----------------------
+
+- Dummy
+- Consul
