@@ -16,17 +16,17 @@ trait DynamicBody extends Body {
   }
 
   def copy(
-            contentType: Option[String] = this.contentType,
-            content: Value = this.content
+            content: Value = this.content,
+            contentType: Option[String] = this.contentType
           ): DynamicBody = {
     DynamicBody(content, contentType)
   }
 }
 
 object DynamicBody {
-  def apply(content: Value, contentType: Option[String]): DynamicBody = DynamicBodyContainer(contentType, content)
+  def apply(content: Value, contentType: Option[String]): DynamicBody = DynamicBodyContainer(content,contentType)
 
-  def apply(content: Value): DynamicBody = DynamicBodyContainer(None, content)
+  def apply(content: Value): DynamicBody = DynamicBodyContainer(content,None)
 
   def apply(reader: Reader, contentType: Option[String]): DynamicBody = {
     JsonBindersFactory.findFactory().withReader(reader) { deserializer =>
@@ -37,7 +37,7 @@ object DynamicBody {
   def unapply(dynamicBody: DynamicBody) = Some((dynamicBody.content, dynamicBody.contentType))
 }
 
-private[model] case class DynamicBodyContainer(contentType: Option[String], content: Value) extends DynamicBody
+private[model] case class DynamicBodyContainer(content: Value, contentType: Option[String]) extends DynamicBody
 
 
 
