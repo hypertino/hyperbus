@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils
 
 import scala.util.matching.Regex
 
-sealed trait TextMatcher {
+sealed trait TextMatcher extends Any {
   def matchText(other: TextMatcher): Boolean
 }
 
@@ -64,16 +64,19 @@ case object Any extends TextMatcher {
   def matchText(other: TextMatcher) = true
 }
 
-case class RegexMatcher(value: String) extends TextMatcher {
-  lazy val valueRegex = new Regex(value)
+case class RegexMatcher(valueRegex: Regex) extends AnyVal with TextMatcher {
   def matchText(other: TextMatcher) = other match {
     case Specific(otherValue) ⇒ valueRegex.findFirstMatchIn(otherValue).isDefined
-    case RegexMatcher(otherRegexPattern) ⇒ otherRegexPattern == value
+    case RegexMatcher(otherRegexPattern) ⇒ otherRegexPattern.pattern.toString == valueRegex.pattern.toString
     case _ ⇒ false
   }
 }
 
-case class Specific(value: String) extends TextMatcher {
+object RegexMatcher {
+  def apply(pattern: String): RegexMatcher = RegexMatcher(new Regex(pattern))
+}
+
+case class Specific(value: String) extends AnyVal with TextMatcher {
   def matchText(other: TextMatcher) = other match {
     case Specific(otherValue) ⇒ otherValue == value
     case _ ⇒ other.matchText(this)

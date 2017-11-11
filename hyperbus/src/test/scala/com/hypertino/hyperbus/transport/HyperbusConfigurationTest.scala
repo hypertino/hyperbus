@@ -89,10 +89,10 @@ class HyperbusConfigurationTest extends FreeSpec with ScalaFutures with Matchers
     conf.clientRoutes.head.transport shouldBe a[MockClientTransport]
 
     conf.serverRoutes should not be empty
-    conf.serverRoutes.head.matcher.headers should contain theSameElementsAs Map(
-      "r.l" → Seq(RegexMatcher("/topic/.*")),
-      "m" → Seq(Any)
-    )
+    conf.serverRoutes.head.matcher.headers should contain ("m" → Seq(Any))
+    val r = conf.serverRoutes.head.matcher.headers("r.l").head
+    r shouldBe a[RegexMatcher]
+    r.asInstanceOf[RegexMatcher].valueRegex.pattern.toString shouldBe "/topic/.*"
     conf.serverRoutes.head.transport shouldBe a[MockServerTransport]
   }
 }
