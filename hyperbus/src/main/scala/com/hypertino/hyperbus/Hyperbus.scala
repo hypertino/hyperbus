@@ -119,34 +119,27 @@ class Hyperbus(val defaultGroupName: Option[String],
       Observable.mergeDelayError(transports.map(_.commands(observableMeta.requestMatcher, requestMeta.apply)):_*)
     }
 
-    val loggingObservable = observableMeta.requestMatcher.headers.get(Header.METHOD) match {
-      case Some(method) ⇒
-        val level = if (method == Specific(Method.GET)) readMessagesLogLevel else writeMessagesLogLevel
-        if (isLoggingMessages(level))
-        observable
-          .map { command ⇒
-            logMessage(command.request, command.request, isClient = false, isEvent = false)
-            val loggingCommand = command.copy(
-              reply = new Callback[ResponseBase] {
-                override def onSuccess(value: ResponseBase): Unit = {
-                  logMessage(command.request, value, isClient = false, isEvent = false)
-                  command.reply.onSuccess(value)
-                }
-                override def onError(ex: Throwable): Unit = {
-                  logThrowableResponse(command.request, ex, isClient = false)
-                  command.reply.onError(ex)
-                }
+    val loggingObservable = if (isLoggingMessages(readMessagesLogLevel) || isLoggingMessages(writeMessagesLogLevel)) {
+      observable
+        .map { command ⇒
+          logMessage(command.request, command.request, isClient = false, isEvent = false)
+          val loggingCommand = command.copy(
+            reply = new Callback[ResponseBase] {
+              override def onSuccess(value: ResponseBase): Unit = {
+                logMessage(command.request, value, isClient = false, isEvent = false)
+                command.reply.onSuccess(value)
               }
-            )
-            loggingCommand
-          }
-        else {
-          observable
+
+              override def onError(ex: Throwable): Unit = {
+                logThrowableResponse(command.request, ex, isClient = false)
+                command.reply.onError(ex)
+              }
+            }
+          )
+          loggingCommand
         }
-
-      case None ⇒
-        observable
-
+    } else {
+      observable
     }
 
     loggingObservable
@@ -172,21 +165,13 @@ class Hyperbus(val defaultGroupName: Option[String],
       Observable.mergeDelayError(transports.map(_.events(observableMeta.requestMatcher, finalGroupName, requestMeta.apply)):_*)
     }
 
-    val loggingObservable = observableMeta.requestMatcher.headers.get(Header.METHOD) match {
-      case Some(method) ⇒
-        val level = if (method == Specific(Method.GET)) readMessagesLogLevel else writeMessagesLogLevel
-        if (isLoggingMessages(level))
-          observable
-            .doOnNext { event ⇒
-              logMessage(event, event, isClient = false, isEvent = true)
-            }
-        else {
-          observable
+    val loggingObservable = if (isLoggingMessages(readMessagesLogLevel) || isLoggingMessages(writeMessagesLogLevel)) {
+      observable
+        .doOnNext { event ⇒
+          logMessage(event, event, isClient = false, isEvent = true)
         }
-
-      case None ⇒
-        observable
-
+    }else {
+      observable
     }
 
     loggingObservable
