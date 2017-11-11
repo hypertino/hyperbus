@@ -6,9 +6,12 @@ import monix.reactive.Observable
 
 trait ServiceResolver {
   def lookupService(message: RequestBase): Task[ServiceEndpoint] = {
-    serviceObservable(message).firstL.map(_.headOption.getOrElse{
+    lookupServiceEndpoints(message).map(_.headOption.getOrElse{
       throw new NoTransportRouteException(s"Can't resolve: ${message.headers.hrl}")
     })
+  }
+  def lookupServiceEndpoints(message: RequestBase): Task[Seq[ServiceEndpoint]] = {
+    serviceObservable(message).firstL
   }
   def serviceObservable(message: RequestBase): Observable[Seq[ServiceEndpoint]]
 }
