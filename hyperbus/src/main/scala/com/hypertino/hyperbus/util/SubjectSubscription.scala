@@ -20,7 +20,7 @@ abstract class SubjectSubscription[T](implicit val scheduler: Scheduler) extends
 
   // Subject properties
   protected val subject: Subject[eventType, eventType]
-  def cancel(): Unit = {
+  def stop(): Unit = {
     remove()
     subject.onComplete()
   }
@@ -31,19 +31,10 @@ abstract class SubjectSubscription[T](implicit val scheduler: Scheduler) extends
     })
   }
 
-  private def cancel_1() = cancel()
-
-  val observable: Observable[eventType] = new Observable[eventType] {
-    override def unsafeSubscribeFn(subscriber: Subscriber[eventType]): Cancelable = {
-      val original: Cancelable = subject.unsafeSubscribeFn(subscriber)
-      add()
-      new Cancelable {
-        override def cancel(): Unit = {
-          cancel_1()
-          original.cancel()
-        }
-      }
-    }
+  def observable: Observable[eventType] = {
+    subject
+      .doOnSubscriptionCancel(remove)
+      .doOnSubscribe(add)
   }
 
   protected def remove(): Unit

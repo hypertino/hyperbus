@@ -33,7 +33,8 @@ lazy val `hyperbus-macro` = project in file("hyperbus-macro") settings (
   publishSettings,
   name := "hyperbus-macro",
   libraryDependencies ++= Seq(
-    binders
+    binders,
+    logback % "test"
   )
 )
 
@@ -51,7 +52,8 @@ lazy val `hyperbus` = project in file("hyperbus") settings (
       scalaUri,
       apacheLang3,
       scalaLogging,
-      scalaMock
+      scalaMock,
+      logback % "test"
     )
   ) dependsOn `hyperbus-macro`
 

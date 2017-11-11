@@ -121,8 +121,8 @@ class InprocTransport(serialize: Boolean = false)
   }
 
   override def shutdown(duration: FiniteDuration): Task[Boolean] = {
-    eventSubscriptions.toSeq.foreach(_.cancel())
-    commandSubscriptions.toSeq.foreach(_.cancel())
+    eventSubscriptions.toSeq.foreach(_.stop())
+    commandSubscriptions.toSeq.foreach(_.stop())
     eventSubscriptions.clear()
     commandSubscriptions.clear()
     Task.now(true)

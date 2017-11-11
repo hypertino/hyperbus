@@ -201,15 +201,12 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       """{"s":201,"t":"created-body","i":"123","r":{"l":"hb://test"}}""" + "\r\n" + """{"resource_id":"100500"}"""
     )
 
-    implicit val injector = new Module {
-      bind [Scheduler] to global
-    }
     val cr: Seq[ClientTransportRoute] = Seq(
       ClientTransportRoute(ct1, RequestMatcher("hb://not-matches")),
       ClientTransportRoute(ct2, RequestMatcher.any)
     )
     val sr = Seq.empty
-    val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
+    val hyperbus = hb(cr, sr)
 
     val f = hyperbus ask testclasses.TestPost1(testclasses.TestBody1("ha ha")) runAsync
 
@@ -383,15 +380,12 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val st1 = new ServerTransportTest()
     val st2 = new ServerTransportTest()
 
-    implicit val injector = new Module {
-      bind [Scheduler] to global
-    }
     val cr = Seq.empty
     val sr: Seq[ServerTransportRoute] = Seq(
       ServerTransportRoute(st1, RequestMatcher.any, DummyRegistrator),
       ServerTransportRoute(st2, RequestMatcher.any, DummyRegistrator)
     )
-    val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
+    val hyperbus = hb(cr, sr)
 
     val subscriptions = hyperbus.commands[TestPost1].subscribe{ c ⇒
       c.reply(Success(
@@ -533,15 +527,12 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       }
     }
 
-    implicit val injector = new Module {
-      bind [Scheduler] to global
-    }
     val cr: Seq[ClientTransportRoute] = Seq(
       ClientTransportRoute(ct1, RequestMatcher.any),
       ClientTransportRoute(ct2, RequestMatcher.any)
     )
     val sr = Seq.empty
-    val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
+    val hyperbus = hb(cr, sr)
 
     val futureResult = hyperbus.publish {
       testclasses.TestPost1(testclasses.TestBody1("ha ha"))
@@ -569,7 +560,9 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       .runAsync
 
     futureResult.futureValue
-    sentEvents.size should equal(1)
+    eventually {
+      sentEvents.size should equal(1)
+    }
   }
 
   "events" should "receive event (server)" in {
@@ -585,22 +578,21 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     val task = st.testEvent(msg)
     task.runAsync.futureValue shouldBe a[PublishResult]
 
-    receivedEvents should equal(1)
+    eventually {
+      receivedEvents should equal(1)
+    }
   }
 
   it should "receive event (server) from multiple transports" in {
     val st1 = new ServerTransportTest()
     val st2 = new ServerTransportTest()
 
-    implicit val injector = new Module {
-      bind [Scheduler] to global
-    }
     val cr = Seq.empty
     val sr: Seq[ServerTransportRoute] = Seq(
       ServerTransportRoute(st1, RequestMatcher.any, DummyRegistrator),
       ServerTransportRoute(st2, RequestMatcher.any, DummyRegistrator)
     )
-    val hyperbus = new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
+    val hyperbus = hb(cr, sr)
 
     val receivedEvents = AtomicInt(0)
     val subscriptions = hyperbus events[TestPost1] Some("group1") subscribe { post ⇒
@@ -766,11 +758,18 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
   }
 
   def newHyperbus(ct: ClientTransport, st: ServerTransport) = {
+    val cr = List(ClientTransportRoute(ct, RequestMatcher.any))
+    val sr = List(ServerTransportRoute(st, RequestMatcher.any, DummyRegistrator))
+    hb(cr,sr)
+  }
+
+  def hb(cr: Seq[ClientTransportRoute], sr: Seq[ServerTransportRoute]) = {
     implicit val injector = new Module {
       bind [Scheduler] to global
     }
-    val cr = List(ClientTransportRoute(ct, RequestMatcher.any))
-    val sr = List(ServerTransportRoute(st, RequestMatcher.any, DummyRegistrator))
-    new Hyperbus(Some("group1"), readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG", cr, sr, global, injector)
+    new Hyperbus(Some("group1"),
+      readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG",
+      serverReadMessagesLogLevel = "TRACE", serverWriteMessagesLogLevel = "DEBUG",
+      cr, sr, global, injector)
   }
 }

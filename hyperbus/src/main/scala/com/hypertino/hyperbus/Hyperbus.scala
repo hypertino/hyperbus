@@ -1,13 +1,13 @@
 package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.config.{HyperbusConfiguration, HyperbusConfigurationLoader}
-import com.hypertino.hyperbus.model.{HyperbusError, MessageBase, Method, RequestBase, RequestMeta, RequestObservableMeta}
+import com.hypertino.hyperbus.model.{Header, HyperbusError, MessageBase, Method, RequestBase, RequestMeta, RequestObservableMeta, ResponseBase}
 import com.hypertino.hyperbus.transport.api.{NoTransportRouteException, _}
-import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
+import com.hypertino.hyperbus.transport.api.matchers.{RequestMatcher, Specific}
 import com.hypertino.hyperbus.util.SchedulerInjector
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.StrictLogging
-import monix.eval.Task
+import monix.eval.{Callback, Task}
 import monix.execution.Scheduler
 import monix.reactive.Observable
 import scaldi.{Injectable, Injector}
@@ -16,8 +16,10 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success}
 
 class Hyperbus(val defaultGroupName: Option[String],
-               val readMessagesLogLevel: String,
-               val writeMessagesLogLevel: String,
+               protected[this] val readMessagesLogLevel: String,
+               protected[this] val writeMessagesLogLevel: String,
+               protected[this] val serverReadMessagesLogLevel: String,
+               protected[this] val serverWriteMessagesLogLevel: String,
                protected[this] val clientRoutes: Seq[ClientTransportRoute],
                protected[this] val serverRoutes: Seq[ServerTransportRoute],
                protected[this] implicit val scheduler: Scheduler,
@@ -28,6 +30,8 @@ class Hyperbus(val defaultGroupName: Option[String],
     configuration.defaultGroupName,
     configuration.readMessagesLogLevel.toUpperCase,
     configuration.writeMessagesLogLevel.toUpperCase,
+    configuration.serverReadMessagesLogLevel.toUpperCase,
+    configuration.serverWriteMessagesLogLevel.toUpperCase,
     configuration.clientRoutes,
     configuration.serverRoutes,
     SchedulerInjector(configuration.schedulerName),
@@ -103,10 +107,9 @@ class Hyperbus(val defaultGroupName: Option[String],
     }
   }
 
-  // todo: implement logging of server-side commands
   override def commands[REQ <: RequestBase](implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[CommandEvent[REQ]] = {
     val transports = lookupServerTransports(observableMeta.requestMatcher)
-    if (transports.isEmpty) {
+    val observable = if (transports.isEmpty) {
       throw new NoTransportRouteException(s"Matcher headers: ${observableMeta.requestMatcher.headers}")
     } else if (transports.tail.isEmpty) {
       transports
@@ -115,9 +118,43 @@ class Hyperbus(val defaultGroupName: Option[String],
     } else {
       Observable.mergeDelayError(transports.map(_.commands(observableMeta.requestMatcher, requestMeta.apply)):_*)
     }
+
+    val loggingObservable = observableMeta.requestMatcher.headers.get(Header.METHOD) match {
+      case Some(method) ⇒
+        val level = if (method == Specific(Method.GET)) readMessagesLogLevel else writeMessagesLogLevel
+        if (isLoggingMessages(level))
+        observable
+          .map { command ⇒
+            logMessage(command.request, command.request, isClient = false, isEvent = false)
+            val loggingCommand = command.copy(
+              reply = new Callback[ResponseBase] {
+                override def onSuccess(value: ResponseBase): Unit = {
+                  logMessage(command.request, value, isClient = false, isEvent = false)
+                  command.reply.onSuccess(value)
+                }
+                override def onError(ex: Throwable): Unit = {
+                  logThrowableResponse(command.request, ex, isClient = false)
+                  command.reply.onError(ex)
+                }
+              }
+            )
+            loggingCommand
+          }
+        else {
+          observable
+        }
+
+      case None ⇒
+        observable
+
+    }
+
+    loggingObservable
+      .doOnSubscriptionCancel(() ⇒ logger.info(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is canceled"))
+      .doOnComplete(() ⇒ logger.info(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is complete"))
+      .doOnError((ex) ⇒ logger.error(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is failed", ex))
   }
 
-  // todo: implement logging of server-side events
   override def events[REQ <: RequestBase](groupName: Option[String])(implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[REQ] = {
     val finalGroupName = groupName.getOrElse {
       defaultGroupName.getOrElse {
@@ -125,7 +162,7 @@ class Hyperbus(val defaultGroupName: Option[String],
       }
     }
     val transports = lookupServerTransports(observableMeta.requestMatcher)
-    if (transports.isEmpty) {
+    val observable = if (transports.isEmpty) {
       throw new NoTransportRouteException(s"Matcher headers: ${observableMeta.requestMatcher.headers}")
     } else if (transports.tail.isEmpty) {
       transports
@@ -134,6 +171,28 @@ class Hyperbus(val defaultGroupName: Option[String],
     } else {
       Observable.mergeDelayError(transports.map(_.events(observableMeta.requestMatcher, finalGroupName, requestMeta.apply)):_*)
     }
+
+    val loggingObservable = observableMeta.requestMatcher.headers.get(Header.METHOD) match {
+      case Some(method) ⇒
+        val level = if (method == Specific(Method.GET)) readMessagesLogLevel else writeMessagesLogLevel
+        if (isLoggingMessages(level))
+          observable
+            .doOnNext { event ⇒
+              logMessage(event, event, isClient = false, isEvent = true)
+            }
+        else {
+          observable
+        }
+
+      case None ⇒
+        observable
+
+    }
+
+    loggingObservable
+      .doOnSubscriptionCancel(() ⇒ logger.info(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is canceled"))
+      .doOnComplete(() ⇒ logger.info(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is complete"))
+      .doOnError((ex) ⇒ logger.error(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is failed", ex))
   }
 
   protected def lookupClientTransports(message: RequestBase): Seq[ClientTransport] = {
