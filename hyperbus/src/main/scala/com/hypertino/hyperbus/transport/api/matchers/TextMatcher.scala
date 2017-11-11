@@ -8,6 +8,7 @@ import scala.util.matching.Regex
 
 sealed trait TextMatcher extends Any {
   def matchText(other: TextMatcher): Boolean
+  def matchText(other: Specific): Boolean = matchText(other: TextMatcher) // GC optimization
 }
 
 object TextMatcher {
@@ -55,10 +56,11 @@ object TextMatcher {
 
 case object EmptyMatcher extends TextMatcher {
   def matchText(other: TextMatcher) = other match {
-    case Specific(otherValue) ⇒ otherValue.isEmpty
+    case s: Specific ⇒ matchText(s)
     case EmptyMatcher ⇒ true
     case _ ⇒ false
   }
+  override def matchText(other: Specific): Boolean = other.value.isEmpty
 }
 
 case object Any extends TextMatcher {
@@ -67,10 +69,11 @@ case object Any extends TextMatcher {
 
 case class RegexMatcher(valueRegex: Regex) extends AnyVal with TextMatcher {
   def matchText(other: TextMatcher) = other match {
-    case Specific(otherValue) ⇒ valueRegex.findFirstMatchIn(otherValue).isDefined
+    case s: Specific ⇒ matchText(s)
     case RegexMatcher(otherRegexPattern) ⇒ otherRegexPattern.pattern.toString == valueRegex.pattern.toString
     case _ ⇒ false
   }
+  override def matchText(other: Specific): Boolean = valueRegex.findFirstMatchIn(other.value).isDefined
 }
 
 object RegexMatcher {
@@ -79,46 +82,49 @@ object RegexMatcher {
 
 case class Specific(value: String) extends AnyVal with TextMatcher {
   def matchText(other: TextMatcher) = other match {
-    case Specific(otherValue) ⇒ otherValue == value
+    case s: Specific ⇒ matchText(s)
     case _ ⇒ other.matchText(this)
   }
+  override def matchText(other: Specific): Boolean = other.value == value
 }
 
 case class PartMatcher(value: String, part: Int, ignoreCase: Boolean) extends TextMatcher {
   override def matchText(other: TextMatcher): Boolean = other match {
-    case Specific(s) ⇒
-      part match {
-        case PartMatcher.LEFT ⇒ {
-          if (ignoreCase)
-            StringUtils.indexOfIgnoreCase(s, value)
-          else
-            StringUtils.indexOf(s, value)
-          } == 0
-
-        case PartMatcher.RIGHT ⇒ {
-          if (ignoreCase)
-                StringUtils.lastIndexOfIgnoreCase(s, value)
-              else
-                StringUtils.lastIndexOf(s, value)
-          } == s.length - value.length - 1
-
-        case PartMatcher.SUBSTRING ⇒ {
-          if (ignoreCase)
-            StringUtils.indexOfIgnoreCase(s, value)
-          else
-            StringUtils.indexOf(s, value)
-        } >= 0
-
-        case PartMatcher.FULL ⇒ {
-          if (ignoreCase)
-            StringUtils.compareIgnoreCase(s, value)
-          else
-            StringUtils.compare(s, value)
-        } == 0
-      }
-
+    case s: Specific ⇒ matchText(s)
     case o: PartMatcher ⇒ o == this
     case o ⇒ o.matchText(this)
+  }
+  override def matchText(other: Specific): Boolean = {
+    val s = other.value
+    part match {
+      case PartMatcher.LEFT ⇒ {
+        if (ignoreCase)
+          StringUtils.indexOfIgnoreCase(s, value)
+        else
+          StringUtils.indexOf(s, value)
+      } == 0
+
+      case PartMatcher.RIGHT ⇒ {
+        if (ignoreCase)
+          StringUtils.lastIndexOfIgnoreCase(s, value)
+        else
+          StringUtils.lastIndexOf(s, value)
+      } == s.length - value.length - 1
+
+      case PartMatcher.SUBSTRING ⇒ {
+        if (ignoreCase)
+          StringUtils.indexOfIgnoreCase(s, value)
+        else
+          StringUtils.indexOf(s, value)
+      } >= 0
+
+      case PartMatcher.FULL ⇒ {
+        if (ignoreCase)
+          StringUtils.compareIgnoreCase(s, value)
+        else
+          StringUtils.compare(s, value)
+      } == 0
+    }
   }
 }
 
