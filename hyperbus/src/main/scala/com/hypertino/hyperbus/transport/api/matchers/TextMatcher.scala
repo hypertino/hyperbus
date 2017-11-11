@@ -67,7 +67,7 @@ case object Any extends TextMatcher {
   def matchText(other: TextMatcher) = true
 }
 
-case class RegexMatcher(valueRegex: Regex) extends AnyVal with TextMatcher {
+case class RegexMatcher(valueRegex: Regex) extends TextMatcher {
   def matchText(other: TextMatcher) = other match {
     case s: Specific ⇒ matchText(s)
     case RegexMatcher(otherRegexPattern) ⇒ otherRegexPattern.pattern.toString == valueRegex.pattern.toString
@@ -90,6 +90,14 @@ case class RegexMatcher(valueRegex: Regex) extends AnyVal with TextMatcher {
     }
     else {
       None
+    }
+  }
+
+  override def hashCode(): Int = valueRegex.pattern.pattern().hashCode
+  override def equals(obj: scala.Any): Boolean = {
+    obj match {
+      case r: RegexMatcher ⇒ r.valueRegex.pattern.pattern() == valueRegex.pattern.pattern()
+      case _ ⇒ false
     }
   }
 }
