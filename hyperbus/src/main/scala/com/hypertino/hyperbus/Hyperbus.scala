@@ -4,7 +4,7 @@ import com.hypertino.hyperbus.config.{HyperbusConfiguration, HyperbusConfigurati
 import com.hypertino.hyperbus.model.{HyperbusError, MessageBase, Method, RequestBase, RequestMeta, RequestObservableMeta}
 import com.hypertino.hyperbus.transport.api.{NoTransportRouteException, _}
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
-import com.hypertino.hyperbus.util.{ObservableList, SchedulerInjector, ServiceRegistratorInjector}
+import com.hypertino.hyperbus.util.SchedulerInjector
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
@@ -113,7 +113,7 @@ class Hyperbus(val defaultGroupName: Option[String],
         .head
         .commands(observableMeta.requestMatcher, requestMeta.apply)
     } else {
-      ObservableList(transports.map(_.commands(observableMeta.requestMatcher, requestMeta.apply)))
+      Observable.mergeDelayError(transports.map(_.commands(observableMeta.requestMatcher, requestMeta.apply)):_*)
     }
   }
 
@@ -132,7 +132,7 @@ class Hyperbus(val defaultGroupName: Option[String],
         .head
         .events(observableMeta.requestMatcher, finalGroupName, requestMeta.apply)
     } else {
-      ObservableList(transports.map(_.events(observableMeta.requestMatcher, finalGroupName, requestMeta.apply)))
+      Observable.mergeDelayError(transports.map(_.events(observableMeta.requestMatcher, finalGroupName, requestMeta.apply)):_*)
     }
   }
 
