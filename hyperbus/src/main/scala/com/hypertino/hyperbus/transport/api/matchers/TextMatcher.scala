@@ -1,9 +1,10 @@
 package com.hypertino.hyperbus.transport.api.matchers
 
-import com.hypertino.hyperbus.config.HyperbusConfigurationError
 import org.apache.commons.lang3.StringUtils
 
 import scala.util.matching.Regex
+
+// todo: test if it's possible to make Specifc AnyVal without GC when matchText is called
 
 sealed trait TextMatcher extends Any {
   def matchText(other: TextMatcher): Boolean
