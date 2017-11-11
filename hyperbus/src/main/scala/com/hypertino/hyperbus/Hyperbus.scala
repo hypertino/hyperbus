@@ -8,7 +8,7 @@ import com.hypertino.hyperbus.util.SchedulerInjector
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.StrictLogging
 import monix.eval.{Callback, Task}
-import monix.execution.Scheduler
+import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.Observable
 import scaldi.{Injectable, Injector}
 
@@ -51,8 +51,8 @@ class Hyperbus(val defaultGroupName: Option[String],
 
   override def ask[REQ <: RequestBase, M <: RequestMeta[REQ]](request: REQ)(implicit requestMeta: M): Task[M#ResponseType] = {
     logMessage(request, request, isClient = true, isEvent = false)
-    val transports = lookupClientTransports(request)
-    askFirst(request, transports)
+    val routes = lookupClientTransports(request)
+    askFirst(request, routes.map(_.transport))
       .materialize
       .map {
         case Success(e: Throwable) ⇒
@@ -94,29 +94,29 @@ class Hyperbus(val defaultGroupName: Option[String],
   }
 
   override def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[Seq[Any]] = {
-    val transports = lookupClientTransports(request)
-    if (transports.isEmpty) {
-      logMessage(request, request, isClient = true, isEvent = true, s = "IGNORED: ", forceLevel=Some("WARN"))
+    val routes = lookupClientTransports(request)
+    if (routes.isEmpty) {
+      logMessage(request, request, isClient = true, isEvent = true, s = "IGNORED: ", forceLevel = Some("WARN"))
       Task.now(Seq.empty)
     }
     else {
       logMessage(request, request, isClient = true, isEvent = true)
-      Task.gather(transports
-        .map(_.publish(request))
+      Task.gather(routes
+        .map(_.transport.publish(request))
       )
     }
   }
 
   override def commands[REQ <: RequestBase](implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[CommandEvent[REQ]] = {
-    val transports = lookupServerTransports(observableMeta.requestMatcher)
-    val observable = if (transports.isEmpty) {
+    val routes = lookupServerTransports(observableMeta.requestMatcher)
+    val (observable, registrators) = if (routes.isEmpty) {
       throw new NoTransportRouteException(s"Matcher headers: ${observableMeta.requestMatcher.headers}")
-    } else if (transports.tail.isEmpty) {
-      transports
-        .head
-        .commands(observableMeta.requestMatcher, requestMeta.apply)
+    } else if (routes.tail.isEmpty) {
+      val route = routes.head
+      (route.transport.commands(observableMeta.requestMatcher, requestMeta.apply), Seq(route.registrator))
     } else {
-      Observable.mergeDelayError(transports.map(_.commands(observableMeta.requestMatcher, requestMeta.apply)):_*)
+      (Observable.mergeDelayError(routes.map(_.transport.commands(observableMeta.requestMatcher, requestMeta.apply)): _*),
+        routes.map(_.registrator))
     }
 
     val loggingObservable = if (isLoggingMessages(readMessagesLogLevel) || isLoggingMessages(writeMessagesLogLevel)) {
@@ -142,10 +142,38 @@ class Hyperbus(val defaultGroupName: Option[String],
       observable
     }
 
-    loggingObservable
-      .doOnSubscriptionCancel(() ⇒ logger.info(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is canceled"))
-      .doOnComplete(() ⇒ logger.info(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is complete"))
-      .doOnError((ex) ⇒ logger.error(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is failed", ex))
+    wrapObservable(loggingObservable, observableMeta.requestMatcher, registrators)
+  }
+
+  private def wrapObservable[T](o: Observable[T], requestMatcher: RequestMatcher, registrators: Seq[ServiceRegistrator]): Observable[T] = {
+    val to = requestMatcher.headers.toString
+    val registrations = Task.gatherUnordered {
+      registrators.map { r ⇒
+        r.registerService(requestMatcher)
+          .onErrorRecover {
+            case t: Throwable ⇒
+              logger.error(s"Registration of subscription $o to $to is failed", t)
+              Cancelable.empty
+          }
+      }
+    }.memoize
+
+    o.doAfterSubscribe(() ⇒ {
+      logger.info(s"Subscription #$o to $to is started")
+      registrations.runAsync
+    })
+      .doOnSubscriptionCancel(() ⇒ {
+        logger.info(s"Subscription #$o to $to is canceled")
+        registrations.map(_.foreach(_.cancel)).runAsync
+      })
+      .doOnTerminateEval {
+        case Some(ex) ⇒
+          logger.info(s"Subscription #$o to $to is failed", ex)
+          registrations.map(_.foreach(_.cancel))
+        case None ⇒
+          logger.info(s"Subscription #$o to $to is complete")
+          registrations.map(_.foreach(_.cancel))
+      }
   }
 
   override def events[REQ <: RequestBase](groupName: Option[String])(implicit requestMeta: RequestMeta[REQ], observableMeta: RequestObservableMeta[REQ]): Observable[REQ] = {
@@ -154,15 +182,15 @@ class Hyperbus(val defaultGroupName: Option[String],
         throw new UnsupportedOperationException(s"Can't subscribe: group name is not defined")
       }
     }
-    val transports = lookupServerTransports(observableMeta.requestMatcher)
-    val observable = if (transports.isEmpty) {
+    val routes = lookupServerTransports(observableMeta.requestMatcher)
+    val (observable, registrators) = if (routes.isEmpty) {
       throw new NoTransportRouteException(s"Matcher headers: ${observableMeta.requestMatcher.headers}")
-    } else if (transports.tail.isEmpty) {
-      transports
-        .head
-        .events(observableMeta.requestMatcher, finalGroupName, requestMeta.apply)
+    } else if (routes.tail.isEmpty) {
+      val route = routes.head
+      (route.transport.events(observableMeta.requestMatcher, finalGroupName, requestMeta.apply), Seq(route.registrator))
     } else {
-      Observable.mergeDelayError(transports.map(_.events(observableMeta.requestMatcher, finalGroupName, requestMeta.apply)):_*)
+      (Observable.mergeDelayError(routes.map(_.transport.events(observableMeta.requestMatcher, finalGroupName, requestMeta.apply)):_*),
+        routes.map(_.registrator))
     }
 
     val loggingObservable = if (isLoggingMessages(readMessagesLogLevel) || isLoggingMessages(writeMessagesLogLevel)) {
@@ -174,22 +202,15 @@ class Hyperbus(val defaultGroupName: Option[String],
       observable
     }
 
-    loggingObservable
-      .doOnSubscriptionCancel(() ⇒ logger.info(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is canceled"))
-      .doOnComplete(() ⇒ logger.info(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is complete"))
-      .doOnError((ex) ⇒ logger.error(s"Subscription #$loggingObservable to ${observableMeta.requestMatcher.headers} is failed", ex))
+    wrapObservable(loggingObservable, observableMeta.requestMatcher, registrators)
   }
 
-  protected def lookupClientTransports(message: RequestBase): Seq[ClientTransport] = {
-    clientRoutes.filter { route ⇒
-      route.matcher.matchMessage(message)
-    } map (_.transport)
+  protected def lookupClientTransports(message: RequestBase): Seq[ClientTransportRoute] = {
+    clientRoutes.filter(_.matcher.matchMessage(message))
   }
 
-  protected def lookupServerTransports(requestMatcher: RequestMatcher): Seq[ServerTransport] = {
-    serverRoutes.filter { route ⇒
-      route.matcher.matchRequestMatcher(requestMatcher)
-    } map (_.transport)
+  protected def lookupServerTransports(requestMatcher: RequestMatcher): Seq[ServerTransportRoute] = {
+    serverRoutes.filter(_.matcher.matchRequestMatcher(requestMatcher))
   }
 
   protected def isLoggingMessages(level: String): Boolean = level match {
