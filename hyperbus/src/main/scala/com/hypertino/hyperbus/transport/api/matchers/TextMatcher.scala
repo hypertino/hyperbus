@@ -7,11 +7,6 @@ import scala.util.matching.Regex
 
 sealed trait TextMatcher {
   def matchText(other: TextMatcher): Boolean
-
-  def specific: String = this match {
-    case Specific(value) ⇒ value
-    case _ ⇒ throw new UnsupportedOperationException(s"Specific value expected but got $getClass")
-  }
 }
 
 object TextMatcher {
