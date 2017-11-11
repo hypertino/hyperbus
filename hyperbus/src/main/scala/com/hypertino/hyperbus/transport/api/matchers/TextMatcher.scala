@@ -74,6 +74,24 @@ case class RegexMatcher(valueRegex: Regex) extends AnyVal with TextMatcher {
     case _ ⇒ false
   }
   override def matchText(other: Specific): Boolean = valueRegex.findFirstMatchIn(other.value).isDefined
+  def replaceIfMatch(s: String, replacement: String): Option[String] = {
+    val m = valueRegex.pattern.matcher(s)
+    var result = m.find
+    if (result) {
+      val sb = new StringBuffer
+      do {
+        m.appendReplacement(sb, replacement)
+        result = m.find
+      } while ( {
+        result
+      })
+      m.appendTail(sb)
+      Some(sb.toString)
+    }
+    else {
+      None
+    }
+  }
 }
 
 object RegexMatcher {

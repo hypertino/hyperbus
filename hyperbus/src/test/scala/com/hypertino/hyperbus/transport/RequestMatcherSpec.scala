@@ -98,6 +98,11 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     ) shouldBe true
   }
 
+  "RegexMatcher" should "matchReplace" in {
+    RegexMatcher("ab(.)de").replaceIfMatch("abcde", "ek$1lm") shouldBe Some("ekclm")
+    RegexMatcher("ab(.)de").replaceIfMatch("ekclm", "ek$1lm") shouldBe None
+  }
+
   def request(all: Headers): RequestBase = {
     new RequestBase{
       override def headers: RequestHeaders = RequestHeaders(all)
