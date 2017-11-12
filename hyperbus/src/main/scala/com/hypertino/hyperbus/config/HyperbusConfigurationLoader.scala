@@ -80,9 +80,6 @@ object HyperbusConfigurationLoader {
         "com.hypertino.hyperbus.transport." + s
     }
     val clazz = Class.forName(className)
-//    val transportConfig = config.getOptionConfig("options").getOrElse(
-//      ConfigFactory.parseString("")
-//    )
     clazz.getConstructor(classOf[Config], classOf[Injector]).newInstance(config, inj)
   }
 }

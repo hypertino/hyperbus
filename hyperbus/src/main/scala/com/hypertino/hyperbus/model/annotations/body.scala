@@ -77,13 +77,13 @@ private[annotations] trait BodyAnnotationMacroImpl extends AnnotationMacroImplBa
     val newClass = contentType match {
       case Some(ct) ⇒
         q"""
-          @com.hypertino.hyperbus.model.annotations.contentType($ct) case class $className(..$fields) extends ..$bases {
+          @com.hypertino.hyperbus.model.annotations.contentType($ct) case class $className(..$fields) extends ..$bases with scala.Serializable {
             ..$newBodyContent
           }
         """
       case None ⇒
         q"""
-          case class $className(..$fields) extends ..$bases {
+          case class $className(..$fields) extends ..$bases with scala.Serializable {
             ..$newBodyContent
           }
         """

@@ -62,7 +62,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
         @com.hypertino.hyperbus.model.annotations.statusCode($statusCode)
         class $className[..$typeArgs](..$fieldsExceptHeaders,
           val headers: com.hypertino.hyperbus.model.ResponseHeaders, plain__init: Boolean)
-          extends ..$bases with scala.Product {
+          extends ..$bases with scala.Product with scala.Serializable {
           def statusCode: Int = ${className.toTermName}.statusCode
 
           def copy[S <: $upperBound](body: S = this.body, headers: com.hypertino.hyperbus.model.ResponseHeaders = this.headers): $className[S] = {

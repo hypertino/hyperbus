@@ -81,7 +81,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         @com.hypertino.hyperbus.model.annotations.location($location)
         @com.hypertino.hyperbus.model.annotations.method($method)
         class $className(..$classFields, plain__init: Boolean = false)
-          extends ..$bases with scala.Product {
+          extends ..$bases with scala.Product with scala.Serializable {
           ..$body
 
           def copy(
