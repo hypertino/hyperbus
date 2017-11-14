@@ -122,4 +122,8 @@ trait ResponseMeta[PB <: Body, R <: Response[PB]] {
   // def unapply[B <: PB](response: Response[PB]): Option[(B,Map[String,Seq[String]])] TODO: this doesn't works, find a workaround
 }
 
+trait ErrorResponseMeta[PB <: Body, R <: Response[PB]] extends ResponseMeta[PB, R] {
+  def apply()(implicit messagingContext: MessagingContext): R
+}
+
 // class UriMatchException(val uri: String, val uriPattern: UriPattern, cause: Throwable = null) extends RuntimeException(s"$uri doesn't match pattern $uriPattern", cause)

@@ -10,6 +10,7 @@ package com.hypertino.hyperbus.model.annotations
 
 import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.language.experimental.macros
+import scala.reflect.internal.Trees
 import scala.reflect.macros.blackbox.Context
 
 @compileTimeOnly("enable macro paradise to expand macro annotations")
@@ -50,7 +51,7 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
       t.name
     }
     val upperBound = typeArgs.head.asInstanceOf[TypeDef].rhs match {
-      case TypeBoundsTree(lower, upper) ⇒ upper
+      case TypeBoundsTree(_, upper) ⇒ upper
       case _ ⇒ c.abort(c.enclosingPosition, "Type bounds aren't found: [T <: Body]")
     }
 
@@ -97,10 +98,25 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
         }
       """
 
+    val companionParts = clzCompanion.map { existingCompanion ⇒
+      val q"object $companion extends ..$bases { ..$body }" = existingCompanion
+      (companion,bases,body)
+    }
+
+
+    val errorApply = if (companionParts.exists(_._2.exists(_.toString.contains("ErrorResponseMeta")))) { // todo: this (check by string is a total hack, do something)
+      q"""
+        def apply()(implicit messagingContext: MessagingContext): $className[ErrorBody] = apply(ErrorBody(statusCodeToName(this.statusCode)))
+       """
+    }
+    else {
+      q""
+    }
+
     val ctxVal = fresh("ctx")
     val companionExtra =
       q"""
-        def statusCode: Int = $statusCode
+        final val statusCode: Int = $statusCode
 
         def apply[..$methodTypeArgs](..$fieldsExceptHeaders, headers: com.hypertino.hyperbus.model.ResponseHeaders)
           :$className[..$classTypeNames] = {
@@ -128,16 +144,17 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
           : $className[..$classTypeNames]
           = apply(..${fieldsExceptHeaders.map(_.name)}, com.hypertino.hyperbus.model.Headers.empty)(mcx)
 
+        ..$errorApply
+
         def unapply[..$methodTypeArgs](response: $className[..$classTypeNames]) = Some(
           (..${fieldsExceptHeaders.map(f ⇒ q"response.${f.name}")}, response.headers)
         )
     """
 
-    val newCompanion = clzCompanion map { existingCompanion =>
-      val q"object $companion extends ..$bases { ..$body }" = existingCompanion
+    val newCompanion = companionParts map { case (companion,companionBases,companionBody) =>
       q"""
-          object $companion extends ..$bases {
-            ..$body
+          object $companion extends ..$companionBases {
+            ..$companionBody
             ..$companionExtra
           }
         """
