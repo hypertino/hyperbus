@@ -9,6 +9,6 @@
 package com.hypertino.hyperbus.model
 
 object DefLink {
-  val SELF = "self"
-  val LOCATION = "location"
+  final val SELF = "self"
+  final val LOCATION = "location"
 }

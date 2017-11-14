@@ -15,9 +15,9 @@ import com.hypertino.binders.value.{Null, Text, Value}
 */
 
 object JsonContentTypeConverter {
-  val CERTAIN_CONTENT_TYPE_START  = "application/vnd."
-  val CERTAIN_CONTENT_TYPE_END    = "+json"
-  val COMMON_CONTENT_TYPE         = "application/json"
+  final val CERTAIN_CONTENT_TYPE_START  = "application/vnd."
+  final val CERTAIN_CONTENT_TYPE_END    = "+json"
+  final val COMMON_CONTENT_TYPE         = "application/json"
 
   def universalJsonContentTypeToSimple(httpContentType: Value): Value = {
     httpContentType match {

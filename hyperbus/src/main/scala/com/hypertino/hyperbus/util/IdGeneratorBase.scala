@@ -9,7 +9,7 @@
 package com.hypertino.hyperbus.util
 
 trait IdGeneratorBase {
-  private val base64t = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz" // sorted by char code
+  final protected val base64t = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz" // sorted by char code
 
   protected def appendInt(sb: StringBuilder, i: Int): Unit = {
     sb.append(base64t.charAt(i >> 24 & 63))

@@ -9,19 +9,19 @@
 package com.hypertino.hyperbus.model
 
 object Header {
-  val HRL = "r"
-  val METHOD = "m"
-  val CONTENT_TYPE = "t"
-  val MESSAGE_ID = "i"
-  val CORRELATION_ID = "c"
-  val PARENT_ID = "p"
-  val REVISION = "v"
-  val STATUS_CODE = "s"
-  val LOCATION = "l"
-  val COUNT = "n"
-  val LINK = "k"
+  final val HRL = "r"
+  final val METHOD = "m"
+  final val CONTENT_TYPE = "t"
+  final val MESSAGE_ID = "i"
+  final val CORRELATION_ID = "c"
+  final val PARENT_ID = "p"
+  final val REVISION = "v"
+  final val STATUS_CODE = "s"
+  final val LOCATION = "l"
+  final val COUNT = "n"
+  final val LINK = "k"
 
-  val fullNameMap = Map(
+  final val fullNameMap = Map(
     HRL → "HRL",
     METHOD → "METHOD",
     CONTENT_TYPE → "CONTENT_TYPE",
@@ -37,9 +37,9 @@ object Header {
 }
 
 object HeaderHRL {
-  val LOCATION = "l"
-  val QUERY = "q"
+  final val LOCATION = "l"
+  final val QUERY = "q"
 
-  val FULL_HRL: String = Header.HRL + "." + HeaderHRL.LOCATION
-  val FULL_QUERY: String = Header.HRL + "." + HeaderHRL.QUERY
+  final val FULL_HRL: String = Header.HRL + "." + HeaderHRL.LOCATION
+  final val FULL_QUERY: String = Header.HRL + "." + HeaderHRL.QUERY
 }
