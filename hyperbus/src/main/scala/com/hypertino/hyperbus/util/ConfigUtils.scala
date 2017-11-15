@@ -13,8 +13,7 @@ import java.util.concurrent.TimeUnit
 import com.typesafe.config.{Config, ConfigObject}
 
 object ConfigUtils {
-
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
   implicit class ExtendConfig(val config: Config) extends AnyVal {
     def getOptionString(key: String): Option[String] =
@@ -30,7 +29,7 @@ object ConfigUtils {
       if (config.hasPath(key)) Some(config.getObject(key)) else None
 
     def getOptionList(key: String): Option[Seq[Config]] =
-      if (config.hasPath(key)) Some(config.getConfigList(key).toSeq) else None
+      if (config.hasPath(key)) Some(config.getConfigList(key).asScala.toSeq) else None
 
     def getOptionBoolean(key: String): Option[Boolean] =
       if (config.hasPath(key)) Some(config.getBoolean(key)) else None

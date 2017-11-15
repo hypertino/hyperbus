@@ -17,16 +17,14 @@ import scaldi.Injector
 class HyperbusConfigurationError(message: String) extends RuntimeException(message)
 
 object HyperbusConfigurationLoader {
-
   import ConfigUtils._
-
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
   def fromConfig(config: Config, inj: Injector): HyperbusConfiguration = {
     val hc = config.getConfig("hyperbus")
 
     val st = hc.getObject("transports")
-    val transportMap = st.entrySet().map { entry ⇒
+    val transportMap = st.entrySet().asScala.map { entry ⇒
       val transportTag = entry.getKey
       val transportConfig = hc.getConfig("transports." + transportTag)
       val transport = createTransport(transportConfig, inj)
@@ -36,11 +34,11 @@ object HyperbusConfigurationLoader {
     import com.hypertino.binders.config.ConfigBinders._
 
     HyperbusConfiguration(
-      hc.getConfigList("client-routes").map { li ⇒
+      hc.getConfigList("client-routes").asScala.map { li ⇒
         val transportName = li.read[String]("transport")
         getClientTransportRoute(transportName, transportMap, li)
       },
-      hc.getConfigList("server-routes").map { li ⇒
+      hc.getConfigList("server-routes").asScala.map { li ⇒
         val transportName = li.read[String]("transport")
         getServerTransportRoute(transportName, transportMap, li)(inj)
       },
