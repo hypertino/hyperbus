@@ -8,15 +8,15 @@
 
 package com.hypertino.hyperbus.util
 
-import com.hypertino.hyperbus.model.{ErrorBody, InternalServerError, MessagingContext, ResponseBase}
+import com.hypertino.hyperbus.model.{ErrorBody, HyperbusError, InternalServerError, MessagingContext}
 import monix.eval.Task
 
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 object ErrorUtils {
-  def unexpected[T](r: Any)(implicit mcx: MessagingContext): T = throw InternalServerError(ErrorBody("unexpected", Some(s"Unexpected result: $r")))
+  def unexpected[T](r: Any)(implicit mcx: MessagingContext): T = throw toHyperbusError(r)
 
-  def unexpectedTask[T](r: Any)(implicit mcx: MessagingContext): Task[T] = Task.raiseError(InternalServerError(ErrorBody("unexpected", Some(s"Unexpected result: $r"))))
+  def unexpectedTask[T](r: Any)(implicit mcx: MessagingContext): Task[T] = Task.raiseError(toHyperbusError(r))
 
   def unexpected[T](implicit mcx: MessagingContext): PartialFunction[Try[_], T] = {
     case x ⇒
@@ -25,5 +25,15 @@ object ErrorUtils {
 
   def unexpectedTask[T](implicit mcx: MessagingContext): PartialFunction[Try[_], Task[T]] = {
     case x ⇒ unexpectedTask(x)(mcx)
+  }
+
+  def toHyperbusError(r: Any)(implicit mcx: MessagingContext): HyperbusError[_] = {
+    r match {
+      case e: HyperbusError[_] ⇒ e
+      case Failure(e: HyperbusError[_]) ⇒ e
+      case Success(s: Any) ⇒ InternalServerError (ErrorBody ("unexpected", Some (s"Unexpected result: $r") ) )
+      case Failure(e: Throwable) ⇒ InternalServerError (ErrorBody ("unexpected_error", Some (e.toString) ) )
+      case _ ⇒ InternalServerError (ErrorBody ("unexpected", Some (s"Unexpected result: $r") ) )
+    }
   }
 }
