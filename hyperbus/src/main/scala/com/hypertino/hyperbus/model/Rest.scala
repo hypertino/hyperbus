@@ -35,7 +35,7 @@ trait Writable {
 //  implicit val defaultBindOptions: BindOptions = BindOptions(skipOptionalFields = true)
 //}
 
-trait Body extends Writable {
+trait Body extends Writable with Serializable {
   def contentType: Option[String]
   override def toString: String = {
     implicit val so = SerializationOptions.forceOptionalFields
@@ -59,7 +59,7 @@ trait NoContentType {
 
 //trait DynamicBodyTrait
 
-trait Message[+B <: Body, +H <: MessageHeaders] extends Writable {
+trait Message[+B <: Body, +H <: MessageHeaders] extends Writable with Serializable {
   def headers: H
 
   def body: B
