@@ -31,10 +31,6 @@ trait Writable {
   }
 }
 
-//object Writable {
-//  implicit val defaultBindOptions: BindOptions = BindOptions(skipOptionalFields = true)
-//}
-
 trait Body extends Writable with Serializable {
   def contentType: Option[String]
   override def toString: String = {
@@ -100,8 +96,6 @@ trait RequestMetaCompanion[R <: RequestBase]
   def location: String
   def method: String
   def contentType: Option[String]
-  def requestMatcher: RequestMatcher
-  def responseDeserializer: com.hypertino.hyperbus.serialization.ResponseDeserializer[ResponseType]
 }
 
 trait Response[+B <: Body] extends Message[B, ResponseHeaders]
@@ -125,5 +119,3 @@ trait ResponseMeta[PB <: Body, R <: Response[PB]] {
 trait ErrorResponseMeta[PB <: Body, R <: Response[PB]] extends ResponseMeta[PB, R] {
   def apply()(implicit messagingContext: MessagingContext): R
 }
-
-// class UriMatchException(val uri: String, val uriPattern: UriPattern, cause: Throwable = null) extends RuntimeException(s"$uri doesn't match pattern $uriPattern", cause)
