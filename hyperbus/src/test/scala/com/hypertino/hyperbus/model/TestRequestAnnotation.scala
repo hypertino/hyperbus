@@ -221,8 +221,15 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
   "TestPost1" should "serialize with headers" in {
     val post1 = TestPost1("155", TestBody1("abcde"), Headers("test" → Lst.from("a")))
     post1.serializeToString should equal(
-      s"""{"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123","test":["a"]}""" + rn +
+      s"""{"test":["a"],"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
          """{"data":"abcde"}""")
+  }
+
+  "TestPost1" should "serialize and headers don't override class arguments" in {
+    val post1 = TestPost1("155", TestBody1("abcde"), Headers("test" → Lst.from("a"), Header.HRL → HRL("hb://abc").toValue))
+    post1.serializeToString should equal(
+      s"""{"test":["a"],"r":{"q":{"id":"155"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
+        """{"data":"abcde"}""")
   }
 
   "TestPost1" should "serialize with extra query" in {

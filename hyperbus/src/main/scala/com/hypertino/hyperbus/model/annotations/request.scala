@@ -203,11 +203,11 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
 
           new $className(..${fieldsExceptHeaders.map(_.name)},
             headers = com.hypertino.hyperbus.model.RequestHeaders(new com.hypertino.hyperbus.model.HeadersBuilder()
+              .++=(headers)
               .withHRL($hrlVal)
               .withMethod(${className.toTermName}.method)
               .withContentType(body.contentType)
               .withContext(mcx)
-              .++=(headers)
               .result()),
             plain__init = true
           )
