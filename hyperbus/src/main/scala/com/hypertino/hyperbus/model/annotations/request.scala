@@ -140,7 +140,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
     }
 
     val query = if (queryFields.isEmpty) {
-      q"com.hypertino.binders.value.Null"
+      q"com.hypertino.binders.value.Obj.empty"
     }
     else {
       q"""
@@ -186,7 +186,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
       val headerFields = if (defaults) {
         Seq(
           q"val headers: com.hypertino.hyperbus.model.Headers = com.hypertino.hyperbus.model.Headers.empty",
-          q"val query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Null"
+          q"val query: com.hypertino.binders.value.Value = com.hypertino.binders.value.Obj.empty"
         )
       } else {
         Seq(
@@ -199,7 +199,7 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
         def apply(..$fieldsExceptHeaders, ..$headerFields)
           (implicit mcx: com.hypertino.hyperbus.model.MessagingContext): $className = {
 
-          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, $query + query)
+          val $hrlVal = com.hypertino.hyperbus.model.HRL(${className.toTermName}.location, query % $query)
 
           new $className(..${fieldsExceptHeaders.map(_.name)},
             headers = com.hypertino.hyperbus.model.RequestHeaders(new com.hypertino.hyperbus.model.HeadersBuilder()

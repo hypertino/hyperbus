@@ -232,10 +232,17 @@ class TestRequestAnnotation extends FlatSpec with Matchers {
         """{"data":"abcde"}""")
   }
 
+  "TestPost1" should "serialize and query don't override class arguments" in {
+    val post1 = TestPost1("155", TestBody1("abcde"), query=Obj.from("id" → "200", "a" → "b"))
+    post1.serializeToString should equal(
+      s"""{"r":{"q":{"id":"155","a":"b"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
+        """{"data":"abcde"}""")
+  }
+
   "TestPost1" should "serialize with extra query" in {
     val post1 = TestPost1("155", TestBody1("abcde"), Headers.empty, Obj.from("a" → "100500"))
     post1.serializeToString should equal(
-      s"""{"r":{"q":{"id":"155","a":"100500"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
+      s"""{"r":{"q":{"a":"100500","id":"155"},"l":"hb://test"},"m":"post","t":"application/vnd.test-body-1+json","i":"123"}""" + rn +
         """{"data":"abcde"}""")
   }
 
