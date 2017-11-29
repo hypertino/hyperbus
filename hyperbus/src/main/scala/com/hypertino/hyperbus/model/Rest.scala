@@ -60,7 +60,7 @@ trait Message[+B <: Body, +H <: MessageHeaders] extends Writable with Serializab
 
   def body: B
 
-  def copyWithHeaders(headers: MessageHeaders): Message[B, H]
+  def copyWithHeaders(headers: Headers): Message[B, H]
 
   def serialize(writer: Writer)(implicit so: SerializationOptions): Unit = {
     headers.serialize(writer)(so)

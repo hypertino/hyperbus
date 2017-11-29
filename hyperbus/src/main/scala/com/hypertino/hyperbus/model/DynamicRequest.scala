@@ -18,11 +18,11 @@ import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 case class DynamicRequest(body: DynamicBody,
                           headers: RequestHeaders) extends Request[DynamicBody] {
 
-  override def copyWithHeaders(headers: MessageHeaders) = this.copy(
+  override def copyWithHeaders(headers: Headers) = this.copy(
     headers=MessageHeaders
       .builder
       .++=(this.headers)
-      .++=(headers.toSeq)
+      .++=(headers)
       .requestHeaders()
   )
 }

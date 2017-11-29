@@ -78,11 +78,11 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
             new $className(body, headers, plain__init = true)
           }
 
-          override def copyWithHeaders(headers: MessageHeaders) = this.copy(
+          override def copyWithHeaders(headers: Headers) = this.copy(
               headers=MessageHeaders
                 .builder
                 .++=(this.headers)
-                .++=(headers.toSeq)
+                .++=(headers)
                 .responseHeaders()
             )
 
