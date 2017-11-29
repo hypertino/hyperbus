@@ -14,7 +14,7 @@ import scaldi.{Injectable, Injector}
 class SchedulerInjector(implicit val inj: Injector) extends Injectable{
   def scheduler(name: Option[String]): Scheduler = name match {
     case None ⇒ inject[Scheduler]
-    case Some(s) ⇒ inject[Scheduler] (identified by s and by default inject[Scheduler])
+    case Some(s) ⇒ inject[Scheduler] (identified by s)
   }
 }
 

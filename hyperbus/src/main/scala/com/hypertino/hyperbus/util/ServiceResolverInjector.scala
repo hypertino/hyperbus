@@ -14,7 +14,7 @@ import scaldi.{Injectable, Injector}
 class ServiceResolverInjector(implicit val inj: Injector) extends Injectable{
   def serviceResolver(name: Option[String]): ServiceResolver = name match {
     case None ⇒ inject[ServiceResolver]
-    case Some(s) ⇒ inject[ServiceResolver] (identified by s and by default inject[ServiceResolver])
+    case Some(s) ⇒ inject[ServiceResolver] (identified by s)
   }
 }
 

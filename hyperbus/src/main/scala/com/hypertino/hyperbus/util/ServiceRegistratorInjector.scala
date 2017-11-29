@@ -14,7 +14,7 @@ import scaldi.{Injectable, Injector}
 class ServiceRegistratorInjector(implicit val inj: Injector) extends Injectable{
   def registrator(name: Option[String]): ServiceRegistrator = name match {
     case None ⇒ inject[ServiceRegistrator]
-    case Some(s) ⇒ inject[ServiceRegistrator] (identified by s and by default inject[ServiceRegistrator])
+    case Some(s) ⇒ inject[ServiceRegistrator] (identified by s)
   }
 }
 
