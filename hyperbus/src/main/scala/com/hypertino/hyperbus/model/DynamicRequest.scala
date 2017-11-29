@@ -16,7 +16,16 @@ import com.hypertino.hyperbus.serialization.ResponseDeserializer
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 
 case class DynamicRequest(body: DynamicBody,
-                          headers: RequestHeaders) extends Request[DynamicBody]
+                          headers: RequestHeaders) extends Request[DynamicBody] {
+
+  override def copyWithHeaders(headers: MessageHeaders) = this.copy(
+    headers=MessageHeaders
+      .builder
+      .++=(this.headers)
+      .++=(headers.toSeq)
+      .requestHeaders()
+  )
+}
 
 case class DynamicRequestObservableMeta(requestMatcher: RequestMatcher)
   extends RequestObservableMeta[DynamicRequest]

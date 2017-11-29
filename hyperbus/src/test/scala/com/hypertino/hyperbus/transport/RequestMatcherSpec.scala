@@ -111,19 +111,9 @@ class RequestMatcherSpec extends FlatSpec with Matchers {
     RegexMatcher("ab(.)de").replaceIfMatch("ekclm", "ek$1lm") shouldBe None
   }
 
-  def request(all: Headers): RequestBase = {
-    new RequestBase{
-      override def headers: RequestHeaders = RequestHeaders(all)
-      override def body: Body = null
-    }
-  }
+  def request(all: Headers): RequestBase = DynamicRequest(EmptyBody,RequestHeaders(all))
 
-  def request(location: String, query: Value = Null): RequestBase = {
-    new RequestBase{
-      override def headers: RequestHeaders = RequestHeaders(
-        Headers(Header.HRL → HRL(location, query).toValue)
-      )
-      override def body: Body = null
-    }
-  }
+  def request(location: String, query: Value = Null): RequestBase = DynamicRequest(EmptyBody,
+    RequestHeaders(Headers(Header.HRL → HRL(location, query).toValue))
+  )
 }

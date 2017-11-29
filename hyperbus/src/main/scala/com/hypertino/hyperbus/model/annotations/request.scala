@@ -99,6 +99,14 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
             new $className(..${classFields.map(_.name)}, plain__init = true)
           }
 
+          override def copyWithHeaders(headers: MessageHeaders) = this.copy(
+              headers=MessageHeaders
+                .builder
+                .++=(this.headers)
+                .++=(headers.toSeq)
+                .requestHeaders()
+            )
+
           def canEqual(other: Any): Boolean = other.isInstanceOf[$className]
 
           override def equals(other: Any) = this.eq(other.asInstanceOf[AnyRef]) ||{

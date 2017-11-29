@@ -73,7 +73,7 @@ object RequestHeaders {
 }
 
 case class ResponseHeaders(underlying: Headers) extends MessageHeaders with MapLike[String, Value, ResponseHeaders]{
-  lazy val statusCode: Int = this(Header.STATUS_CODE).toInt
+  def statusCode: Int = this(Header.STATUS_CODE).toInt
 
   def location: HRL = this(Header.LOCATION).to[HRL]
 

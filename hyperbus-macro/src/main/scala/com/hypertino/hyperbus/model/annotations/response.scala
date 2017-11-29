@@ -78,6 +78,14 @@ private[annotations] trait ResponseAnnotationMacroImpl extends AnnotationMacroIm
             new $className(body, headers, plain__init = true)
           }
 
+          override def copyWithHeaders(headers: MessageHeaders) = this.copy(
+              headers=MessageHeaders
+                .builder
+                .++=(this.headers)
+                .++=(headers.toSeq)
+                .responseHeaders()
+            )
+
           def canEqual(other: Any): Boolean = other.isInstanceOf[$className[_ <: $upperBound]]
 
           override def equals(other: Any) = this.eq(other.asInstanceOf[AnyRef]) || {
