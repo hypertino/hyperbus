@@ -99,8 +99,8 @@ private[annotations] trait RequestAnnotationMacroImpl extends AnnotationMacroImp
             new $className(..${classFields.map(_.name)}, plain__init = true)
           }
 
-          override def copyWithHeaders(headers: Headers) = this.copy(
-              headers=MessageHeaders
+          override def copyWithHeaders(headers: com.hypertino.hyperbus.model.Headers) = this.copy(
+              headers=com.hypertino.hyperbus.model.MessageHeaders
                 .builder
                 .++=(this.headers)
                 .++=(headers)
