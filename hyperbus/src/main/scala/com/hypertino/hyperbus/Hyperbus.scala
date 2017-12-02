@@ -57,7 +57,7 @@ class Hyperbus(val defaultGroupName: Option[String],
     }
   }
 
-  override def ask[REQ <: RequestBase, M <: RequestMeta[REQ]](request: REQ)(implicit requestMeta: M): Task[M#ResponseType] = {
+  override def ask[REQ <: RequestBase, M <: RequestMeta[REQ]](request: REQ)(implicit requestMeta: M): Task[M#ResponseType] = Task.defer {
     logMessage(request, request, isClient = true, isEvent = false)
     val routes = lookupClientTransports(request)
     askFirst(request, routes.map(_.transport))
@@ -101,7 +101,7 @@ class Hyperbus(val defaultGroupName: Option[String],
       }
   }
 
-  override def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[Seq[Any]] = {
+  override def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[Seq[Any]] = Task.defer {
     val routes = lookupClientTransports(request)
     if (routes.isEmpty) {
       logMessage(request, request, isClient = true, isEvent = true, s = "IGNORED: ", forceLevel = Some("WARN"))
