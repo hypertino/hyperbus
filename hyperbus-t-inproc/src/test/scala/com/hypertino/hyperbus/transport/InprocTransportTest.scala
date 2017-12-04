@@ -111,7 +111,7 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers with 
 
       val f: Task[PublishResult] = t.publish(MockRequest(MockBody("hey")))
       val publishResult = f.runAsync.futureValue
-      publishResult.sent should equal(Some(true))
+      publishResult.committed should equal(None)
       publishResult.offset should equal(None)
 
       eventually {
@@ -142,7 +142,7 @@ class InprocTransportTest extends FreeSpec with ScalaFutures with Matchers with 
 
       val f: Task[PublishResult] = t.publish(MockRequest(MockBody("hey")))
       val publishResult = f.runAsync.futureValue
-      publishResult.sent should equal(Some(true))
+      publishResult.committed should equal(None)
       publishResult.offset should equal(None)
 
       eventually {

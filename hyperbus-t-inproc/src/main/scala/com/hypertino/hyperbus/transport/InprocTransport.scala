@@ -95,7 +95,7 @@ class InprocTransport(serialize: Boolean = false)
 
       if (isPublish) {
         Task.zipList(publishTasks: _*).map { _ ⇒
-          PublishResult.sent
+          PublishResult.empty
         }
       } else {
         resultTask.get

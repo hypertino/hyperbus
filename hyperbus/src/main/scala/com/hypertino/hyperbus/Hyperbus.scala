@@ -101,7 +101,7 @@ class Hyperbus(val defaultGroupName: Option[String],
       }
   }
 
-  override def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[Seq[Any]] = Task.defer {
+  override def publish[REQ <: RequestBase](request: REQ)(implicit requestMeta: RequestMeta[REQ]): Task[Seq[PublishResult]] = Task.defer {
     val routes = lookupClientTransports(request)
     if (routes.isEmpty) {
       logMessage(request, request, isClient = true, isEvent = true, s = "IGNORED: ", forceLevel = Some("WARN"))

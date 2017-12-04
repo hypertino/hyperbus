@@ -123,7 +123,7 @@ class ServerTransportTest extends ServerTransport {
   def testEvent(msg: RequestBase): Task[PublishResult] = {
     sEventsSubject.onNext(msg)
     Task.now {
-      PublishResult.sent
+      PublishResult.committed
     }
   }
 }

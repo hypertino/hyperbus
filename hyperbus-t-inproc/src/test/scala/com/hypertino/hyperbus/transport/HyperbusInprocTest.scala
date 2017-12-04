@@ -32,7 +32,7 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
   implicit val mcx = MessagingContext("123")
   import testclasses._
 
-  "Hyperbus " - {
+  "Hyperbus Inproc" - {
     "Send and Receive" in {
 
       val hyperbus = newHyperbus()

@@ -20,13 +20,13 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 trait PublishResult {
-  def sent: Option[Boolean]
+  def committed: Option[Boolean]
   def offset: Option[String]
 }
 
 trait ClientTransport {
   def ask(message: RequestBase, responseDeserializer: ResponseBaseDeserializer): Task[ResponseBase]
-  def publish(message: RequestBase): Task[Any]
+  def publish(message: RequestBase): Task[PublishResult]
   def shutdown(duration: FiniteDuration): Task[Boolean]
 }
 
@@ -51,12 +51,12 @@ class NoTransportRouteException(message: String) extends RuntimeException(messag
 object PublishResult {
   val empty: PublishResult = new PublishResult {
     override def offset: Option[String] = None
-    override def sent: Option[Boolean] = None
+    override def committed: Option[Boolean] = None
     override def toString: String = "PublishResult.empty"
   }
-  val sent: PublishResult = new PublishResult {
+  val committed: PublishResult = new PublishResult {
     override def offset: Option[String] = None
-    override def sent: Option[Boolean] = Some(true)
+    override def committed: Option[Boolean] = Some(true)
     override def toString: String = "PublishResult.sent"
   }
 }
