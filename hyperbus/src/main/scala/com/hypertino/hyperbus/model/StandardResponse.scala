@@ -41,7 +41,7 @@ object StandardResponse {
 
   def apply(reader: Reader,
             headers: Headers): DynamicResponse = {
-    apply(reader, headers, PartialFunction.empty, false).asInstanceOf[DynamicResponse]
+    apply(reader, headers, PartialFunction.empty, throwIfError = false).asInstanceOf[DynamicResponse]
   }
 
   def dynamicDeserializer: ResponseDeserializer[DynamicResponse] = apply
