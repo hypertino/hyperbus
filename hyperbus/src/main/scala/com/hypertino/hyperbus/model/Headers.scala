@@ -27,6 +27,8 @@ trait MessageHeaders extends Map[String, Value] {
 
   def correlationId: String = underlying.get(Header.CORRELATION_ID).map(_.toString).getOrElse(messageId)
 
+  def parentId: String = underlying.get(Header.PARENT_ID).map(_.toString).getOrElse(messageId)
+
   def contentType: Option[String] = underlying.get(Header.CONTENT_TYPE).map(_.toString)
 
   def link: Map[String, HRL] = underlying.get(Header.LINK).map(_.to[Map[String, HRL]]).getOrElse(Map.empty)

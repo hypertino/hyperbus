@@ -108,7 +108,10 @@ object TemporaryRedirect extends ResponseMetaWithLocation[Body, TemporaryRedirec
 // ----------------- Exception base classes -----------------
 
 abstract class HyperbusError[+B <: Body](body: B)
-  extends RuntimeException(body.serializeToString) with Response[B] {
+  extends RuntimeException with Response[B] {
+  override def getMessage: String = {
+    s"${body.serializeToString} (i#${headers.messageId} p#${headers.parentId} c#${headers.correlationId})"
+  }
 }
 
 abstract class HyperbusServerError[+B <: Body](body: B) extends HyperbusError(body)
