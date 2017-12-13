@@ -88,7 +88,7 @@ object StandardResponse {
       case Status.UNPROCESSABLE_ENTITY => UnprocessableEntity(body, headers)
       case Status.LOCKED => Locked(body, headers)
       case Status.FAILED_DEPENDENCY => FailedDependency(body, headers)
-      case Status.TOO_MANY_REQUEST => TooManyRequest(body, headers)
+      case Status.TOO_MANY_REQUESTS => TooManyRequests(body, headers)
 
       case Status.INTERNAL_SERVER_ERROR => InternalServerError(body, headers)
       case Status.NOT_IMPLEMENTED => NotImplemented(body, headers)

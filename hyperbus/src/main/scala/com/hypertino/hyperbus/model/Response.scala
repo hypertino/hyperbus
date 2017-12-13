@@ -204,9 +204,9 @@ object Locked extends ErrorResponseMeta[Body, Locked[Body]]
 
 object FailedDependency extends ErrorResponseMeta[Body, FailedDependency[Body]]
 
-@response(Status.TOO_MANY_REQUEST) case class TooManyRequest[+B <: Body](body: B) extends HyperbusClientError(body)
+@response(Status.TOO_MANY_REQUESTS) case class TooManyRequests[+B <: Body](body: B) extends HyperbusClientError(body)
 
-object TooManyRequest extends ErrorResponseMeta[Body, TooManyRequest[Body]]
+object TooManyRequests extends ErrorResponseMeta[Body, TooManyRequests[Body]]
 
 // ----------------- Server Error responses -----------------
 

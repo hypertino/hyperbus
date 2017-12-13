@@ -47,7 +47,7 @@ object Status {
   final val UNPROCESSABLE_ENTITY = 422
   final val LOCKED = 423
   final val FAILED_DEPENDENCY = 424
-  final val TOO_MANY_REQUEST = 429
+  final val TOO_MANY_REQUESTS = 429
 
   final val INTERNAL_SERVER_ERROR = 500
   final val NOT_IMPLEMENTED = 501
@@ -93,7 +93,7 @@ object Status {
     "unprocessable_entity" → UNPROCESSABLE_ENTITY,
     "locked" → LOCKED,
     "failed_dependency" → FAILED_DEPENDENCY,
-    "too_many_request" → TOO_MANY_REQUEST,
+    "too_many_requests" → TOO_MANY_REQUESTS,
 
     "internal_server_error" → INTERNAL_SERVER_ERROR,
     "not_implemented" → NOT_IMPLEMENTED,
