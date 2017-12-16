@@ -8,8 +8,6 @@
 
 package com.hypertino.hyperbus.transport
 
-import java.io.StringReader
-
 import com.hypertino.hyperbus.model.{Message, RequestBase, ResponseBase}
 import com.hypertino.hyperbus.serialization._
 import com.hypertino.hyperbus.transport.api._
@@ -17,9 +15,8 @@ import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.util.ConfigUtils._
 import com.hypertino.hyperbus.util._
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
-import monix.execution.Scheduler
+import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.Observable
 import monix.reactive.subjects.ConcurrentSubject
 import scaldi.Injector
@@ -116,6 +113,7 @@ class InprocTransport(serialize: Boolean = false)
 
     new CommandSubscription(matcher, inputDeserializer)
       .observable
+      .share
       .asInstanceOf[Observable[CommandEvent[REQ]]]
   }
 
@@ -154,8 +152,6 @@ class InprocTransport(serialize: Boolean = false)
       seq.headOption
   }
 
-
-
   protected class CommandSubscription(val requestMatcher: RequestMatcher,
                                       val inputDeserializer: RequestDeserializer[RequestBase])
     extends SubjectSubscription[CommandEvent[RequestBase]] {
@@ -183,6 +179,11 @@ class InprocTransport(serialize: Boolean = false)
     override def add(): Unit = {
       eventSubscriptions.add(this)
     }
+  }
+
+  override def startServices(): Cancelable = {
+    // inproc transport ignores this
+    Cancelable.empty
   }
 }
 

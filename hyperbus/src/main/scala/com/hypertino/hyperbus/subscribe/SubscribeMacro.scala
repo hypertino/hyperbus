@@ -54,17 +54,7 @@ trait SubscribeMacroImpl[C <: Context] extends MacroAdapter[C] {
       val typeSymbol = t.typeSignature
       q"""
         $tVar.commands[$typeSymbol].subscribe{ implicit c ⇒
-          val $taskVar: monix.eval.Task[com.hypertino.hyperbus.model.ResponseBase] = monix.eval.Task.fromTry{
-            scala.util.Try {
-              $m(c.request)
-            }
-          }.flatten
-
-          $taskVar
-            .onErrorRecover(com.hypertino.hyperbus.subscribe.SubscribeMacroUtil.convertUnhandledException($log))
-            .runOnComplete(c.reply)
-
-          monix.execution.Ack.Continue
+          $tVar.safeHandleCommand(c, $log)($m)
         }
       """
     }
@@ -74,7 +64,7 @@ trait SubscribeMacroImpl[C <: Context] extends MacroAdapter[C] {
       val typeSymbol = t.typeSignature
       q"""
         $tVar.events[$typeSymbol](this.groupName($groupName)).subscribe{ implicit e ⇒
-          $m(e)
+          $tVar.safeHandleEvent(e)($m)
         }
       """
     }

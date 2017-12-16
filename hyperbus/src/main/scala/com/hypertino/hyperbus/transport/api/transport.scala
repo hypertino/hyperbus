@@ -43,6 +43,7 @@ trait ServerTransport {
                                  groupName: String,
                                  inputDeserializer: RequestDeserializer[REQ]): Observable[REQ]
 
+  def startServices(): Cancelable
   def shutdown(duration: FiniteDuration): Task[Boolean]
 }
 

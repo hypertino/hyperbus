@@ -19,7 +19,8 @@ import com.hypertino.hyperbus.transport.registrators.DummyRegistrator
 import monix.execution.Ack.Continue
 import monix.execution.Scheduler
 import monix.execution.Scheduler.Implicits.global
-import org.scalatest.concurrent.ScalaFutures
+import monix.execution.atomic.AtomicInt
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FreeSpec, Matchers}
 import scaldi.Module
@@ -27,14 +28,13 @@ import scaldi.Module
 import scala.util.{Success, Try}
 
 
-class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
-  override implicit val patienceConfig = PatienceConfig(timeout = scaled(Span(10000, Millis)))
+class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers with Eventually {
+  override implicit val patienceConfig = PatienceConfig(timeout = scaled(Span(12000, Millis)))
   implicit val mcx = MessagingContext("123")
   import testclasses._
 
   "Hyperbus Inproc" - {
     "Send and Receive" in {
-
       val hyperbus = newHyperbus()
 
       hyperbus.commands[TestPost1].subscribe{ implicit c ⇒
@@ -112,6 +112,87 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
 
       f4.failed.futureValue shouldBe a[Conflict[_]]
     }
+
+    "Publish events" in {
+      val hyperbus = newHyperbus()
+
+      val c1 = AtomicInt(0)
+      val c2 = AtomicInt(0)
+
+      val s1g1 = hyperbus.events[TestPost1](Some("g1")).subscribe { implicit c ⇒
+        c1.increment()
+        Continue
+      }
+
+      val s2g1 = hyperbus.events[TestPost1](Some("g1")).subscribe { implicit c ⇒
+        c1.increment()
+        Continue
+      }
+
+      val s1g2 = hyperbus.events[TestPost1](Some("g2")).subscribe { implicit c ⇒
+        c2.increment()
+        Continue
+      }
+
+      val f = hyperbus publish TestPost1(TestBody1("abc")) runAsync
+      val r = f.futureValue
+      r shouldBe a[Seq[_]]
+
+      eventually {
+        c1.get shouldBe 1
+        c2.get shouldBe 1
+      }
+      for (i ← 0 until 100) {
+        val f2 = hyperbus publish TestPost1(TestBody1("abc")) runAsync
+        val r2 = f2.futureValue
+        r2 shouldBe a[Seq[_]]
+      }
+
+      eventually {
+        c1.get shouldBe 101
+        c2.get shouldBe 101
+      }
+    }
+
+    "Publish events when handler is failed should not stop handling further events" in {
+      val hyperbus = newHyperbus()
+
+      val c1 = AtomicInt(0)
+      val c2 = AtomicInt(0)
+
+      val s1g1 = hyperbus.events[TestPost1](Some("g1")).subscribe { implicit c ⇒
+        hyperbus.safeHandleEvent(c) { _ ⇒
+          val i = c1.getAndIncrement()
+          if (i == 0) {
+            throw new RuntimeException(s"call #$i failed")
+          }
+          Continue
+        }
+      }
+
+      val s1g2 = hyperbus.events[TestPost1](Some("g2")).subscribe { implicit c ⇒
+        c2.increment()
+        Continue
+      }
+
+      val f = hyperbus publish TestPost1(TestBody1("abc")) runAsync
+      val r = f.futureValue
+      r shouldBe a[Seq[_]]
+
+      eventually {
+        c1.get shouldBe 0
+        c2.get shouldBe 1
+      }
+
+      val f2 = hyperbus publish TestPost1(TestBody1("abc")) runAsync
+      val r2 = f2.futureValue
+      r2 shouldBe a[Seq[_]]
+
+      eventually {
+        c1.get shouldBe 1
+        c2.get shouldBe 2
+      }
+    }
   }
 
   def newHyperbus() = {
@@ -119,8 +200,8 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers {
       bind [Scheduler] to global
     }
     val tr = new InprocTransport
-    val cr = List(ClientTransportRoute(tr, RequestMatcher.any))
-    val sr = List(ServerTransportRoute(tr, RequestMatcher.any, DummyRegistrator))
+    val cr = List(ClientTransportRoute(tr, RequestMatcher.any, None))
+    val sr = List(ServerTransportRoute(tr, RequestMatcher.any, DummyRegistrator, None))
     new Hyperbus(Some("group1"),
       readMessagesLogLevel = "TRACE", writeMessagesLogLevel = "DEBUG",
       serverReadMessagesLogLevel = "TRACE", serverWriteMessagesLogLevel = "DEBUG",

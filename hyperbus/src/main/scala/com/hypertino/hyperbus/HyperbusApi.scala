@@ -11,11 +11,13 @@ package com.hypertino.hyperbus
 import com.hypertino.hyperbus.model._
 import com.hypertino.hyperbus.subscribe.{Subscribable, SubscribeMacro}
 import com.hypertino.hyperbus.transport.api._
+import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.typesafe.scalalogging.Logger
 import monix.eval.Task
-import monix.execution.Cancelable
+import monix.execution.{Ack, Cancelable}
 import monix.reactive.Observable
 
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.language.experimental.macros
 
@@ -42,4 +44,10 @@ trait HyperbusApi {
   def subscribe[A](serviceClass: A, log: Logger): Seq[Cancelable] = macro SubscribeMacro.subscribeWithLog[A]
 
   def subscribe[A <: Subscribable](serviceClass: A): Seq[Cancelable] = macro SubscribeMacro.subscribe[A]
+
+  def startServices(): Cancelable
+
+  def safeHandleCommand[REQ <: RequestBase](command: CommandEvent[REQ], log: Option[Logger])(handler: REQ ⇒ Task[ResponseBase]): Future[Ack]
+
+  def safeHandleEvent[REQ <: RequestBase](request: REQ)(handler: REQ ⇒ Future[Ack]): Future[Ack]
 }

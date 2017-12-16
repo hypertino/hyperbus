@@ -16,7 +16,7 @@ import com.hypertino.hyperbus.transport.api.matchers._
 import com.hypertino.hyperbus.transport.registrators.DummyRegistrator
 import com.typesafe.config.{Config, ConfigFactory}
 import monix.eval.Task
-import monix.execution.Scheduler
+import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.Observable
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{FreeSpec, Matchers}
@@ -41,6 +41,8 @@ class MockServerTransport(config: Config, inj: Injector) extends ServerTransport
                                    inputDeserializer: RequestDeserializer[REQ]): Observable[REQ] = ???
 
   override def shutdown(duration: FiniteDuration): Task[Boolean] = ???
+
+  override def startServices() = Cancelable.empty
 }
 
 // todo: document match syntax

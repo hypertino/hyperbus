@@ -51,7 +51,7 @@ object HyperbusConfigurationLoader {
     )
   }
 
-  private def getTransportAndMatcher[T](transportName: String, transportMap: Map[String, Any], config: Config): (T, RequestMatcher) = {
+  private def getTransportAndMatcher[T](transportName: String, transportMap: Map[String, Any], config: Config): (T, RequestMatcher, Option[TransportType]) = {
     val transport = transportMap.getOrElse(transportName,
       throw new HyperbusConfigurationError(s"Couldn't find transport '$transportName'")
     ).asInstanceOf[T]
@@ -60,21 +60,27 @@ object HyperbusConfigurationLoader {
       RequestMatcher(config.getValue("match"))
     else
       RequestMatcher.any
-    (transport, matcher)
+
+    val transportType = config.getOptionString("transport-type").flatMap {
+      case "commands" ⇒ Some(Commands)
+      case "events" ⇒ Some(Events)
+      case "" | "*" ⇒ None
+    }
+    (transport, matcher, transportType)
   }
 
   private def getClientTransportRoute(transportName: String, transportMap: Map[String, Any], config: Config): ClientTransportRoute = {
-    val (transport, matcher) = getTransportAndMatcher[ClientTransport](transportName,transportMap,config)
-    ClientTransportRoute(transport,matcher)
+    val (transport, matcher, transportType) = getTransportAndMatcher[ClientTransport](transportName,transportMap,config)
+    ClientTransportRoute(transport,matcher,transportType)
   }
 
   private def getServerTransportRoute(transportName: String, transportMap: Map[String, Any], config: Config)(implicit inj: Injector): ServerTransportRoute = {
-    val (transport, matcher) = getTransportAndMatcher[ServerTransport](transportName,transportMap,config)
+    val (transport, matcher, transportType) = getTransportAndMatcher[ServerTransport](transportName,transportMap,config)
     val registratorName = if (config.hasPath("registrator"))
       Some(config.getString("registrator"))
     else
       None
-    ServerTransportRoute(transport,matcher,ServiceRegistratorInjector(registratorName)(inj))
+    ServerTransportRoute(transport,matcher,ServiceRegistratorInjector(registratorName)(inj),transportType)
   }
 
   private def createTransport(config: Config, inj: Injector): Any = {

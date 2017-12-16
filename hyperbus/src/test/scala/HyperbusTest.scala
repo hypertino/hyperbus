@@ -26,6 +26,7 @@ import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import monix.reactive.subjects.ConcurrentSubject
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
+import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FlatSpec, Matchers}
 import scaldi.Module
 import testclasses.{TestPost1, _}
@@ -126,6 +127,8 @@ class ServerTransportTest extends ServerTransport {
       PublishResult.committed
     }
   }
+
+  override def startServices(): Cancelable = Cancelable.empty
 }
 
 class TestServiceClass(hyperbus: Hyperbus) extends Subscribable {
@@ -179,6 +182,8 @@ class TestServiceClass2(hyperbus: Hyperbus) extends Subscribable {
 }
 
 class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventually {
+  override implicit val patienceConfig = PatienceConfig(timeout = scaled(Span(12000, Millis)))
+
   implicit val mcx = new MessagingContext {
     override def createMessageId() = "123"
     override def correlationId = "123"
@@ -210,8 +215,8 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     )
 
     val cr: Seq[ClientTransportRoute] = Seq(
-      ClientTransportRoute(ct1, RequestMatcher("hb://not-matches")),
-      ClientTransportRoute(ct2, RequestMatcher.any)
+      ClientTransportRoute(ct1, RequestMatcher("hb://not-matches"), None),
+      ClientTransportRoute(ct2, RequestMatcher.any, None)
     )
     val sr = Seq.empty
     val hyperbus = hb(cr, sr)
@@ -390,8 +395,8 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
     val cr = Seq.empty
     val sr: Seq[ServerTransportRoute] = Seq(
-      ServerTransportRoute(st1, RequestMatcher.any, DummyRegistrator),
-      ServerTransportRoute(st2, RequestMatcher.any, DummyRegistrator)
+      ServerTransportRoute(st1, RequestMatcher.any, DummyRegistrator, None),
+      ServerTransportRoute(st2, RequestMatcher.any, DummyRegistrator, None)
     )
     val hyperbus = hb(cr, sr)
 
@@ -488,7 +493,6 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
       )
     )
 
-
     val task = st.testCommand(msg)
     task.runAsync.futureValue should equal(NoContent(EmptyBody))
   }
@@ -536,8 +540,8 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
     }
 
     val cr: Seq[ClientTransportRoute] = Seq(
-      ClientTransportRoute(ct1, RequestMatcher.any),
-      ClientTransportRoute(ct2, RequestMatcher.any)
+      ClientTransportRoute(ct1, RequestMatcher.any, None),
+      ClientTransportRoute(ct2, RequestMatcher.any, None)
     )
     val sr = Seq.empty
     val hyperbus = hb(cr, sr)
@@ -597,8 +601,8 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
 
     val cr = Seq.empty
     val sr: Seq[ServerTransportRoute] = Seq(
-      ServerTransportRoute(st1, RequestMatcher.any, DummyRegistrator),
-      ServerTransportRoute(st2, RequestMatcher.any, DummyRegistrator)
+      ServerTransportRoute(st1, RequestMatcher.any, DummyRegistrator, None),
+      ServerTransportRoute(st2, RequestMatcher.any, DummyRegistrator, None)
     )
     val hyperbus = hb(cr, sr)
 
@@ -766,8 +770,8 @@ class HyperbusTest extends FlatSpec with ScalaFutures with Matchers with Eventua
   }
 
   def newHyperbus(ct: ClientTransport, st: ServerTransport) = {
-    val cr = List(ClientTransportRoute(ct, RequestMatcher.any))
-    val sr = List(ServerTransportRoute(st, RequestMatcher.any, DummyRegistrator))
+    val cr = List(ClientTransportRoute(ct, RequestMatcher.any, None))
+    val sr = List(ServerTransportRoute(st, RequestMatcher.any, DummyRegistrator, None))
     hb(cr,sr)
   }
 

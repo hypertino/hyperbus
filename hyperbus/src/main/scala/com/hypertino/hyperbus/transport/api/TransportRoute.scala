@@ -10,10 +10,15 @@ package com.hypertino.hyperbus.transport.api
 
 import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 
+sealed trait TransportType
+object Events extends TransportType
+object Commands extends TransportType
+
 trait TansportRoute[T] {
   def transport: T
   def matcher: RequestMatcher
+  def transportType: Option[TransportType]
 }
-case class ClientTransportRoute(transport: ClientTransport, matcher: RequestMatcher) extends TansportRoute[ClientTransport]
-case class ServerTransportRoute(transport: ServerTransport, matcher: RequestMatcher, registrator: ServiceRegistrator) extends TansportRoute[ServerTransport]
+case class ClientTransportRoute(transport: ClientTransport, matcher: RequestMatcher, transportType: Option[TransportType]) extends TansportRoute[ClientTransport]
+case class ServerTransportRoute(transport: ServerTransport, matcher: RequestMatcher, registrator: ServiceRegistrator, transportType: Option[TransportType]) extends TansportRoute[ServerTransport]
 
