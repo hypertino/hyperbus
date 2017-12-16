@@ -180,7 +180,7 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers with E
       r shouldBe a[Seq[_]]
 
       eventually {
-        c1.get shouldBe 0
+        c1.get shouldBe 1
         c2.get shouldBe 1
       }
 
@@ -189,7 +189,7 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers with E
       r2 shouldBe a[Seq[_]]
 
       eventually {
-        c1.get shouldBe 1
+        c1.get shouldBe 2
         c2.get shouldBe 2
       }
     }
