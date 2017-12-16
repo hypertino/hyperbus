@@ -181,9 +181,7 @@ class InprocTransport(serialize: Boolean = false)
     }
   }
 
-  override def startServices(): Cancelable = {
-    // inproc transport ignores this
-    Cancelable.empty
+  override def startServices(): Unit = {
   }
 }
 

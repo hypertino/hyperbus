@@ -128,7 +128,7 @@ class ServerTransportTest extends ServerTransport {
     }
   }
 
-  override def startServices(): Cancelable = Cancelable.empty
+  override def startServices(): Unit = Unit
 }
 
 class TestServiceClass(hyperbus: Hyperbus) extends Subscribable {

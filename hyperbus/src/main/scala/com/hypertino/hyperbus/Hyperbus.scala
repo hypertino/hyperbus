@@ -244,19 +244,12 @@ class Hyperbus(val defaultGroupName: Option[String],
     wrapObservable(loggingObservable, observableNames, observableMeta.requestMatcher, registrators)
   }
 
-  def startServices(): Cancelable = {
+  def startServices(): Unit = {
     logger.info("Connecting services")
     val cancelables = serverRoutes
       .map(_.transport)
       .distinct
-      .map(_.startServices())
-
-    new Cancelable {
-      override def cancel(): Unit = {
-        logger.info("Canceling connection to services")
-        cancelables.foreach(_.cancel())
-      }
-    }
+      .foreach(_.startServices())
   }
 
   protected def lookupClientTransports(message: RequestBase, transportType: TransportType): Seq[ClientTransportRoute] = {

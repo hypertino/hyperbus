@@ -45,7 +45,7 @@ trait HyperbusApi {
 
   def subscribe[A <: Subscribable](serviceClass: A): Seq[Cancelable] = macro SubscribeMacro.subscribe[A]
 
-  def startServices(): Cancelable
+  def startServices(): Unit
 
   def safeHandleCommand[REQ <: RequestBase](command: CommandEvent[REQ], log: Option[Logger])(handler: REQ ⇒ Task[ResponseBase]): Future[Ack]
 

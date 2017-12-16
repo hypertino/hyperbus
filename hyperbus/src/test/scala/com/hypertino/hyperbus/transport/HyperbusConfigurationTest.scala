@@ -42,7 +42,7 @@ class MockServerTransport(config: Config, inj: Injector) extends ServerTransport
 
   override def shutdown(duration: FiniteDuration): Task[Boolean] = ???
 
-  override def startServices() = Cancelable.empty
+  override def startServices(): Unit = {}
 }
 
 // todo: document match syntax
