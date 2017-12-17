@@ -246,7 +246,7 @@ class Hyperbus(val defaultGroupName: Option[String],
 
   def startServices(): Unit = {
     logger.info("Connecting services")
-    val cancelables = serverRoutes
+    serverRoutes
       .map(_.transport)
       .distinct
       .foreach(_.startServices())
