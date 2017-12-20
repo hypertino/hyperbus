@@ -136,7 +136,7 @@ class TestServiceClass(hyperbus: Hyperbus) extends Subscribable {
   val okEvents = AtomicInt(0)
   val failedEvents = AtomicInt(0)
 
-  def onTestPost1Command(post1: TestPost1) = Task.eval {
+  def onTestPost1Command(implicit post1: TestPost1) = Task.eval {
     implicit val mcx = new MessagingContext {
       override def createMessageId() = "123"
       override def correlationId: String = post1.correlationId

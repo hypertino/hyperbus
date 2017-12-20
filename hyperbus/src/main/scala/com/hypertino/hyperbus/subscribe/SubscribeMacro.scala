@@ -53,8 +53,8 @@ trait SubscribeMacroImpl[C <: Context] extends MacroAdapter[C] {
     val commandSubscriptions = commandMethods.map { case (m, t) ⇒
       val typeSymbol = t.typeSignature
       q"""
-        $tVar.commands[$typeSymbol].subscribe{ implicit c ⇒
-          $tVar.safeHandleCommand(c, $log)($m)
+        $tVar.commands[$typeSymbol].subscribe{ c ⇒
+          $tVar.safeHandleCommand(c, $log)($m(_))
         }
       """
     }
@@ -63,8 +63,8 @@ trait SubscribeMacroImpl[C <: Context] extends MacroAdapter[C] {
       val groupName = methodGroupName(m)
       val typeSymbol = t.typeSignature
       q"""
-        $tVar.events[$typeSymbol](this.groupName($groupName)).subscribe{ implicit e ⇒
-          $tVar.safeHandleEvent(e)($m)
+        $tVar.events[$typeSymbol](this.groupName($groupName)).subscribe{ e ⇒
+          $tVar.safeHandleEvent(e)($m(_))
         }
       """
     }
