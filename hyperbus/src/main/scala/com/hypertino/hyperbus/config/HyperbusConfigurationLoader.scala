@@ -61,7 +61,7 @@ object HyperbusConfigurationLoader {
     else
       RequestMatcher.any
 
-    val transportType = config.getOptionString("transport-type").flatMap {
+    val transportType = config.getOptionString("type").flatMap {
       case "commands" ⇒ Some(Commands)
       case "events" ⇒ Some(Events)
       case "" | "*" ⇒ None
