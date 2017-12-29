@@ -9,9 +9,9 @@
 package com.hypertino.hyperbus
 
 import com.hypertino.hyperbus.config.{HyperbusConfiguration, HyperbusConfigurationLoader}
-import com.hypertino.hyperbus.model.{Header, HyperbusClientError, HyperbusError, MessageBase, Method, RequestBase, RequestMeta, RequestObservableMeta, ResponseBase}
+import com.hypertino.hyperbus.model.{HyperbusError, MessageBase, Method, RequestBase, RequestMeta, RequestObservableMeta, ResponseBase}
+import com.hypertino.hyperbus.transport.api.matchers.RequestMatcher
 import com.hypertino.hyperbus.transport.api.{NoTransportRouteException, _}
-import com.hypertino.hyperbus.transport.api.matchers.{Any, RequestMatcher, Specific}
 import com.hypertino.hyperbus.util.SchedulerInjector
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.{Logger, StrictLogging}
@@ -24,7 +24,6 @@ import scaldi.{Injectable, Injector}
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.duration._
 
 class Hyperbus(val defaultGroupName: Option[String],
                protected[this] val readMessagesLogLevel: String,
@@ -173,14 +172,17 @@ class Hyperbus(val defaultGroupName: Option[String],
     monix.execution.Ack.Continue
   }
 
-  def safeHandleEvent[REQ <: RequestBase](request: REQ)(handler: REQ ⇒ Future[Ack]): Future[Ack] = {
+  def safeHandleEvent[REQ <: RequestBase](event: REQ)(handler: REQ ⇒ Future[Ack]): Future[Ack] = {
     Try {
-      handler(request)
+      handler(event)
     }.recover {
       case e: Throwable ⇒
-        logger.error(s"Processing of $request is failed", e)
+        Future.failed(e)
+    }.get.recover {
+      case e: Throwable ⇒
+        logger.error(s"Processing of $event is failed. Event is SKIPPED", e)
         Continue
-    }.get
+    }
   }
 
   private def wrapObservable[T](o: Observable[T], observableNames: String, requestMatcher: RequestMatcher, registrators: Seq[ServiceRegistrator]): Observable[T] = {

@@ -25,6 +25,7 @@ import org.scalatest.time.{Millis, Span}
 import org.scalatest.{FreeSpec, Matchers}
 import scaldi.Module
 
+import scala.concurrent.Future
 import scala.util.{Success, Try}
 
 
@@ -165,8 +166,11 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers with E
           val i = c1.getAndIncrement()
           if (i == 0) {
             throw new RuntimeException(s"call #$i failed")
+          } else if (i == 1) Future.failed {
+            new RuntimeException(s"call #$i failed (async failure)")
+          } else {
+            Continue
           }
-          Continue
         }
       }
 
@@ -191,6 +195,15 @@ class HyperbusInprocTest extends FreeSpec with ScalaFutures with Matchers with E
       eventually {
         c1.get shouldBe 2
         c2.get shouldBe 2
+      }
+
+      val f3 = hyperbus publish TestPost1(TestBody1("abc")) runAsync
+      val r3 = f3.futureValue
+      r3 shouldBe a[Seq[_]]
+
+      eventually {
+        c1.get shouldBe 3
+        c2.get shouldBe 3
       }
     }
   }
